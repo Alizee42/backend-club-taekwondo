@@ -1,14 +1,7 @@
 package club.taekwondo.entity.jpa;
 
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Access(AccessType.FIELD)
@@ -19,9 +12,19 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "type_document", length = 50)
     private String typeDocument;
+
+    @Column(name = "nom_document", length = 100)
     private String nomDocument;
-    private String dateDepot;
+
+    @Column(name = "chemin_fichier", length = 255)
+    private String cheminFichier; // Chemin ou nom du fichier réel sur le disque
+
+    @Column(name = "date_depot", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime dateDepot;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     // Clé étrangère pour lier Document à Membre
@@ -31,13 +34,15 @@ public class Document {
 
     // Constructeur par défaut
     public Document() {
+        this.dateDepot = LocalDateTime.now(); // Initialiser avec la date et l'heure actuelles
     }
 
     // Constructeur avec paramètres
-    public Document(Long id, String typeDocument, String nomDocument, String dateDepot, String description, Membre membre) {
+    public Document(Long id, String typeDocument, String nomDocument, String cheminFichier, LocalDateTime dateDepot, String description, Membre membre) {
         this.id = id;
         this.typeDocument = typeDocument;
         this.nomDocument = nomDocument;
+        this.cheminFichier = cheminFichier;
         this.dateDepot = dateDepot;
         this.description = description;
         this.membre = membre;
@@ -68,11 +73,19 @@ public class Document {
         this.nomDocument = nomDocument;
     }
 
-    public String getDateDepot() {
+    public String getCheminFichier() {
+        return cheminFichier;
+    }
+
+    public void setCheminFichier(String cheminFichier) {
+        this.cheminFichier = cheminFichier;
+    }
+
+    public LocalDateTime getDateDepot() {
         return dateDepot;
     }
 
-    public void setDateDepot(String dateDepot) {
+    public void setDateDepot(LocalDateTime dateDepot) {
         this.dateDepot = dateDepot;
     }
 

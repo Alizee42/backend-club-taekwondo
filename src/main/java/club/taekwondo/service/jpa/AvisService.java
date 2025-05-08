@@ -14,32 +14,50 @@ public class AvisService {
     @Autowired
     private AvisRepository avisRepository;
 
-    // Méthode pour obtenir tous les avis
+    // Récupérer tous les avis
     public List<Avis> getAllAvis() {
         return avisRepository.findAll();
     }
 
-    // Méthode pour obtenir un avis par son ID
-    public Optional<Avis> getAvisById(Long id) {
+    // Récupérer un avis par son ID
+    public Optional<Avis> getAvisById(Integer id) {
         return avisRepository.findById(id);
     }
 
-    // Méthode pour créer un nouvel avis
+    // Ajouter un nouvel avis
     public Avis createAvis(Avis avis) {
         return avisRepository.save(avis);
     }
 
-    // Méthode pour mettre à jour un avis existant
-    public Avis updateAvis(Long id, Avis avis) {
-        if (avisRepository.existsById(id)) {
-            avis.setId(id);
+    // Mettre à jour un avis existant
+    public Avis updateAvis(Integer id, Avis avisDetails) {
+        return avisRepository.findById(id).map(avis -> {
+            if (avisDetails.getContenu() != null) {
+                avis.setContenu(avisDetails.getContenu());
+            }
+            if (avisDetails.getPseudoVisiteur() != null) {
+                avis.setPseudoVisiteur(avisDetails.getPseudoVisiteur());
+            }
+            if (avisDetails.getNote() != null) {
+                avis.setNote(avisDetails.getNote());
+            }
+            if (avisDetails.getTypeAvis() != null) {
+                avis.setTypeAvis(avisDetails.getTypeAvis());
+            }
             return avisRepository.save(avis);
-        }
-        return null; // ou gérer l'exception
+        }).orElseThrow(() -> new RuntimeException("Avis non trouvé avec l'ID : " + id));
     }
 
-    // Méthode pour supprimer un avis
-    public void deleteAvis(Long id) {
+    // Approuver un avis
+    public Avis approuverAvis(Integer id) {
+        return avisRepository.findById(id).map(avis -> {
+            avis.setApprouve(true); // Mettre à jour le statut d'approbation
+            return avisRepository.save(avis); // Sauvegarder les modifications
+        }).orElseThrow(() -> new RuntimeException("Avis non trouvé avec l'ID : " + id));
+    }
+
+    // Supprimer un avis
+    public void deleteAvis(Integer id) {
         avisRepository.deleteById(id);
     }
 }

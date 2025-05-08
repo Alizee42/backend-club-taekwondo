@@ -1,19 +1,7 @@
 package club.taekwondo.entity.jpa;
 
-
-import java.time.LocalDateTime;
-
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Access(AccessType.FIELD)
@@ -22,41 +10,52 @@ public class Avis {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Column(name = "date_pub", nullable = false)
-    private LocalDateTime datePub;
+    private LocalDate datePub;
 
-    @Column(name = "contenu", nullable = false)
+    @Column(name = "contenu", nullable = false, columnDefinition = "TEXT")
     private String contenu;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "membre_id", nullable = false)
-    private Membre membre;
+    @Column(name = "approuve", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean approuve = false;
+
+    @Column(name = "pseudo_visiteur", length = 100)
+    private String pseudoVisiteur;
+
+    @Column(name = "note", columnDefinition = "TINYINT")
+    private Integer note; // Note sur 5 étoiles
+
+    @Column(name = "type_avis", length = 50)
+    private String typeAvis; // Type d'avis : "cours", "événement", etc.
 
     // Constructeurs
     public Avis() {}
 
-    public Avis(LocalDateTime datePub, String contenu, Membre membre) {
+    public Avis(LocalDate datePub, String contenu, Boolean approuve, String pseudoVisiteur, Integer note, String typeAvis) {
         this.datePub = datePub;
         this.contenu = contenu;
-        this.membre = membre;
+        this.approuve = approuve;
+        this.pseudoVisiteur = pseudoVisiteur;
+        this.note = note;
+        this.typeAvis = typeAvis;
     }
 
     // Getters et Setters
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public LocalDateTime getDatePub() {
+    public LocalDate getDatePub() {
         return datePub;
     }
 
-    public void setDatePub(LocalDateTime datePub) {
+    public void setDatePub(LocalDate datePub) {
         this.datePub = datePub;
     }
 
@@ -68,12 +67,35 @@ public class Avis {
         this.contenu = contenu;
     }
 
-    public Membre getMembre() {
-        return membre;
+    public Boolean getApprouve() {
+        return approuve;
     }
 
-    public void setMembre(Membre membre) {
-        this.membre = membre;
+    public void setApprouve(Boolean approuve) {
+        this.approuve = approuve;
+    }
+
+    public String getPseudoVisiteur() {
+        return pseudoVisiteur;
+    }
+
+    public void setPseudoVisiteur(String pseudoVisiteur) {
+        this.pseudoVisiteur = pseudoVisiteur;
+    }
+
+    public Integer getNote() {
+        return note;
+    }
+
+    public void setNote(Integer note) {
+        this.note = note;
+    }
+
+    public String getTypeAvis() {
+        return typeAvis;
+    }
+
+    public void setTypeAvis(String typeAvis) {
+        this.typeAvis = typeAvis;
     }
 }
-

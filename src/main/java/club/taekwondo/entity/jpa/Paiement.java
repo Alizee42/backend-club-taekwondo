@@ -2,16 +2,7 @@ package club.taekwondo.entity.jpa;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Access(AccessType.FIELD)
@@ -22,29 +13,43 @@ public class Paiement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String type; // Cotisation ou Achat
+
     private Double montant;
 
-    @Column(name = "date_paiement")
+    @Column(name = "date_paiement", nullable = false)
     private LocalDate datePaiement;
 
-    private String statut;
+    private String statut; // payé / en attente / annulé
+
+    @Column(name = "mode_paiement", nullable = false)
+    private String modePaiement; // Espèces / Carte / Virement, etc.
 
     // Clé étrangère vers Membre
     @ManyToOne
-    @JoinColumn(name = "membre_id", referencedColumnName = "id")
+    @JoinColumn(name = "membre_id", referencedColumnName = "id", nullable = false)
     private Membre membre;
+
+    // Clé étrangère vers Commande (peut être null si c’est un paiement de cotisation)
+    @ManyToOne
+    @JoinColumn(name = "commande_id")
+    private Commande commande;
 
     // Constructeur sans argument
     public Paiement() {
     }
 
-    // Constructeur avec arguments
-    public Paiement(Long id, Double montant, LocalDate datePaiement, String statut, Membre membre) {
+    // Constructeur avec tous les arguments
+    public Paiement(Long id, String type, Double montant, LocalDate datePaiement, String statut, String modePaiement, Membre membre, Commande commande) {
         this.id = id;
+        this.type = type;
         this.montant = montant;
         this.datePaiement = datePaiement;
         this.statut = statut;
+        this.modePaiement = modePaiement;
         this.membre = membre;
+        this.commande = commande;
     }
 
     // Getters et Setters
@@ -54,6 +59,14 @@ public class Paiement {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public Double getMontant() {
@@ -80,6 +93,14 @@ public class Paiement {
         this.statut = statut;
     }
 
+    public String getModePaiement() {
+        return modePaiement;
+    }
+
+    public void setModePaiement(String modePaiement) {
+        this.modePaiement = modePaiement;
+    }
+
     public Membre getMembre() {
         return membre;
     }
@@ -87,5 +108,12 @@ public class Paiement {
     public void setMembre(Membre membre) {
         this.membre = membre;
     }
-}
 
+    public Commande getCommande() {
+        return commande;
+    }
+
+    public void setCommande(Commande commande) {
+        this.commande = commande;
+    }
+}

@@ -5,6 +5,7 @@ import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,9 @@ public class InscriptionEvenementService {
 
     // Méthode pour inscrire un membre à un événement
     public InscriptionEvenement inscrireMembre(InscriptionEvenement inscriptionEvenement) {
+        if (inscriptionEvenement.getDateInscription() == null) {
+            inscriptionEvenement.setDateInscription(LocalDate.now()); // Définit la date actuelle si elle n'est pas fournie
+        }
         return inscriptionEvenementRepository.save(inscriptionEvenement);
     }
 

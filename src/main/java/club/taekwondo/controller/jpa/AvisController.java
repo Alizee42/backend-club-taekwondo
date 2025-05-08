@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/avis")
@@ -17,36 +17,47 @@ public class AvisController {
     @Autowired
     private AvisService avisService;
 
-    // Endpoint pour récupérer tous les avis
+    // Récupérer tous les avis
     @GetMapping
-    public List<Avis> getAllAvis() {
-        return avisService.getAllAvis();
+    public ResponseEntity<List<Avis>> getAllAvis() {
+        List<Avis> avisList = avisService.getAllAvis();
+        return ResponseEntity.ok(avisList);
     }
 
-    // Endpoint pour récupérer un avis par son ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Avis> getAvisById(@PathVariable Long id) {
-        Optional<Avis> avis = avisService.getAvisById(id);
-        return avis.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Endpoint pour créer un nouvel avis
+    // Ajouter un nouvel avis
     @PostMapping
     public ResponseEntity<Avis> createAvis(@RequestBody Avis avis) {
-        Avis newAvis = avisService.createAvis(avis);
-        return new ResponseEntity<>(newAvis, HttpStatus.CREATED);
+        avis.setDatePub(LocalDate.now());
+        avis.setApprouve(false); // Par défaut, l'avis n'est pas approuvé
+        Avis savedAvis = avisService.createAvis(avis);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedAvis);
     }
 
-    // Endpoint pour mettre à jour un avis existant
+    // Mettre à jour un avis existant
     @PutMapping("/{id}")
-    public ResponseEntity<Avis> updateAvis(@PathVariable Long id, @RequestBody Avis avis) {
-        Avis updatedAvis = avisService.updateAvis(id, avis);
-        return updatedAvis != null ? ResponseEntity.ok(updatedAvis) : ResponseEntity.notFound().build();
+    public ResponseEntity<Avis> updateAvis(@PathVariable Integer id, @RequestBody Avis avisDetails) {
+        try {
+            Avis updatedAvis = avisService.updateAvis(id, avisDetails);
+            return ResponseEntity.ok(updatedAvis);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
-    // Endpoint pour supprimer un avis
+    // Approuver un avis
+    @PutMapping("/{id}/approuver")
+    public ResponseEntity<Avis> approuverAvis(@PathVariable Integer id) {
+        try {
+            Avis approuveAvis = avisService.approuverAvis(id);
+            return ResponseEntity.ok(approuveAvis);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+    // Supprimer un avis
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAvis(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteAvis(@PathVariable Integer id) {
         avisService.deleteAvis(id);
         return ResponseEntity.noContent().build();
     }

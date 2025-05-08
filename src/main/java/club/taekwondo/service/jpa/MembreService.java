@@ -25,7 +25,6 @@ public class MembreService {
     }
 
     public Membre createMembre(Membre membre) {
-        // Ici tu peux ajouter une logique de validation si besoin (ex: email déjà utilisé)
         return membreRepository.save(membre);
     }
 
@@ -41,6 +40,7 @@ public class MembreService {
             membre.setPassword(updatedMembre.getPassword());
             membre.setTelephone(updatedMembre.getTelephone());
             membre.setRole(updatedMembre.getRole());
+            membre.setNumeroLicence(updatedMembre.getNumeroLicence()); // Ajout de numeroLicence
             membre.setCeinture(updatedMembre.getCeinture());
             membre.setDateNaissance(updatedMembre.getDateNaissance());
             membre.setAdresse(updatedMembre.getAdresse());
@@ -53,4 +53,3 @@ public class MembreService {
         membreRepository.deleteById(id);
     }
 }
-

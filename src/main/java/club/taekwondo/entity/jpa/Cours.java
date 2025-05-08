@@ -1,7 +1,7 @@
 package club.taekwondo.entity.jpa;
 
-
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
@@ -27,21 +27,28 @@ public class Cours {
     private LocalDateTime date;
     private Integer duree; // durée en minutes
 
-    // Clé étrangère vers Professeur
+    private LocalTime horaire; // Horaire du cours
+    private String niveau; // Niveau requis pour le cours
+    private Integer capacite; // Nombre maximum de participants
+
+    // Clé étrangère vers Utilisateur (professeur)
     @ManyToOne
-    @JoinColumn(name = "professeur_id", referencedColumnName = "id")
-    private Professeur professeur;
+    @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
+    private Utilisateur professeur; // Utilisateur ayant le rôle de professeur
 
     // Constructeur par défaut
     public Cours() {}
 
     // Constructeur avec paramètres
-    public Cours(Long id, String nomCours, String description, LocalDateTime date, Integer duree, Professeur professeur) {
+    public Cours(Long id, String nomCours, String description, LocalDateTime date, Integer duree, LocalTime horaire, String niveau, Integer capacite, Utilisateur professeur) {
         this.id = id;
         this.nomCours = nomCours;
         this.description = description;
         this.date = date;
         this.duree = duree;
+        this.horaire = horaire;
+        this.niveau = niveau;
+        this.capacite = capacite;
         this.professeur = professeur;
     }
 
@@ -86,11 +93,35 @@ public class Cours {
         this.duree = duree;
     }
 
-    public Professeur getProfesseur() {
+    public LocalTime getHoraire() {
+        return horaire;
+    }
+
+    public void setHoraire(LocalTime horaire) {
+        this.horaire = horaire;
+    }
+
+    public String getNiveau() {
+        return niveau;
+    }
+
+    public void setNiveau(String niveau) {
+        this.niveau = niveau;
+    }
+
+    public Integer getCapacite() {
+        return capacite;
+    }
+
+    public void setCapacite(Integer capacite) {
+        this.capacite = capacite;
+    }
+
+    public Utilisateur getProfesseur() {
         return professeur;
     }
 
-    public void setProfesseur(Professeur professeur) {
+    public void setProfesseur(Utilisateur professeur) {
         this.professeur = professeur;
     }
 }

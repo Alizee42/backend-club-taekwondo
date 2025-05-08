@@ -2,11 +2,13 @@ package club.taekwondo.entity.mongo;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 
 import java.time.LocalDateTime;
+
 @Access(AccessType.FIELD)
 @Document(collection = "galerie")
 public class Galerie {
@@ -15,8 +17,13 @@ public class Galerie {
     private String id;
 
     private String titre;
+
+    @Field("image_url")
     private String imageUrl;
+
     private String description;
+
+    @Field("date_publication")
     private LocalDateTime datePublication;
 
     // === Constructeurs ===
@@ -73,8 +80,6 @@ public class Galerie {
     public void setDatePublication(LocalDateTime datePublication) {
         this.datePublication = datePublication;
     }
-
-    // === toString (optionnel mais pratique pour debug) ===
 
     @Override
     public String toString() {

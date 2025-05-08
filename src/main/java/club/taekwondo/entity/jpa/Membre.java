@@ -9,6 +9,9 @@ import jakarta.persistence.*;
 @Table(name = "membre")
 public class Membre extends Utilisateur {
 
+    @Column(nullable = false, unique = true)
+    private String numeroLicence;
+
     private String ceinture;
     private LocalDate dateNaissance;
     private String adresse;
@@ -18,6 +21,14 @@ public class Membre extends Utilisateur {
     public Membre() {}
 
     // Getters et Setters
+    public String getNumeroLicence() {
+        return numeroLicence;
+    }
+
+    public void setNumeroLicence(String numeroLicence) {
+        this.numeroLicence = numeroLicence;
+    }
+
     public String getCeinture() {
         return ceinture;
     }
@@ -50,5 +61,3 @@ public class Membre extends Utilisateur {
         this.statutSante = statutSante;
     }
 }
-
-
