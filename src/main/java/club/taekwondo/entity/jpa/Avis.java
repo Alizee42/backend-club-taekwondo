@@ -29,6 +29,9 @@ public class Avis {
 
     @Column(name = "type_avis", length = 50)
     private String typeAvis; // Type d'avis : "cours", "événement", etc.
+    
+    @Column(name = "photo", nullable = true)
+    private String photo;
 
     // Constructeurs
     public Avis() {}
@@ -97,5 +100,12 @@ public class Avis {
 
     public void setTypeAvis(String typeAvis) {
         this.typeAvis = typeAvis;
+    }
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
     }
 }

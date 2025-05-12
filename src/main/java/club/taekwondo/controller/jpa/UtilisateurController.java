@@ -24,7 +24,6 @@ public class UtilisateurController {
     @Autowired
     private UtilisateurService utilisateurService;
 
-    @Autowired
     public UtilisateurController(JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;

@@ -3,11 +3,8 @@ package club.taekwondo.entity.mongo;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-
 import java.time.LocalDateTime;
-@Access(AccessType.FIELD)
+
 @Document(collection = "actualite")
 public class Actualite {
 
@@ -18,15 +15,21 @@ public class Actualite {
     private String contenu;
     private LocalDateTime datePublication;
     private String typeActu;
+    private boolean isFeatured;
+    private String imageUrl; // 🆕 Ajout du champ image
 
     public Actualite() {}
 
-    public Actualite(String titre, String contenu, LocalDateTime datePublication, String typeActu) {
+    public Actualite(String titre, String contenu, LocalDateTime datePublication, String typeActu, boolean isFeatured, String imageUrl) {
         this.titre = titre;
         this.contenu = contenu;
         this.datePublication = datePublication;
         this.typeActu = typeActu;
+        this.isFeatured = isFeatured;
+        this.imageUrl = imageUrl;
     }
+
+    // Getters et setters
 
     public String getId() {
         return id;
@@ -66,5 +69,21 @@ public class Actualite {
 
     public void setTypeActu(String typeActu) {
         this.typeActu = typeActu;
+    }
+
+    public boolean isFeatured() {
+        return isFeatured;
+    }
+
+    public void setFeatured(boolean isFeatured) {
+        this.isFeatured = isFeatured;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

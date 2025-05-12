@@ -15,7 +15,8 @@ public class JwtUtil {
     @Value("${jwt.secret}")
 private String SECRET_KEY;
 
-    public String generateToken(String email, String role) {
+    @SuppressWarnings("deprecation")
+	public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
@@ -25,7 +26,8 @@ private String SECRET_KEY;
                 .compact();
     }
 
-    public Claims extractClaims(String token) {
+    @SuppressWarnings("deprecation")
+	public Claims extractClaims(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
                 .parseClaimsJws(token)

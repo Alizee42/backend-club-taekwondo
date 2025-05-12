@@ -20,6 +20,10 @@ public class ActualiteService {
         return actualiteRepository.findAll();
     }
 
+    public List<Actualite> getFeatured() {
+        return actualiteRepository.findByIsFeaturedTrue();
+    }
+
     public Optional<Actualite> getById(String id) {
         return actualiteRepository.findById(id);
     }
@@ -28,16 +32,16 @@ public class ActualiteService {
         return actualiteRepository.save(actualite);
     }
 
-    public Actualite update(String id, Actualite actualite) {
-        return actualiteRepository.findById(id)
-                .map(existing -> {
-                    existing.setTitre(actualite.getTitre());
-                    existing.setContenu(actualite.getContenu());
-                    existing.setDatePublication(actualite.getDatePublication());
-                    existing.setTypeActu(actualite.getTypeActu());
-                    return actualiteRepository.save(existing);
-                })
-                .orElse(null);
+    public Actualite update(String id, Actualite updatedActualite) {
+        return actualiteRepository.findById(id).map(actualite -> {
+            actualite.setTitre(updatedActualite.getTitre());
+            actualite.setContenu(updatedActualite.getContenu());
+            actualite.setDatePublication(updatedActualite.getDatePublication());
+            actualite.setTypeActu(updatedActualite.getTypeActu());
+            actualite.setFeatured(updatedActualite.isFeatured());
+            actualite.setImageUrl(updatedActualite.getImageUrl());
+            return actualiteRepository.save(actualite);
+        }).orElse(null);
     }
 
     public void delete(String id) {
