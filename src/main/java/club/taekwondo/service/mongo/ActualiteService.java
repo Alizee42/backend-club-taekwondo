@@ -29,11 +29,28 @@ public class ActualiteService {
     }
 
     public Actualite create(Actualite actualite) {
-        System.out.println("Enregistrement de l'actualité : " + actualite.isFeatured()); // Vérifiez la valeur ici
+        if (actualite.isFeatured()) {
+            // Désactiver le statut "À la une" pour toutes les autres actualités
+            List<Actualite> featuredActualites = actualiteRepository.findByIsFeaturedTrue();
+            for (Actualite featured : featuredActualites) {
+                featured.setFeatured(false);
+                actualiteRepository.save(featured);
+            }
+        }
         return actualiteRepository.save(actualite);
     }
 
     public Actualite update(String id, Actualite updatedActualite) {
+        if (updatedActualite.isFeatured()) {
+            // Désactiver le statut "À la une" pour toutes les autres actualités
+            List<Actualite> featuredActualites = actualiteRepository.findByIsFeaturedTrue();
+            for (Actualite featured : featuredActualites) {
+                if (!featured.getId().equals(id)) {
+                    featured.setFeatured(false);
+                    actualiteRepository.save(featured);
+                }
+            }
+        }
         return actualiteRepository.findById(id).map(actualite -> {
             actualite.setTitre(updatedActualite.getTitre());
             actualite.setContenu(updatedActualite.getContenu());

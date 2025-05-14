@@ -1,4 +1,3 @@
-
 package club.taekwondo.repository.mongo;
 
 import club.taekwondo.entity.mongo.Galerie;

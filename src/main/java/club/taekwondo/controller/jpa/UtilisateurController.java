@@ -177,5 +177,33 @@ public class UtilisateurController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de la mise à jour du mot de passe."));
         }
     }
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Utilisateur utilisateur) {
+        try {
+            // Vérifiez si l'email est déjà utilisé
+            if (utilisateurService.getUtilisateurByEmail(utilisateur.getEmail()).isPresent()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Cet email est déjà utilisé."));
+            }
+
+            // Attribuez un rôle par défaut si aucun rôle n'est fourni
+            if (utilisateur.getRole() == null || utilisateur.getRole().isEmpty()) {
+                utilisateur.setRole("membre"); // Rôle par défaut
+            }
+
+            // Créez l'utilisateur (le mot de passe sera haché dans le service)
+            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateur);
+
+            // Retournez une réponse de succès
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", "Utilisateur créé avec succès.",
+                "id", nouvelUtilisateur.getId(),
+                "email", nouvelUtilisateur.getEmail(),
+                "role", nouvelUtilisateur.getRole()
+            ));
+        } catch (Exception e) {
+            // Gestion des erreurs
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de l'inscription."));
+        }
+    }
 }
 

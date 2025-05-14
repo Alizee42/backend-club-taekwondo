@@ -45,19 +45,18 @@ public class UtilisateurService {
     }
 
     public Utilisateur createUtilisateur(Utilisateur utilisateur) {
+        // Vérifiez si le mot de passe est fourni et non vide
         if (utilisateur.getPassword() != null && !utilisateur.getPassword().isEmpty()) {
-            // Vérifiez si le mot de passe est déjà haché
-            if (!utilisateur.getPassword().startsWith("$2a$")) {
-                System.out.println("Mot de passe avant hachage : " + utilisateur.getPassword());
-                utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
-                System.out.println("Mot de passe après hachage : " + utilisateur.getPassword());
-            } else {
-                System.out.println("Le mot de passe est déjà haché, aucun hachage supplémentaire n'est nécessaire.");
-            }
+            // Hachez le mot de passe avant de le sauvegarder
+            utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
+        } else {
+            throw new IllegalArgumentException("Le mot de passe est requis.");
         }
+
+        // Sauvegardez l'utilisateur dans la base de données
         return utilisateurRepository.save(utilisateur);
     }
-
+    
     public Utilisateur updateUtilisateur(Long id, Utilisateur updatedUser) {
         return utilisateurRepository.findById(id).map(user -> {
             user.setNom(updatedUser.getNom());
