@@ -29,6 +29,7 @@ public class ActualiteService {
     }
 
     public Actualite create(Actualite actualite) {
+        System.out.println("Enregistrement de l'actualité : " + actualite.isFeatured()); // Vérifiez la valeur ici
         return actualiteRepository.save(actualite);
     }
 

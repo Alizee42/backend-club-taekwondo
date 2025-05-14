@@ -44,6 +44,7 @@ public class ActualiteController {
 
     @PostMapping
     public Actualite create(@RequestBody Actualite actualite) {
+        System.out.println("Actualité reçue : " + actualite.isFeatured()); // Vérifiez la valeur ici
         return actualiteService.create(actualite);
     }
 

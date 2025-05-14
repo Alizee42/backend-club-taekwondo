@@ -6,5 +6,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.List;
 
 public interface ActualiteRepository extends MongoRepository<Actualite, String> {
-    List<Actualite> findByIsFeaturedTrue();
+    List<Actualite> findByIsFeaturedTrue(); // Récupérer les actualités mises en avant
 }

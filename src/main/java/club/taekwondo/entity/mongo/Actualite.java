@@ -1,5 +1,6 @@
 package club.taekwondo.entity.mongo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -15,8 +16,11 @@ public class Actualite {
     private String contenu;
     private LocalDateTime datePublication;
     private String typeActu;
+
+    @JsonProperty("isFeatured") // Mappe "isFeatured" dans le JSON au champ Java
     private boolean isFeatured;
-    private String imageUrl; // 🆕 Ajout du champ image
+
+    private String imageUrl;
 
     public Actualite() {}
 
