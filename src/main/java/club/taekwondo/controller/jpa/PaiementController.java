@@ -8,7 +8,6 @@ import club.taekwondo.service.jpa.MembreService;
 import club.taekwondo.service.jpa.PaiementService;
 import club.taekwondo.service.jpa.UtilisateurService; // Import manquant
 
-import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
 

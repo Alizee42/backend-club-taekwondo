@@ -11,7 +11,6 @@ public class Membre extends Utilisateur {
 
     @Column(nullable = false, unique = true)
     private String numeroLicence;
-
     private String ceinture;
     private LocalDate dateNaissance;
     private String adresse;
