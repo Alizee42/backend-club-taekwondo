@@ -1,5 +1,6 @@
 package club.taekwondo.entity.jpa;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -12,14 +13,14 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "type_document", length = 50)
+    @Column(name = "type_document", length = 50, nullable = false)
     private String typeDocument;
 
-    @Column(name = "nom_document", length = 100)
+    @Column(name = "nom_document", length = 100, nullable = false)
     private String nomDocument;
 
-    @Column(name = "chemin_fichier", length = 255)
-    private String cheminFichier; // Chemin ou nom du fichier réel sur le disque
+    @Column(name = "chemin_fichier", length = 255, nullable = false)
+    private String cheminFichier;
 
     @Column(name = "date_depot", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime dateDepot;
@@ -27,28 +28,20 @@ public class Document {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Clé étrangère pour lier Document à Membre
+    @Column(name = "status", length = 20, nullable = false)
+    private String status;
+
     @ManyToOne
-    @JoinColumn(name = "membre_id", referencedColumnName = "id")
-    private Membre membre;
+    @JoinColumn(name = "utilisateur_id", nullable = false)
+    @JsonBackReference // Empêche la sérialisation récursive
+    private Utilisateur utilisateur;
 
-    // Constructeur par défaut
     public Document() {
-        this.dateDepot = LocalDateTime.now(); // Initialiser avec la date et l'heure actuelles
+        this.dateDepot = LocalDateTime.now();
+        this.status = "en attente";
     }
 
-    // Constructeur avec paramètres
-    public Document(Long id, String typeDocument, String nomDocument, String cheminFichier, LocalDateTime dateDepot, String description, Membre membre) {
-        this.id = id;
-        this.typeDocument = typeDocument;
-        this.nomDocument = nomDocument;
-        this.cheminFichier = cheminFichier;
-        this.dateDepot = dateDepot;
-        this.description = description;
-        this.membre = membre;
-    }
-
-    // Getters et Setters
+ // Getters et Setters
     public Long getId() {
         return id;
     }
@@ -97,11 +90,19 @@ public class Document {
         this.description = description;
     }
 
-    public Membre getMembre() {
-        return membre;
+    public String getStatus() {
+        return status;
     }
 
-    public void setMembre(Membre membre) {
-        this.membre = membre;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Utilisateur getUtilisateur() {
+        return utilisateur;
+    }
+
+    public void setUtilisateur(Utilisateur utilisateur) {
+        this.utilisateur = utilisateur;
     }
 }

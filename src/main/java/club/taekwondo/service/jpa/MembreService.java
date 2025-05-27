@@ -16,40 +16,53 @@ public class MembreService {
         this.membreRepository = membreRepository;
     }
 
+    // Récupérer tous les membres
     public List<Membre> getAllMembres() {
         return membreRepository.findAll();
     }
 
+    // Récupérer un membre par ID
     public Optional<Membre> getMembreById(Long id) {
         return membreRepository.findById(id);
     }
 
+    // Récupérer un membre par email
+    public Optional<Membre> getMembreByEmail(String email) {
+        return membreRepository.findByEmail(email);
+    }
+
+    // Créer un nouveau membre
     public Membre createMembre(Membre membre) {
+        // Encodage du mot de passe ou autres validations si nécessaire
         return membreRepository.save(membre);
     }
 
-    public Membre saveMembre(Membre membre) {
-        return membreRepository.save(membre);
-    }
-
-    public Membre updateMembre(Long id, Membre updatedMembre) {
-        return membreRepository.findById(id).map(membre -> {
-            membre.setNom(updatedMembre.getNom());
-            membre.setPrenom(updatedMembre.getPrenom());
-            membre.setEmail(updatedMembre.getEmail());
-            membre.setPassword(updatedMembre.getPassword());
-            membre.setTelephone(updatedMembre.getTelephone());
-            membre.setRole(updatedMembre.getRole());
-            membre.setNumeroLicence(updatedMembre.getNumeroLicence()); // Ajout de numeroLicence
-            membre.setCeinture(updatedMembre.getCeinture());
-            membre.setDateNaissance(updatedMembre.getDateNaissance());
-            membre.setAdresse(updatedMembre.getAdresse());
-            membre.setStatutSante(updatedMembre.getStatutSante());
+    // Mettre à jour un membre existant
+    public Membre updateMembre(Long id, Membre membreDetails) {
+        Optional<Membre> membreOptional = membreRepository.findById(id);
+        if (membreOptional.isPresent()) {
+            Membre membre = membreOptional.get();
+            membre.setNom(membreDetails.getNom());
+            membre.setPrenom(membreDetails.getPrenom());
+            membre.setEmail(membreDetails.getEmail());
+            membre.setAdresse(membreDetails.getAdresse());
+            membre.setCeinture(membreDetails.getCeinture());
+            membre.setDateNaissance(membreDetails.getDateNaissance());
+            membre.setNumeroLicence(membreDetails.getNumeroLicence());
+            membre.setStatutSante(membreDetails.getStatutSante());
             return membreRepository.save(membre);
-        }).orElseThrow(() -> new RuntimeException("Membre non trouvé avec ID : " + id));
+        } else {
+            throw new RuntimeException("Membre non trouvé avec l'ID : " + id);
+        }
     }
 
+    // Supprimer un membre
     public void deleteMembre(Long id) {
-        membreRepository.deleteById(id);
+        Optional<Membre> membreOptional = membreRepository.findById(id);
+        if (membreOptional.isPresent()) {
+            membreRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Membre non trouvé avec l'ID : " + id);
+        }
     }
 }

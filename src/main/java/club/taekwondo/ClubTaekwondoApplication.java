@@ -11,5 +11,7 @@ public class ClubTaekwondoApplication {
     public static void main(String[] args) {
         SpringApplication.run(ClubTaekwondoApplication.class, args);
         System.out.println("ClubTaekwondoApplication demarre...");
+        
     }
+    
 }

@@ -1,7 +1,10 @@
 package club.taekwondo.entity.jpa;
 
+import java.util.List;
+
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -23,6 +27,8 @@ public class Utilisateur {
 
     private String nom;
     private String prenom;
+    
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -33,6 +39,8 @@ public class Utilisateur {
     @Column(nullable = false)
     private String role;
 
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Paiement> paiements;
     // Constructeur sans argument
     public Utilisateur() {
     }
@@ -105,4 +113,3 @@ public class Utilisateur {
         this.role = role;
     }
 }
-

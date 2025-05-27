@@ -1,12 +1,10 @@
 package club.taekwondo.entity.jpa;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
-import jakarta.persistence.*;
-
 @Entity
-@Access(AccessType.FIELD)
-@Table(name = "paiement")
 public class Paiement {
 
     @Id
@@ -14,7 +12,7 @@ public class Paiement {
     private Long id;
 
     @Column(nullable = false)
-    private String type; // Cotisation ou Achat
+    private String type = "Cotisation"; // Valeur par défaut
 
     private Double montant;
 
@@ -26,31 +24,17 @@ public class Paiement {
     @Column(name = "mode_paiement", nullable = false)
     private String modePaiement; // Espèces / Carte / Virement, etc.
 
-    // Clé étrangère vers Membre
     @ManyToOne
-    @JoinColumn(name = "membre_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "membre_id", nullable = false)
+    @JsonBackReference // Empêche la récursion infinie
     private Membre membre;
 
-    // Clé étrangère vers Commande (peut être null si c’est un paiement de cotisation)
     @ManyToOne
-    @JoinColumn(name = "commande_id")
-    private Commande commande;
+    @JoinColumn(name = "utilisateur_id", nullable = false) // Relation avec Utilisateur
+    private Utilisateur utilisateur;
 
-    // Constructeur sans argument
-    public Paiement() {
-    }
-
-    // Constructeur avec tous les arguments
-    public Paiement(Long id, String type, Double montant, LocalDate datePaiement, String statut, String modePaiement, Membre membre, Commande commande) {
-        this.id = id;
-        this.type = type;
-        this.montant = montant;
-        this.datePaiement = datePaiement;
-        this.statut = statut;
-        this.modePaiement = modePaiement;
-        this.membre = membre;
-        this.commande = commande;
-    }
+    
+    public Paiement() {}
 
     // Getters et Setters
     public Long getId() {
@@ -108,12 +92,11 @@ public class Paiement {
     public void setMembre(Membre membre) {
         this.membre = membre;
     }
-
-    public Commande getCommande() {
-        return commande;
+    public Utilisateur getUtilisateur() {
+        return utilisateur;
     }
 
-    public void setCommande(Commande commande) {
-        this.commande = commande;
+    public void setUtilisateur(Utilisateur utilisateur) {
+        this.utilisateur = utilisateur;
     }
 }
