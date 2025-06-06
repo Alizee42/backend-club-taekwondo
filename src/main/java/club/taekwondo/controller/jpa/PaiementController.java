@@ -1,48 +1,45 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.entity.jpa.Membre;
-import club.taekwondo.entity.jpa.Paiement;
-import club.taekwondo.entity.jpa.Utilisateur;
-import club.taekwondo.security.JwtUtil;
-import club.taekwondo.service.jpa.MembreService;
-import club.taekwondo.service.jpa.PaiementService;
-import club.taekwondo.service.jpa.UtilisateurService; // Import manquant
-
-import com.stripe.model.PaymentIntent;
-import com.stripe.param.PaymentIntentCreateParams;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
+
+import club.taekwondo.entity.jpa.Paiement;
+import club.taekwondo.service.StripeService;
+import club.taekwondo.service.jpa.PaiementService;
+
 @RestController
 @RequestMapping("/api/paiements")
 public class PaiementController {
 
+    private final StripeService stripeService;
     private final PaiementService paiementService;
-    private final MembreService membreService;
-    private final UtilisateurService utilisateurService; // Ajout de UtilisateurService
-    private final JwtUtil jwtUtil;
 
-    public PaiementController(PaiementService paiementService, 
-                              MembreService membreService, 
-                              UtilisateurService utilisateurService, // Ajout dans le constructeur
-                              JwtUtil jwtUtil) {
+    public PaiementController(StripeService stripeService, PaiementService paiementService) {
+        this.stripeService = stripeService;
         this.paiementService = paiementService;
-        this.membreService = membreService;
-        this.utilisateurService = utilisateurService;
-        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping
     public List<Paiement> getAll() {
-        return paiementService.getAll();
+        List<Paiement> paiements = paiementService.getAll();
+        paiements.forEach(paiement -> System.out.println("Paiement renvoyé : " + paiement));
+        return paiements;
     }
 
     @PostMapping("/create-payment-intent")
@@ -50,60 +47,77 @@ public class PaiementController {
             @RequestHeader("Authorization") String token,
             @RequestBody Map<String, Object> request) {
         try {
-            Long membreId = extractMembreIdFromToken(token);
-            Optional<Membre> membreOptional = membreService.getMembreById(membreId);
-            if (membreOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Membre non trouvé."));
-            }
-            Membre membre = membreOptional.get();
-
-            Optional<Utilisateur> utilisateurOptional = utilisateurService.getUtilisateurById(membreId);
-            if (utilisateurOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Utilisateur non trouvé."));
-            }
-            Utilisateur utilisateur = utilisateurOptional.get();
-
-            Double amount = Double.valueOf(request.get("amount").toString());
-            String currency = request.get("currency").toString();
-
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount((long) (amount * 100))
-                    .setCurrency(currency)
-                    .build();
-
-            PaymentIntent paymentIntent = PaymentIntent.create(params);
-
-            Paiement paiement = new Paiement();
-            paiement.setMontant(amount);
-            paiement.setDatePaiement(LocalDate.now());
-            paiement.setStatut("en attente");
-            paiement.setModePaiement("carte");
-            paiement.setType("Cotisation");
-            paiement.setMembre(membre);
-            paiement.setUtilisateur(utilisateur); // Définir l'utilisateur
-            paiementService.save(paiement);
+            PaymentIntent paymentIntent = stripeService.executeStripePayment(token, request);
 
             Map<String, String> response = new HashMap<>();
             response.put("clientSecret", paymentIntent.getClientSecret());
+
             return ResponseEntity.ok(response);
+        } catch (StripeException se) {
+            System.out.println(se.getCode());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", se.getCode()));
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Une erreur inattendue est survenue."));
         }
     }
 
-    private Long extractMembreIdFromToken(String token) {
-        try {
-            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-            Optional<Membre> membre = membreService.getMembreByEmail(email);
-            if (membre.isPresent()) {
-                return membre.get().getId();
-            }
-            throw new RuntimeException("Membre non trouvé pour l'e-mail : " + email);
-        } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de l'extraction de l'ID du membre depuis le token.", e);
+    @GetMapping("/filter")
+    public ResponseEntity<List<Paiement>> filterPaiements(
+            @RequestParam(required = false) String statut,
+            @RequestParam(required = false) String modePaiement) {
+        List<Paiement> paiements = paiementService.filterPaiements(statut, modePaiement);
+        return ResponseEntity.ok(paiements);
+    }
+
+    @PostMapping("/{id}/valider")
+    public ResponseEntity<Paiement> validerPaiement(@PathVariable Long id) {
+        Optional<Paiement> paiementOpt = paiementService.getById(id);
+        if (paiementOpt.isPresent()) {
+            Paiement paiement = paiementOpt.get();
+            paiement.setStatut("payé");
+            Paiement updatedPaiement = paiementService.save(paiement);
+            return ResponseEntity.ok(updatedPaiement);
         }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @PostMapping("/{id}/annuler")
+    public ResponseEntity<Paiement> annulerPaiement(@PathVariable Long id) {
+        Optional<Paiement> paiementOpt = paiementService.getById(id);
+        if (paiementOpt.isPresent()) {
+            Paiement paiement = paiementOpt.get();
+            paiement.setStatut("annulé");
+            Paiement updatedPaiement = paiementService.save(paiement);
+            return ResponseEntity.ok(updatedPaiement);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+    @PostMapping("/{id}/payer-echeance")
+    public ResponseEntity<Paiement> payerEcheance(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        Optional<Paiement> paiementOpt = paiementService.getById(id);
+        if (paiementOpt.isPresent()) {
+            Paiement paiement = paiementOpt.get();
+
+            Integer nombreEcheances = (Integer) request.get("nombreEcheances");
+            Double montantTotalAPayer = (Double) request.get("montantTotalAPayer");
+
+            // Mettre à jour le montant restant et les échéances restantes
+            paiement.setMontantRestant(paiement.getMontantRestant() - montantTotalAPayer);
+            paiement.setEcheancesRestantes(paiement.getEcheancesRestantes() - nombreEcheances);
+
+            // Si le montant restant est 0, marquer comme payé
+            if (paiement.getMontantRestant() <= 0) {
+                paiement.setStatut("payé");
+                paiement.setMontantRestant(0.0); // S'assurer que le montant restant est 0
+                paiement.setEcheancesRestantes(0); // Plus d'échéances restantes
+            }
+
+            Paiement updatedPaiement = paiementService.save(paiement);
+            return ResponseEntity.ok(updatedPaiement);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 }

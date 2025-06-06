@@ -14,7 +14,7 @@ public class InscriptionEvenement {
 
     // Clé étrangère vers Membre
     @ManyToOne
-    @JoinColumn(name = "membre_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "utilisateur_id", referencedColumnName = "id", nullable = false)
     private Membre membre;
 
     // Clé étrangère vers Evenement

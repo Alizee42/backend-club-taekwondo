@@ -1,6 +1,5 @@
 package club.taekwondo.entity.jpa;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -25,13 +24,12 @@ public class Paiement {
     private String modePaiement; // Espèces / Carte / Virement, etc.
 
     @ManyToOne
-    @JoinColumn(name = "membre_id", nullable = false)
-    @JsonBackReference // Empêche la récursion infinie
-    private Membre membre;
-
-    @ManyToOne
     @JoinColumn(name = "utilisateur_id", nullable = false) // Relation avec Utilisateur
     private Utilisateur utilisateur;
+
+    private Double montantTotal; // Montant total à payer
+    private Double montantRestant; // Montant restant à payer
+    private Integer echeancesRestantes; // Nombre d'échéances restantes
 
     
     public Paiement() {}
@@ -85,18 +83,33 @@ public class Paiement {
         this.modePaiement = modePaiement;
     }
 
-    public Membre getMembre() {
-        return membre;
-    }
-
-    public void setMembre(Membre membre) {
-        this.membre = membre;
-    }
     public Utilisateur getUtilisateur() {
         return utilisateur;
     }
 
     public void setUtilisateur(Utilisateur utilisateur) {
         this.utilisateur = utilisateur;
+    }
+    public Double getMontantTotal() {
+        return montantTotal;
+    }
+
+    public void setMontantTotal(Double montantTotal) {
+        this.montantTotal = montantTotal;
+    }
+
+    public Double getMontantRestant() {
+        return montantRestant;
+    }
+
+    public void setMontantRestant(Double montantRestant) {
+        this.montantRestant = montantRestant;
+    }
+
+    public Integer getEcheancesRestantes() {
+        return echeancesRestantes;
+    }
+    public void setEcheancesRestantes(Integer echeancesRestantes) {
+        this.echeancesRestantes = echeancesRestantes;
     }
 }

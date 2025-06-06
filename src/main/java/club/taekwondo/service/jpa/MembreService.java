@@ -49,7 +49,7 @@ public class MembreService {
             membre.setCeinture(membreDetails.getCeinture());
             membre.setDateNaissance(membreDetails.getDateNaissance());
             membre.setNumeroLicence(membreDetails.getNumeroLicence());
-            membre.setStatutSante(membreDetails.getStatutSante());
+
             return membreRepository.save(membre);
         } else {
             throw new RuntimeException("Membre non trouvé avec l'ID : " + id);

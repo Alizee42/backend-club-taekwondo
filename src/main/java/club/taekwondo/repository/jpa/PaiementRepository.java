@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
-    List<Paiement> findByMembreId(Long membreId); // Paiements d'un membre donné
+    List<Paiement> findByUtilisateurId(Long utilisateurId); // Paiements d'un membre donné
 }

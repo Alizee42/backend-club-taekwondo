@@ -45,15 +45,12 @@ public class UtilisateurService {
     }
 
     public Utilisateur createUtilisateur(Utilisateur utilisateur) {
-        // Vérifiez si le mot de passe est fourni et non vide
+
         if (utilisateur.getPassword() != null && !utilisateur.getPassword().isEmpty()) {
-            // Hachez le mot de passe avant de le sauvegarder
             utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
         } else {
             throw new IllegalArgumentException("Le mot de passe est requis.");
         }
-
-        // Sauvegardez l'utilisateur dans la base de données
         return utilisateurRepository.save(utilisateur);
     }
     

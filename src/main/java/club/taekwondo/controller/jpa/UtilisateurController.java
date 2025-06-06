@@ -41,9 +41,7 @@ public class UtilisateurController {
 
     @PostMapping
     public Utilisateur createUtilisateur(@RequestBody Utilisateur utilisateur) {
-        if (utilisateur.getPassword() != null && !utilisateur.getPassword().isEmpty()) {
-            utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
-        }
+       
         return utilisateurService.createUtilisateur(utilisateur);
     }
 

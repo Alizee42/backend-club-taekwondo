@@ -1,23 +1,26 @@
 package club.taekwondo.entity.jpa;
 
-import java.time.LocalDate;
-
-import jakarta.persistence.*;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
-@Access(AccessType.FIELD)
 @Table(name = "membre")
+@Access(AccessType.FIELD)
 public class Membre extends Utilisateur {
 
     @Column(nullable = false, unique = true)
     private String numeroLicence;
     private String ceinture;
-    private LocalDate dateNaissance;
-    private String adresse;
-    private String statutSante;
+
+
 
     // Constructeur sans argument
-    public Membre() {}
+    public Membre() {
+    	super();
+    }
 
     // Getters et Setters
     public String getNumeroLicence() {
@@ -36,27 +39,5 @@ public class Membre extends Utilisateur {
         this.ceinture = ceinture;
     }
 
-    public LocalDate getDateNaissance() {
-        return dateNaissance;
-    }
-
-    public void setDateNaissance(LocalDate dateNaissance) {
-        this.dateNaissance = dateNaissance;
-    }
-
-    public String getAdresse() {
-        return adresse;
-    }
-
-    public void setAdresse(String adresse) {
-        this.adresse = adresse;
-    }
-
-    public String getStatutSante() {
-        return statutSante;
-    }
-
-    public void setStatutSante(String statutSante) {
-        this.statutSante = statutSante;
-    }
 }
+

@@ -1,5 +1,6 @@
 package club.taekwondo.entity.jpa;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.Access;
@@ -24,10 +25,10 @@ public class Utilisateur {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String nom;
     private String prenom;
-    
+    private LocalDate dateNaissance;
+    private String adresse;
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -111,5 +112,20 @@ public class Utilisateur {
 
     public void setRole(String role) {
         this.role = role;
+    }
+    public LocalDate getDateNaissance() {
+        return dateNaissance;
+    }
+
+    public void setDateNaissance(LocalDate dateNaissance) {
+        this.dateNaissance = dateNaissance;
+    }
+
+    public String getAdresse() {
+        return adresse;
+    }
+
+    public void setAdresse(String adresse) {
+        this.adresse = adresse;
     }
 }
