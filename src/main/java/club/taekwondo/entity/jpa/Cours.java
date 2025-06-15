@@ -34,7 +34,7 @@ public class Cours {
     // Clé étrangère vers Utilisateur (professeur)
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
-    private Utilisateur professeur; // Utilisateur ayant le rôle de professeur
+    private Utilisateur professeur; //
 
     // Constructeur par défaut
     public Cours() {}

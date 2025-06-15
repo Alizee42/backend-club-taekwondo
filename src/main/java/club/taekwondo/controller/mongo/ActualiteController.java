@@ -1,6 +1,6 @@
 package club.taekwondo.controller.mongo;
 
-import club.taekwondo.entity.mongo.Actualite;
+import club.taekwondo.dto.ActualiteDTO;
 import club.taekwondo.service.mongo.ActualiteService;
 import club.taekwondo.service.common.FileUploadService;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @CrossOrigin(origins = "*")
-
 @RestController
 @RequestMapping("/api/actualites")
 public class ActualiteController {
@@ -26,30 +25,30 @@ public class ActualiteController {
     }
 
     @GetMapping
-    public List<Actualite> getAll() {
+    public List<ActualiteDTO> getAll() {
         return actualiteService.getAll();
     }
 
     @GetMapping("/featured")
-    public List<Actualite> getFeatured() {
+    public List<ActualiteDTO> getFeatured() {
         return actualiteService.getFeatured();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Actualite> getById(@PathVariable String id) {
+    public ResponseEntity<ActualiteDTO> getById(@PathVariable String id) {
         return actualiteService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Actualite create(@RequestBody Actualite actualite) {
-        System.out.println("Actualité reçue : " + actualite.isFeatured()); // Vérifiez la valeur ici
-        return actualiteService.create(actualite);
+    public ResponseEntity<ActualiteDTO> create(@RequestBody ActualiteDTO actualiteDTO) {
+        ActualiteDTO created = actualiteService.create(actualiteDTO);
+        return ResponseEntity.status(201).body(created);
     }
 
     @PostMapping("/with-image")
-    public ResponseEntity<Actualite> createWithImage(
+    public ResponseEntity<ActualiteDTO> createWithImage(
             @RequestParam("titre") String titre,
             @RequestParam("contenu") String contenu,
             @RequestParam("typeActu") String typeActu,
@@ -58,22 +57,20 @@ public class ActualiteController {
     ) {
         try {
             String imageUrl = null;
-
-            // Upload de l'image si fournie
             if (imageFile != null && !imageFile.isEmpty()) {
                 imageUrl = fileUploadService.uploadFile(imageFile);
             }
 
-            // Création de l’actualité
-            Actualite actualite = new Actualite();
-            actualite.setTitre(titre);
-            actualite.setContenu(contenu);
-            actualite.setTypeActu(typeActu);
-            actualite.setFeatured(isFeatured);
-            actualite.setDatePublication(LocalDateTime.now());
-            actualite.setImageUrl(imageUrl);
+            ActualiteDTO actualiteDTO = new ActualiteDTO();
+            actualiteDTO.setTitre(titre);
+            actualiteDTO.setContenu(contenu);
+            actualiteDTO.setTypeActu(typeActu);
+            actualiteDTO.setFeatured(isFeatured);
+            actualiteDTO.setImageUrl(imageUrl);
+            actualiteDTO.setDatePublication(LocalDateTime.now());
 
-            return ResponseEntity.ok(actualiteService.create(actualite));
+            ActualiteDTO created = actualiteService.create(actualiteDTO);
+            return ResponseEntity.status(201).body(created);
 
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
@@ -81,12 +78,11 @@ public class ActualiteController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Actualite> update(@PathVariable String id, @RequestBody Actualite actualite) {
-        Actualite updated = actualiteService.update(id, actualite);
-        if (updated != null) {
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<ActualiteDTO> update(@PathVariable String id, @RequestBody ActualiteDTO actualiteDTO) {
+        ActualiteDTO updated = actualiteService.update(id, actualiteDTO);
+        return updated != null
+                ? ResponseEntity.ok(updated)
+                : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")

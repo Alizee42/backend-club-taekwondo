@@ -1,6 +1,6 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.entity.jpa.LigneCommande;
+import club.taekwondo.dto.LigneCommandeDTO;
 import club.taekwondo.service.jpa.LigneCommandeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,34 +17,39 @@ public class LigneCommandeController {
     @Autowired
     private LigneCommandeService ligneCommandeService;
 
-    // Endpoint pour récupérer toutes les lignes de commande
+    // ✅ Récupérer toutes les lignes de commande
     @GetMapping
-    public List<LigneCommande> getAllLignesCommande() {
-        return ligneCommandeService.getAllLignesCommande();
+    public ResponseEntity<List<LigneCommandeDTO>> getAllLignesCommande() {
+        List<LigneCommandeDTO> lignes = ligneCommandeService.getAllLignesCommande();
+        return ResponseEntity.ok(lignes);
     }
 
-    // Endpoint pour récupérer une ligne de commande par son ID
+    // ✅ Récupérer une ligne par ID
     @GetMapping("/{id}")
-    public ResponseEntity<LigneCommande> getLigneCommandeById(@PathVariable Long id) {
-        Optional<LigneCommande> ligneCommande = ligneCommandeService.getLigneCommandeById(id);
-        return ligneCommande.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<LigneCommandeDTO> getLigneCommandeById(@PathVariable Long id) {
+        Optional<LigneCommandeDTO> ligne = ligneCommandeService.getLigneCommandeById(id);
+        return ligne.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Endpoint pour créer une nouvelle ligne de commande
+    // ✅ Créer une nouvelle ligne
     @PostMapping
-    public ResponseEntity<LigneCommande> createLigneCommande(@RequestBody LigneCommande ligneCommande) {
-        LigneCommande savedLigneCommande = ligneCommandeService.createLigneCommande(ligneCommande);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedLigneCommande);
+    public ResponseEntity<LigneCommandeDTO> createLigneCommande(@RequestBody LigneCommandeDTO dto) {
+        LigneCommandeDTO created = ligneCommandeService.createLigneCommande(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // Endpoint pour mettre à jour une ligne de commande existante
+    // ✅ Mettre à jour une ligne existante
     @PutMapping("/{id}")
-    public ResponseEntity<LigneCommande> updateLigneCommande(@PathVariable Long id, @RequestBody LigneCommande ligneCommande) {
-        LigneCommande updatedLigneCommande = ligneCommandeService.updateLigneCommande(id, ligneCommande);
-        return updatedLigneCommande != null ? ResponseEntity.ok(updatedLigneCommande) : ResponseEntity.notFound().build();
+    public ResponseEntity<LigneCommandeDTO> updateLigneCommande(@PathVariable Long id, @RequestBody LigneCommandeDTO dto) {
+        try {
+            LigneCommandeDTO updated = ligneCommandeService.updateLigneCommande(id, dto);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Endpoint pour supprimer une ligne de commande
+    // ✅ Supprimer une ligne
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLigneCommande(@PathVariable Long id) {
         ligneCommandeService.deleteLigneCommande(id);

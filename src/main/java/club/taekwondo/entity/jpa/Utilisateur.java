@@ -42,6 +42,10 @@ public class Utilisateur {
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Paiement> paiements;
+    
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Avis> avis;
+    
     // Constructeur sans argument
     public Utilisateur() {
     }

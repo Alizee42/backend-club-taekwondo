@@ -32,6 +32,11 @@ public class Avis {
     
     @Column(name = "photo", nullable = true)
     private String photo;
+    
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "utilisateur_id", nullable = true)
+    private Utilisateur utilisateur;
+
 
     // Constructeurs
     public Avis() {}
@@ -107,5 +112,12 @@ public class Avis {
 
     public void setPhoto(String photo) {
         this.photo = photo;
+    }
+    public Utilisateur getUtilisateur() {
+        return utilisateur;
+    }
+
+    public void setUtilisateur(Utilisateur utilisateur) {
+        this.utilisateur = utilisateur;
     }
 }

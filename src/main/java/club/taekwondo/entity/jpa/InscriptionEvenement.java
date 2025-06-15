@@ -12,10 +12,10 @@ public class InscriptionEvenement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Clé étrangère vers Membre
+    // Clé étrangère vers Utilisateur
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id", nullable = false)
-    private Membre membre;
+    private Utilisateur utilisateur;
 
     // Clé étrangère vers Evenement
     @ManyToOne
@@ -23,27 +23,26 @@ public class InscriptionEvenement {
     private Evenement evenement;
 
     @Column(nullable = false, columnDefinition = "ENUM('en_attente', 'validée', 'annulée') DEFAULT 'en_attente'")
-    private String statut; // Statut de l'inscription
+    private String statut;
 
     @Column(name = "date_inscription", nullable = false)
-    private LocalDate dateInscription; // Date de l'inscription
+    private LocalDate dateInscription;
 
     @Column(nullable = true)
-    private Boolean presence; // Indique si le membre était présent ou non
+    private Boolean presence;
 
     @Column(nullable = true)
-    private String commentaire; // Champ texte pour ajouter des commentaires
+    private String commentaire;
 
     // Constructeur sans argument
     public InscriptionEvenement() {
-        // Initialiser la date d'inscription à la date actuelle
         this.dateInscription = LocalDate.now();
     }
 
     // Constructeur avec tous les arguments
-    public InscriptionEvenement(Long id, Membre membre, Evenement evenement, String statut, LocalDate dateInscription, Boolean presence, String commentaire) {
+    public InscriptionEvenement(Long id, Utilisateur utilisateur, Evenement evenement, String statut, LocalDate dateInscription, Boolean presence, String commentaire) {
         this.id = id;
-        this.membre = membre;
+        this.utilisateur = utilisateur;
         this.evenement = evenement;
         this.statut = statut;
         this.dateInscription = dateInscription;
@@ -60,12 +59,12 @@ public class InscriptionEvenement {
         this.id = id;
     }
 
-    public Membre getMembre() {
-        return membre;
+    public Utilisateur getUtilisateur() {
+        return utilisateur;
     }
 
-    public void setMembre(Membre membre) {
-        this.membre = membre;
+    public void setUtilisateur(Utilisateur utilisateur) {
+        this.utilisateur = utilisateur;
     }
 
     public Evenement getEvenement() {

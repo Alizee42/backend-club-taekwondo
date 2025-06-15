@@ -1,53 +1,62 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.entity.jpa.InscriptionEvenement;
+import club.taekwondo.dto.InscriptionEvenementDTO;
 import club.taekwondo.service.jpa.InscriptionEvenementService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/inscriptions")
 public class InscriptionEvenementController {
 
     @Autowired
-    private InscriptionEvenementService inscriptionEvenementService;
+    private InscriptionEvenementService inscriptionService;
 
-    // Endpoint pour récupérer toutes les inscriptions
+    // 🔹 Récupérer toutes les inscriptions
     @GetMapping
-    public List<InscriptionEvenement> getAllInscriptions() {
-        return inscriptionEvenementService.getAllInscriptions();
+    public ResponseEntity<List<InscriptionEvenementDTO>> getAllInscriptions() {
+        return ResponseEntity.ok(inscriptionService.getAllInscriptions());
     }
 
-    // Endpoint pour récupérer une inscription par son ID
+    // 🔹 Récupérer une inscription par son ID
     @GetMapping("/{id}")
-    public ResponseEntity<InscriptionEvenement> getInscriptionById(@PathVariable Long id) {
-        Optional<InscriptionEvenement> inscriptionEvenement = inscriptionEvenementService.getInscriptionById(id);
-        return inscriptionEvenement.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<InscriptionEvenementDTO> getInscriptionById(@PathVariable Long id) {
+        return inscriptionService.getInscriptionById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // Endpoint pour inscrire un membre à un événement
+    // 🔹 Créer une nouvelle inscription
     @PostMapping
-    public ResponseEntity<InscriptionEvenement> inscrireMembre(@RequestBody InscriptionEvenement inscriptionEvenement) {
-        InscriptionEvenement newInscription = inscriptionEvenementService.inscrireMembre(inscriptionEvenement);
-        return new ResponseEntity<>(newInscription, HttpStatus.CREATED);
+    public ResponseEntity<InscriptionEvenementDTO> inscrireMembre(@RequestBody InscriptionEvenementDTO dto) {
+        try {
+            InscriptionEvenementDTO created = inscriptionService.inscrireMembre(dto);
+            return ResponseEntity.status(201).body(created);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    // Endpoint pour mettre à jour une inscription
+    // 🔹 Mettre à jour une inscription
     @PutMapping("/{id}")
-    public ResponseEntity<InscriptionEvenement> updateInscription(@PathVariable Long id, @RequestBody InscriptionEvenement inscriptionEvenement) {
-        InscriptionEvenement updatedInscription = inscriptionEvenementService.updateInscription(id, inscriptionEvenement);
-        return updatedInscription != null ? ResponseEntity.ok(updatedInscription) : ResponseEntity.notFound().build();
+    public ResponseEntity<InscriptionEvenementDTO> updateInscription(@PathVariable Long id, @RequestBody InscriptionEvenementDTO dto) {
+        try {
+            InscriptionEvenementDTO updated = inscriptionService.updateInscription(id, dto);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Endpoint pour annuler une inscription
+    // 🔹 Supprimer une inscription
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> annulerInscription(@PathVariable Long id) {
-        inscriptionEvenementService.annulerInscription(id);
+        inscriptionService.annulerInscription(id);
         return ResponseEntity.noContent().build();
     }
 }
+
+

@@ -1,6 +1,6 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.entity.jpa.Avis;
+import club.taekwondo.dto.AvisDTO;
 import club.taekwondo.service.jpa.AvisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,45 +17,45 @@ public class AvisController {
     @Autowired
     private AvisService avisService;
 
-    // Récupérer tous les avis
+    // 🔹 Récupérer tous les avis
     @GetMapping
-    public ResponseEntity<List<Avis>> getAllAvis() {
-        List<Avis> avisList = avisService.getAllAvis();
+    public ResponseEntity<List<AvisDTO>> getAllAvis() {
+        List<AvisDTO> avisList = avisService.getAllAvis();
         return ResponseEntity.ok(avisList);
     }
 
-    // Ajouter un nouvel avis
+    // 🔹 Ajouter un nouvel avis
     @PostMapping
-    public ResponseEntity<Avis> createAvis(@RequestBody Avis avis) {
-        avis.setDatePub(LocalDate.now());
-        avis.setApprouve(false); // Par défaut, l'avis n'est pas approuvé
-        Avis savedAvis = avisService.createAvis(avis);
+    public ResponseEntity<AvisDTO> createAvis(@RequestBody AvisDTO avisDTO) {
+        avisDTO.setDatePub(LocalDate.now());
+        avisDTO.setApprouve(false); // Par défaut, l'avis n'est pas approuvé
+        AvisDTO savedAvis = avisService.createAvis(avisDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedAvis);
     }
 
-    // Mettre à jour un avis existant
+    // 🔹 Mettre à jour un avis existant
     @PutMapping("/{id}")
-    public ResponseEntity<Avis> updateAvis(@PathVariable Integer id, @RequestBody Avis avisDetails) {
+    public ResponseEntity<AvisDTO> updateAvis(@PathVariable Integer id, @RequestBody AvisDTO avisDTO) {
         try {
-            Avis updatedAvis = avisService.updateAvis(id, avisDetails);
+            AvisDTO updatedAvis = avisService.updateAvis(id, avisDTO);
             return ResponseEntity.ok(updatedAvis);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
-    // Approuver un avis
+    // 🔹 Approuver un avis
     @PutMapping("/{id}/approuver")
-    public ResponseEntity<Avis> approuverAvis(@PathVariable Integer id) {
+    public ResponseEntity<AvisDTO> approuverAvis(@PathVariable Integer id) {
         try {
-            Avis approuveAvis = avisService.approuverAvis(id);
+            AvisDTO approuveAvis = avisService.approuverAvis(id);
             return ResponseEntity.ok(approuveAvis);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
-    // Supprimer un avis
+    // 🔹 Supprimer un avis
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAvis(@PathVariable Integer id) {
         avisService.deleteAvis(id);

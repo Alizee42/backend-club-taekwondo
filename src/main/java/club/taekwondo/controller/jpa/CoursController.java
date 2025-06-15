@@ -1,6 +1,6 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.entity.jpa.Cours;
+import club.taekwondo.dto.CoursDTO;
 import club.taekwondo.service.jpa.CoursService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,34 +17,36 @@ public class CoursController {
     @Autowired
     private CoursService coursService;
 
-    // Endpoint pour récupérer tous les cours
+    // 🔹 Récupérer tous les cours
     @GetMapping
-    public List<Cours> getAllCours() {
+    public List<CoursDTO> getAllCours() {
         return coursService.getAllCours();
     }
 
-    // Endpoint pour récupérer un cours par son ID
+    // 🔹 Récupérer un cours par son ID
     @GetMapping("/{id}")
-    public ResponseEntity<Cours> getCoursById(@PathVariable Long id) {
-        Optional<Cours> cours = coursService.getCoursById(id);
-        return cours.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<CoursDTO> getCoursById(@PathVariable Long id) {
+        Optional<CoursDTO> cours = coursService.getCoursById(id);
+        return cours.map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Endpoint pour créer un nouveau cours
+    // 🔹 Créer un nouveau cours
     @PostMapping
-    public ResponseEntity<Cours> createCours(@RequestBody Cours cours) {
-        Cours newCours = coursService.createCours(cours);
+    public ResponseEntity<CoursDTO> createCours(@RequestBody CoursDTO coursDTO) {
+        CoursDTO newCours = coursService.createCours(coursDTO);
         return new ResponseEntity<>(newCours, HttpStatus.CREATED);
     }
 
-    // Endpoint pour mettre à jour un cours existant
+    // 🔹 Mettre à jour un cours existant
     @PutMapping("/{id}")
-    public ResponseEntity<Cours> updateCours(@PathVariable Long id, @RequestBody Cours cours) {
-        Cours updatedCours = coursService.updateCours(id, cours);
-        return updatedCours != null ? ResponseEntity.ok(updatedCours) : ResponseEntity.notFound().build();
+    public ResponseEntity<CoursDTO> updateCours(@PathVariable Long id, @RequestBody CoursDTO coursDTO) {
+        CoursDTO updatedCours = coursService.updateCours(id, coursDTO);
+        return updatedCours != null ? ResponseEntity.ok(updatedCours)
+                                    : ResponseEntity.notFound().build();
     }
 
-    // Endpoint pour supprimer un cours
+    // 🔹 Supprimer un cours
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCours(@PathVariable Long id) {
         coursService.deleteCours(id);

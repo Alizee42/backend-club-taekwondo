@@ -1,6 +1,6 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.entity.jpa.Commande;
+import club.taekwondo.dto.CommandeDTO;
 import club.taekwondo.service.jpa.CommandeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,34 +17,39 @@ public class CommandeController {
     @Autowired
     private CommandeService commandeService;
 
-    // Endpoint pour récupérer toutes les commandes
+    // 🔹 Récupérer toutes les commandes
     @GetMapping
-    public List<Commande> getAllCommandes() {
-        return commandeService.getAllCommandes();
+    public ResponseEntity<List<CommandeDTO>> getAllCommandes() {
+        List<CommandeDTO> commandes = commandeService.getAllCommandes();
+        return ResponseEntity.ok(commandes);
     }
 
-    // Endpoint pour récupérer une commande par son ID
+    // 🔹 Récupérer une commande par ID
     @GetMapping("/{id}")
-    public ResponseEntity<Commande> getCommandeById(@PathVariable Long id) {
-        Optional<Commande> commande = commandeService.getCommandeById(id);
-        return commande.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
+        Optional<CommandeDTO> commande = commandeService.getCommandeById(id);
+        return commande.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
-    // Endpoint pour créer une nouvelle commande
+    // 🔹 Créer une commande
     @PostMapping
-    public ResponseEntity<Commande> createCommande(@RequestBody Commande commande) {
-        Commande savedCommande = commandeService.createCommande(commande);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCommande);
+    public ResponseEntity<CommandeDTO> createCommande(@RequestBody CommandeDTO commandeDTO) {
+        CommandeDTO saved = commandeService.createCommande(commandeDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // Endpoint pour mettre à jour une commande existante
+    // 🔹 Mettre à jour une commande
     @PutMapping("/{id}")
-    public ResponseEntity<Commande> updateCommande(@PathVariable Long id, @RequestBody Commande commande) {
-        Commande updatedCommande = commandeService.updateCommande(id, commande);
-        return updatedCommande != null ? ResponseEntity.ok(updatedCommande) : ResponseEntity.notFound().build();
+    public ResponseEntity<CommandeDTO> updateCommande(@PathVariable Long id, @RequestBody CommandeDTO commandeDTO) {
+        try {
+            CommandeDTO updated = commandeService.updateCommande(id, commandeDTO);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Endpoint pour supprimer une commande
+    // 🔹 Supprimer une commande
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCommande(@PathVariable Long id) {
         commandeService.deleteCommande(id);
