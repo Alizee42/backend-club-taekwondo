@@ -2,6 +2,7 @@ package club.taekwondo.controller.jpa;
 
 import java.util.*;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,6 +13,7 @@ import com.stripe.model.PaymentIntent;
 
 import club.taekwondo.dto.DashboardStatsDTO;
 import club.taekwondo.dto.PaiementDTO;
+import club.taekwondo.dto.PaiementRequestDTO;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementService;
@@ -31,21 +33,15 @@ public class PaiementController {
 
     @GetMapping
     public List<PaiementDTO> getAll() {
-        List<PaiementDTO> paiements = paiementService.getAllWithEcheances();
-        System.out.println("Paiements retournés : " + paiements);
-        return paiements;
+        return paiementService.getAllWithEcheances();
     }
+
     @PostMapping("/create-payment-intent")
     public ResponseEntity<Map<String, String>> createPaymentIntent(
             @RequestHeader("Authorization") String token,
-            @RequestBody Map<String, Object> request) {
+            @Valid @RequestBody PaiementRequestDTO dto) {
         try {
-            // Validation minimale
-            if (!request.containsKey("amount") || !request.containsKey("currency")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Champs 'amount' et 'currency' requis."));
-            }
-
-            PaymentIntent paymentIntent = stripeService.executeStripePayment(token, request);
+            PaymentIntent paymentIntent = stripeService.executeStripePayment(token, dto);
 
             Map<String, String> response = new HashMap<>();
             response.put("clientSecret", paymentIntent.getClientSecret());
@@ -64,9 +60,7 @@ public class PaiementController {
     @PostMapping("/{id}/payer-echeance")
     public ResponseEntity<Paiement> payerEcheance(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         Optional<Paiement> paiementOpt = paiementService.getById(id);
-        if (paiementOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        if (paiementOpt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         Paiement paiement = paiementOpt.get();
 
@@ -74,7 +68,7 @@ public class PaiementController {
         double montantTotalAPayer = Double.parseDouble(request.get("montantTotalAPayer").toString());
 
         if (nombreEcheances > paiement.getEcheancesRestantes()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         paiement.setMontantRestant(Math.max(0, paiement.getMontantRestant() - montantTotalAPayer));
@@ -86,42 +80,34 @@ public class PaiementController {
             paiement.setEcheancesRestantes(0);
         }
 
-        Paiement updatedPaiement = paiementService.save(paiement);
-        return ResponseEntity.ok(updatedPaiement);
+        return ResponseEntity.ok(paiementService.save(paiement));
     }
 
     @GetMapping("/filter")
     public ResponseEntity<List<Paiement>> filterPaiements(
             @RequestParam(required = false) String statut,
             @RequestParam(required = false) String modePaiement) {
-        List<Paiement> paiements = paiementService.filterPaiements(statut, modePaiement);
-        return ResponseEntity.ok(paiements);
+        return ResponseEntity.ok(paiementService.filterPaiements(statut, modePaiement));
     }
 
     @PostMapping("/{id}/valider")
     public ResponseEntity<Paiement> validerPaiement(@PathVariable Long id) {
-        Optional<Paiement> paiementOpt = paiementService.getById(id);
-        if (paiementOpt.isPresent()) {
-            Paiement paiement = paiementOpt.get();
-            paiement.setStatut("payé");
-            paiement.setEcheancesRestantes(0);
-            paiement.setMontantRestant(0.0);
-            Paiement updatedPaiement = paiementService.save(paiement);
-            return ResponseEntity.ok(updatedPaiement);
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return paiementService.getById(id)
+                .map(paiement -> {
+                    paiement.setStatut("payé");
+                    paiement.setEcheancesRestantes(0);
+                    paiement.setMontantRestant(0.0);
+                    return ResponseEntity.ok(paiementService.save(paiement));
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @PostMapping("/{id}/annuler")
     public ResponseEntity<Paiement> annulerPaiement(@PathVariable Long id) {
-        Optional<Paiement> paiementOpt = paiementService.getById(id);
-        if (paiementOpt.isPresent()) {
-            Paiement paiement = paiementOpt.get();
-            paiement.setStatut("annulé");
-            Paiement updatedPaiement = paiementService.save(paiement);
-            return ResponseEntity.ok(updatedPaiement);
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return paiementService.getById(id)
+                .map(paiement -> {
+                    paiement.setStatut("annulé");
+                    return ResponseEntity.ok(paiementService.save(paiement));
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping("/stats")
@@ -135,3 +121,4 @@ public class PaiementController {
         }
     }
 }
+

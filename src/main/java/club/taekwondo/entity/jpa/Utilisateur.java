@@ -50,7 +50,7 @@ public class Utilisateur {
     public Utilisateur() {
     }
 
-    // Constructeur avec tous les arguments (sans ceinture, avec role)
+    // Constructeur avec tous les arguments
     public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, String role) {
         this.id = id;
         this.nom = nom;

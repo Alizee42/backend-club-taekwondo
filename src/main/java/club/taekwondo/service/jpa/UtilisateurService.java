@@ -58,15 +58,16 @@ public class UtilisateurService {
         return Optional.empty();
     }
     
-    public Optional<Utilisateur> getUtilisateurById(Long id) {
+    public Optional<UtilisateurDTO> getUtilisateurById(Long id) {
         System.out.println("Recherche de l'utilisateur avec l'ID : " + id);
         Optional<Utilisateur> utilisateur = utilisateurRepository.findById(id);
         if (utilisateur.isPresent()) {
             System.out.println("Utilisateur trouvé : " + utilisateur.get().getNom());
+            return Optional.of(toUtilisateurDTO(utilisateur.get()));
         } else {
             System.out.println("Aucun utilisateur trouvé avec l'ID : " + id);
         }
-        return utilisateur;
+        return Optional.empty();
     }
 
     public Utilisateur createUtilisateur(UtilisateurDTO utilisateur) {
@@ -124,7 +125,6 @@ public class UtilisateurService {
     	utilisateurDTO.setEmail(utilisateur.getEmail());
     	utilisateurDTO.setTelephone(utilisateur.getTelephone());
     	utilisateurDTO.setRole(utilisateur.getRole());
-        utilisateurDTO.setPassword(utilisateur.getPassword()); 
         
 
     	return utilisateurDTO;

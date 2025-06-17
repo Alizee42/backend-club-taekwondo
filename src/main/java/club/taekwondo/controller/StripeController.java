@@ -1,5 +1,6 @@
 package club.taekwondo.controller;
 
+import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
@@ -56,11 +57,11 @@ public class StripeController {
             Long utilisateurId = Long.parseLong(request.get("utilisateurId").toString());
     
             // Récupérer l'utilisateur
-            Optional<Utilisateur> utilisateurOptional = utilisateurService.getUtilisateurById(utilisateurId);
+            Optional<UtilisateurDTO> utilisateurOptional = utilisateurService.getUtilisateurById(utilisateurId);
             if (utilisateurOptional.isEmpty()) {
                 throw new RuntimeException("Utilisateur non trouvé pour l'ID : " + utilisateurId);
             }
-            Utilisateur utilisateur = utilisateurOptional.get();
+            UtilisateurDTO utilisateur = utilisateurOptional.get();
     
             // Vérifiez si un paiement similaire existe déjà
             List<Paiement> paiementsExistants = paiementService.getByMembreId(utilisateurId);

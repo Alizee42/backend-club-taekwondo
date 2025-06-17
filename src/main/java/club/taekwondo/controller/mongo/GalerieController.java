@@ -1,6 +1,6 @@
 package club.taekwondo.controller.mongo;
 
-import club.taekwondo.entity.mongo.Galerie;
+import club.taekwondo.dto.GalerieDTO;
 import club.taekwondo.service.mongo.GalerieService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,25 +18,25 @@ public class GalerieController {
     }
 
     @GetMapping
-    public List<Galerie> getAll() {
+    public List<GalerieDTO> getAll() {
         return galerieService.getAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Galerie> getById(@PathVariable String id) {
+    public ResponseEntity<GalerieDTO> getById(@PathVariable String id) {
         return galerieService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Galerie create(@RequestBody Galerie galerie) {
-        return galerieService.create(galerie);
+    public GalerieDTO create(@RequestBody GalerieDTO galerieDTO) {
+        return galerieService.create(galerieDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Galerie> update(@PathVariable String id, @RequestBody Galerie galerie) {
-        Galerie updated = galerieService.update(id, galerie);
+    public ResponseEntity<GalerieDTO> update(@PathVariable String id, @RequestBody GalerieDTO galerieDTO) {
+    	GalerieDTO updated = galerieService.update(id, galerieDTO);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         }

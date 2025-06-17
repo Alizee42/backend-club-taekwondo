@@ -36,7 +36,7 @@ public class UtilisateurController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Utilisateur> getUtilisateurById(@PathVariable Long id) {
+    public Optional<UtilisateurDTO> getUtilisateurById(@PathVariable Long id) {
         return utilisateurService.getUtilisateurById(id);
     }
 
@@ -48,7 +48,7 @@ public class UtilisateurController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUtilisateur(@PathVariable Long id, @RequestBody UtilisateurDTO utilisateurDTO) {
-        Optional<Utilisateur> existingUserOptional = utilisateurService.getUtilisateurById(id);
+        Optional<UtilisateurDTO> existingUserOptional = utilisateurService.getUtilisateurById(id);
         if (existingUserOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Utilisateur non trouvé avec l'ID : " + id);
         }
