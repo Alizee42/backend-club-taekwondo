@@ -60,9 +60,11 @@ public class UtilisateurService {
         return utilisateur.map(this::toUtilisateurDTO);
     }
 
-    // ✅ AJOUT ICI
     public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
         return utilisateurRepository.findById(id);
+    }
+    public Optional<Utilisateur> getByEmail(String email) {
+        return utilisateurRepository.findByEmail(email);
     }
 
     public Utilisateur createUtilisateur(UtilisateurDTO utilisateur) {

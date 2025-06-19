@@ -21,6 +21,7 @@ public class PaiementService {
         this.paiementRepository = paiementRepository;
     }
 
+    // 🔹 Récupérer tous les paiements avec leurs échéances
     public List<PaiementDTO> getAllWithEcheances() {
         List<PaiementDTO> paiementsDTO = new ArrayList<>();
         List<Paiement> paiements = paiementRepository.findAllWithEcheances();
@@ -42,6 +43,7 @@ public class PaiementService {
         return paiementRepository.findPaiementByUtilisateurAndMontantAndStatut(utilisateurId, montantTotal, modePaiement, statut);
     }
 
+    // 🔹 Enregistrer un nouveau paiement
     public Paiement save(Paiement paiement) {
         if (paiement.getMontant() == null || paiement.getMontant() <= 0) {
             throw new IllegalArgumentException("Le montant ne peut pas être nul ou négatif.");
@@ -53,11 +55,11 @@ public class PaiementService {
         }
 
         Optional<Paiement> duplicatePaiement = findPaiementByUtilisateurAndMontantAndStatut(
-    paiement.getUtilisateur().getId(),
-    paiement.getMontantTotal(),
-    paiement.getModePaiement(), // Ajout du mode de paiement ici
-    "en attente"
-);;
+                paiement.getUtilisateur().getId(),
+                paiement.getMontantTotal(),
+                paiement.getModePaiement(),
+                "en attente"
+        );
 
         if (duplicatePaiement.isPresent()) {
             throw new RuntimeException("Un paiement similaire existe déjà.");
@@ -74,6 +76,7 @@ public class PaiementService {
         paiementRepository.deleteById(id);
     }
 
+    // 🔹 Filtres simples
     public List<Paiement> filterPaiements(String statut, String modePaiement) {
         List<Paiement> paiements = paiementRepository.findAll();
         if (statut != null) {
@@ -89,13 +92,14 @@ public class PaiementService {
         return paiements;
     }
 
+    // 🔹 Calcul des infos associées à un paiement
     public void calculerPaiementDetails(Paiement paiement) {
         if ("echeances".equalsIgnoreCase(paiement.getModePaiement())) {
             paiement.setEcheancesRestantes(
-                paiement.getEcheancesRestantes() == null || paiement.getEcheancesRestantes() <= 0 ? 1 : paiement.getEcheancesRestantes()
+                    paiement.getEcheancesRestantes() == null || paiement.getEcheancesRestantes() <= 0 ? 1 : paiement.getEcheancesRestantes()
             );
             paiement.setMontantRestant(
-                paiement.getMontantRestant() == null ? paiement.getMontantTotal() : paiement.getMontantRestant()
+                    paiement.getMontantRestant() == null ? paiement.getMontantTotal() : paiement.getMontantRestant()
             );
         } else {
             paiement.setMontantRestant(0.0);
@@ -103,6 +107,7 @@ public class PaiementService {
         }
     }
 
+ // 🔹 Stats Dashboard (version complète)
     public DashboardStatsDTO buildDashboardStats() {
         LocalDate today = LocalDate.now();
         LocalDate firstDayMonth = today.withDayOfMonth(1);
@@ -111,67 +116,85 @@ public class PaiementService {
         try {
             List<Paiement> paiements = paiementRepository.findAll();
 
+            // 🔷 Montant réellement encaissé (tous paiements non annulés)
             double totalPayes = paiements.stream()
-                    .filter(p -> "payé".equalsIgnoreCase(p.getStatut()))
+                    .filter(p -> !"annulé".equalsIgnoreCase(p.getStatut()))
                     .mapToDouble(p -> safeMontant(p.getMontantTotal()) - safeMontant(p.getMontantRestant()))
                     .sum();
 
+            // 🔷 Montant encore en attente (reste à payer pour paiements non annulés)
             double totalAttente = paiements.stream()
-                    .filter(p -> "en attente".equalsIgnoreCase(p.getStatut()))
-                    .mapToDouble(p -> safeMontant(p.getMontantTotal()) - safeMontant(p.getMontantRestant()))
+                    .filter(p -> !"annulé".equalsIgnoreCase(p.getStatut()))
+                    .mapToDouble(p -> safeMontant(p.getMontantRestant()))
                     .sum();
 
+            // 🔷 Montant des paiements annulés (montant total)
             double totalAnnules = paiements.stream()
                     .filter(p -> "annulé".equalsIgnoreCase(p.getStatut()))
-                    .mapToDouble(p -> safeMontant(p.getMontantTotal()) - safeMontant(p.getMontantRestant()))
+                    .mapToDouble(p -> safeMontant(p.getMontantTotal()))
                     .sum();
 
+            // 🔷 Pourcentage des paiements payés ce mois-ci
             double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
             double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
             double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
 
+            // 🔷 Courbe : somme des paiements par jour sur 30 jours
             var courbe = paiementRepository.sumByDay(minus30);
+
+            // 🔷 Top 5 des membres en retard
             var topRows = paiementRepository.topRetards(PageRequest.of(0, 5));
             var top = topRows.stream()
                     .map(o -> new MembreRetardDTO((String) o[0], (Double) o[1]))
                     .toList();
 
             return new DashboardStatsDTO(
-                    totalPayes, totalAttente, totalAnnules,
-                    pctMois, courbe, top);
+                    totalPayes,
+                    totalAttente,
+                    totalAnnules,
+                    pctMois,
+                    courbe,
+                    top
+            );
         } catch (Exception e) {
-            System.err.println("Erreur lors de la génération des statistiques : " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Erreur lors de la génération des statistiques : " + e.getMessage());
             throw new RuntimeException("Erreur lors de la génération des statistiques", e);
         }
     }
 
+    // Méthode utilitaire unique pour éviter les NullPointer
     private double safeMontant(Double montant) {
         return montant != null ? montant : 0.0;
     }
 
-    private PaiementDTO toPaiementDto(Paiement paiement) {
-        PaiementDTO paiementDTO = new PaiementDTO();
-        paiementDTO.setId(paiement.getId());
-        paiementDTO.setType(paiement.getType());
-        paiementDTO.setMontant(paiement.getMontant());
-        paiementDTO.setDatePaiement(paiement.getDatePaiement());
-        paiementDTO.setStatut(paiement.getStatut());
-        paiementDTO.setModePaiement(paiement.getModePaiement());
-        paiementDTO.setUtilisateurId(paiement.getUtilisateur().getId());
 
-        List<EcheanceDTO> listEcheanceDTO = new ArrayList<>();
+    // 🔹 Conversion Paiement → DTO
+    private PaiementDTO toPaiementDto(Paiement paiement) {
+        PaiementDTO dto = new PaiementDTO();
+        dto.setId(paiement.getId());
+        dto.setType(paiement.getType());
+        dto.setMontant(paiement.getMontant());
+        dto.setDatePaiement(paiement.getDatePaiement());
+        dto.setStatut(paiement.getStatut());
+        dto.setModePaiement(paiement.getModePaiement());
+        dto.setUtilisateurId(paiement.getUtilisateur().getId());
+        dto.setMontantTotal(paiement.getMontantTotal());
+        dto.setMontantRestant(paiement.getMontantRestant());
+
         if (paiement.getEcheances() != null) {
-            for (Echeance echeance : paiement.getEcheances()) {
-                EcheanceDTO echeanceDTO = new EcheanceDTO();
-                echeanceDTO.setId(echeance.getId());
-                echeanceDTO.setDateEcheance(echeance.getDateEcheance());
-                echeanceDTO.setMontant(echeance.getMontant());
-                echeanceDTO.setStatut(echeance.getStatut());
-                listEcheanceDTO.add(echeanceDTO);
+            List<EcheanceDTO> echeanceDTOs = new ArrayList<>();
+            for (Echeance e : paiement.getEcheances()) {
+                EcheanceDTO edto = new EcheanceDTO();
+                edto.setId(e.getId());
+                edto.setDateEcheance(e.getDateEcheance());
+                edto.setMontant(e.getMontant());
+                edto.setStatut(e.getStatut());
+                edto.setNumero(e.getNumero());
+                echeanceDTOs.add(edto);
             }
+            dto.setEcheances(echeanceDTOs);
         }
-        paiementDTO.setEcheances(listEcheanceDTO);
-        return paiementDTO;
+
+        return dto;
     }
 }

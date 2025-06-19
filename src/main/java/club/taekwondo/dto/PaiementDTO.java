@@ -13,6 +13,9 @@ public class PaiementDTO {
 	private String modePaiement;
 	private Long utilisateurId;
 	private List<EcheanceDTO> echeances;
+	private Double montantTotal;
+	private Double montantRestant;
+
 
 	public Long getId() {
 		return id;
@@ -78,4 +81,20 @@ public class PaiementDTO {
 		this.echeances = echeances;
 	}
 
+	public Double getMontantTotal() {
+		return montantTotal;
+	}
+
+	public void setMontantTotal(Double montantTotal) {
+		this.montantTotal = montantTotal;
+	}
+
+	public Double getMontantRestant() {
+		return montantRestant;
+	}
+
+	public void setMontantRestant(Double montantRestant) {
+		this.montantRestant = montantRestant;
+	}
+	
 }

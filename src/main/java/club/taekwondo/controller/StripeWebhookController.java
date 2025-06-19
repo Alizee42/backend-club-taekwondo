@@ -50,25 +50,41 @@ public class StripeWebhookController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Signature invalide");
         }
 
-        if ("payment_intent.succeeded".equals(event.getType())) {
-            System.out.println("📩 Webhook Stripe reçu : payment_intent.succeeded");
+        System.out.println("📦 Stripe Mode : " + (event.getLivemode() ? "LIVE" : "TEST"));
+        System.out.println("ℹ️ Type d'événement Stripe reçu : " + event.getType());
 
-            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
+        if ("payment_intent.succeeded".equals(event.getType())) {
+            System.out.println("✅ Paiement réussi détecté");
+
+            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
+                    .getObject()
+                    .orElse(null);
+
             if (paymentIntent != null) {
                 String paiementIdStr = paymentIntent.getMetadata().get("paiementId");
-                System.out.println("➡️ Metadata reçu : " + paymentIntent.getMetadata());
+                System.out.println("📌 Metadata : " + paymentIntent.getMetadata());
 
                 if (paiementIdStr != null) {
                     try {
                         Long paiementId = Long.parseLong(paiementIdStr);
                         Optional<Paiement> optional = paiementService.getById(paiementId);
-                        optional.ifPresent(paiement -> {
-                            paiement.setStatut("payé");
-                            paiementService.save(paiement);
-                            System.out.println("✅ Paiement confirmé pour ID " + paiementId);
-                        });
+                        if (optional.isPresent()) {
+                            Paiement paiement = optional.get();
+
+                            if (!"payé".equalsIgnoreCase(paiement.getStatut())) {
+                                paiement.setStatut("payé");
+                                paiementService.save(paiement);
+                                System.out.printf("✅ Paiement confirmé : ID=%d, Montant=%.2f, UtilisateurID=%d%n",
+                                        paiement.getId(), paiement.getMontantTotal(), paiement.getUtilisateur().getId());
+                            } else {
+                                System.out.println("⚠️ Paiement déjà marqué comme payé.");
+                            }
+
+                        } else {
+                            System.err.println("❌ Paiement non trouvé pour ID : " + paiementId);
+                        }
                     } catch (NumberFormatException e) {
-                        System.err.println("❌ paiementId invalide : " + paiementIdStr);
+                        System.err.println("❌ paiementId invalide dans metadata : " + paiementIdStr);
                     }
                 } else {
                     System.err.println("⚠️ paiementId manquant dans metadata Stripe");
@@ -81,4 +97,3 @@ public class StripeWebhookController {
         return ResponseEntity.ok("Webhook reçu");
     }
 }
-

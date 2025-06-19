@@ -67,6 +67,13 @@ public class StripeService {
 
         Double amount = Double.valueOf(request.get("amount").toString());
         String currency = request.get("currency").toString();
+        
+        currency = currency.toLowerCase();
+        List<String> devisesAutorisees = List.of("eur", "usd");
+        if (!devisesAutorisees.contains(currency)) {
+            throw new IllegalArgumentException("Devise non supportée : " + currency);
+        }
+        
         String typePaiement = request.get("typePaiement").toString();
         String modePaiement = request.getOrDefault("modePaiement", "inconnu").toString();
         Integer nombreEcheances = request.containsKey("nombreEcheances")

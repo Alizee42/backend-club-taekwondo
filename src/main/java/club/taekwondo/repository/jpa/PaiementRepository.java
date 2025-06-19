@@ -15,15 +15,12 @@ import java.util.Optional;
 
 @Repository
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
-	
-    // 🔥 Requête : trouver les paiements par utilisateur
+
     List<Paiement> findByUtilisateurId(Long utilisateurId);
 
-    // 🔥 Requête : tous les paiements avec leurs échéances
     @Query("SELECT DISTINCT p FROM Paiement p LEFT JOIN FETCH p.echeances")
     List<Paiement> findAllWithEcheances();
 
-    // 🔥 Requête corrigée : somme des montants par statut
     @Query("""
         SELECT new club.taekwondo.dto.StatutCountDTO(p.statut, SUM(p.montantTotal))
         FROM Paiement p
@@ -31,7 +28,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     """)
     List<StatutCountDTO> sumByStatut();
 
-    // 🔥 Requête corrigée : somme des montants par jour (-30 jours)
     @Query("""
         SELECT new club.taekwondo.dto.DaySumDTO(p.datePaiement, SUM(p.montantTotal))
         FROM Paiement p
@@ -41,7 +37,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     """)
     List<DaySumDTO> sumByDay(@Param("from") LocalDate from);
 
-    // 🔥 Requête corrigée : top 5 utilisateurs avec retards
     @Query("""
         SELECT p.utilisateur.nom, SUM(p.montantRestant)
         FROM Paiement p
@@ -51,7 +46,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     """)
     List<Object[]> topRetards(Pageable limit);
 
-    // 🔥 Requête corrigée : somme des montants payés entre deux dates
     @Query("""
         SELECT COALESCE(SUM(p.montantTotal), 0)
         FROM Paiement p
@@ -59,7 +53,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     """)
     Long sumByDatePaiementBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
-    // 🔥 Requête corrigée : somme des montants payés par statut entre deux dates
     @Query("""
         SELECT COALESCE(SUM(p.montantTotal), 0)
         FROM Paiement p
@@ -67,7 +60,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     """)
     Long sumByStatutAndDatePaiementBetween(@Param("statut") String statut, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
-    // 🔥 Requête : trouver un paiement existant (doublon)
     @Query("""
         SELECT p
         FROM Paiement p
@@ -82,4 +74,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
         @Param("modePaiement") String modePaiement,
         @Param("statut") String statut
     );
+
+    // ✅ ✅ Ajout pour résoudre l’erreur : méthode de comptage automatique
+    long countByStatut(String statut);
 }

@@ -5,7 +5,6 @@ import java.util.*;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.stripe.exception.StripeException;
@@ -136,15 +135,11 @@ public class PaiementController {
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @GetMapping("/stats")
-    @PreAuthorize("hasRole('ADMIN')")
-    public DashboardStatsDTO getStats() {
-        try {
-            return paiementService.buildDashboardStats();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Erreur lors de la génération des statistiques", e);
-        }
+    @GetMapping("/dashboard")
+    public DashboardStatsDTO getDashboardStats() {
+        return paiementService.buildDashboardStats(); // ✅ maintenant défini
     }
+
+
 }
 
