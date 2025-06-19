@@ -33,7 +33,10 @@ public class PaiementController {
 
     @GetMapping
     public List<PaiementDTO> getAll() {
-        return paiementService.getAllWithEcheances();
+        List<PaiementDTO> paiements = paiementService.getAllWithEcheances();
+        // Log des échéances pour chaque paiement
+        paiements.forEach(p -> System.out.println(p.getEcheances()));
+        return paiements;
     }
 
     @PostMapping("/create-payment-intent")
@@ -64,6 +67,9 @@ public class PaiementController {
 
         Paiement paiement = paiementOpt.get();
 
+        // Log des échéances avant modification
+        System.out.println("Avant modification : " + paiement.getEcheances());
+
         int nombreEcheances = Integer.parseInt(request.get("nombreEcheances").toString());
         double montantTotalAPayer = Double.parseDouble(request.get("montantTotalAPayer").toString());
 
@@ -80,6 +86,9 @@ public class PaiementController {
             paiement.setEcheancesRestantes(0);
         }
 
+        // Log des échéances après modification
+        System.out.println("Après modification : " + paiement.getEcheances());
+
         return ResponseEntity.ok(paiementService.save(paiement));
     }
 
@@ -87,16 +96,26 @@ public class PaiementController {
     public ResponseEntity<List<Paiement>> filterPaiements(
             @RequestParam(required = false) String statut,
             @RequestParam(required = false) String modePaiement) {
-        return ResponseEntity.ok(paiementService.filterPaiements(statut, modePaiement));
+        List<Paiement> paiements = paiementService.filterPaiements(statut, modePaiement);
+        // Log des échéances pour chaque paiement filtré
+        paiements.forEach(p -> System.out.println(p.getEcheances()));
+        return ResponseEntity.ok(paiements);
     }
 
     @PostMapping("/{id}/valider")
     public ResponseEntity<Paiement> validerPaiement(@PathVariable Long id) {
         return paiementService.getById(id)
                 .map(paiement -> {
+                    // Log des échéances avant validation
+                    System.out.println("Avant validation : " + paiement.getEcheances());
+
                     paiement.setStatut("payé");
                     paiement.setEcheancesRestantes(0);
                     paiement.setMontantRestant(0.0);
+
+                    // Log des échéances après validation
+                    System.out.println("Après validation : " + paiement.getEcheances());
+
                     return ResponseEntity.ok(paiementService.save(paiement));
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
@@ -105,7 +124,14 @@ public class PaiementController {
     public ResponseEntity<Paiement> annulerPaiement(@PathVariable Long id) {
         return paiementService.getById(id)
                 .map(paiement -> {
+                    // Log des échéances avant annulation
+                    System.out.println("Avant annulation : " + paiement.getEcheances());
+
                     paiement.setStatut("annulé");
+
+                    // Log des échéances après annulation
+                    System.out.println("Après annulation : " + paiement.getEcheances());
+
                     return ResponseEntity.ok(paiementService.save(paiement));
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }

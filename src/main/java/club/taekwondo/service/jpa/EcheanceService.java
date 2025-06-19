@@ -77,12 +77,14 @@ public class EcheanceService {
 
     // 🔁 Entity → DTO
     private EcheanceDTO toDTO(Echeance echeance) {
+        System.out.println("Conversion de l'entité Echeance en DTO : " + echeance);
         EcheanceDTO echeanceDTO = new EcheanceDTO();
         echeanceDTO.setId(echeance.getId());
         echeanceDTO.setDateEcheance(echeance.getDateEcheance());
         echeanceDTO.setMontant(echeance.getMontant());
         echeanceDTO.setStatut(echeance.getStatut());
         echeanceDTO.setNumero(echeance.getNumero());
+        System.out.println("DTO généré : " + echeanceDTO);
         return echeanceDTO;
     }
 

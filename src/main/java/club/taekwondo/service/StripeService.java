@@ -2,6 +2,7 @@ package club.taekwondo.service;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -61,7 +62,7 @@ public class StripeService {
     public PaymentIntent executeStripePayment(String token, Map<String, Object> request) throws StripeException {
         Long utilisateurId = extractUtilisateurIdFromToken(token);
 
-        Utilisateur utilisateur = utilisateurService.getUtilisateurById(utilisateurId)
+        Utilisateur utilisateur = utilisateurService.getUtilisateurEntityById(utilisateurId)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé pour l'ID : " + utilisateurId));
 
         Double amount = Double.valueOf(request.get("amount").toString());
@@ -76,22 +77,27 @@ public class StripeService {
             throw new IllegalArgumentException("Le montant ne peut pas être nul ou négatif.");
         }
 
-        // Création de l'entité Paiement
+        // 🔹 Création initiale du paiement
         Paiement paiement = new Paiement();
         paiement.setMontant(amount);
-        paiement.setMontantTotal("echeances".equalsIgnoreCase(typePaiement) ? amount * nombreEcheances : amount);
         paiement.setDatePaiement(LocalDate.now());
         paiement.setStatut("en attente");
         paiement.setModePaiement(modePaiement);
         paiement.setType("Cotisation");
         paiement.setUtilisateur(utilisateur);
         paiement.setEcheancesTotales(nombreEcheances);
-        paiement.setEcheancesRestantes(nombreEcheances);
+        paiement.setEcheancesRestantes(0); // temporaire
+        paiement.setMontantRestant(0.0);
+        paiement.setMontantTotal(0.0);
 
-        paiementService.save(paiement);
+        paiementService.save(paiement); // sauvegarde initiale
 
-        // Création des échéances si applicable
+        // 🔹 Gestion des échéances
         if ("echeances".equalsIgnoreCase(typePaiement) && nombreEcheances > 1) {
+            double montantRestant = 0.0;
+            int echeancesRestantes = 0;
+            double montantTotal = 0.0;
+
             for (int i = 0; i < nombreEcheances; i++) {
                 Echeance echeance = new Echeance();
                 echeance.setPaiement(paiement);
@@ -99,18 +105,40 @@ public class StripeService {
                 echeance.setMontant(amount);
                 echeance.setDateEcheance(LocalDate.now().plusMonths(i));
                 echeance.setStatut(i == 0 ? "payé" : "en attente");
+
                 echeanceRepository.save(echeance);
+
+                montantTotal += amount;
+                if (i != 0) {
+                    montantRestant += amount;
+                    echeancesRestantes++;
+                }
             }
+
+            paiement.setMontantTotal(montantTotal);
+            paiement.setMontantRestant(montantRestant);
+            paiement.setEcheancesRestantes(echeancesRestantes);
+
+            // ✅ Recharge les échéances créées pour les attacher à l'objet renvoyé
+            List<Echeance> echeances = echeanceRepository.findByPaiementIdOrderByNumeroAsc(paiement.getId());
+            paiement.setEcheances(echeances);
+
+            paiementService.save(paiement); // mise à jour
+        } else {
+            // Paiement unique
+            paiement.setMontantTotal(amount);
+            paiement.setMontantRestant(0.0);
+            paiement.setEcheancesRestantes(0);
+            paiement.setEcheancesTotales(1);
+            paiementService.save(paiement);
         }
 
-        // Création du PaymentIntent Stripe
+        // 🔹 Création du PaymentIntent Stripe
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-            .setAmount((long) (amount * 100)) // Montant en centimes
+            .setAmount((long) (amount * 100))
             .setCurrency(currency)
             .setAutomaticPaymentMethods(
-                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                    .setEnabled(true)
-                    .build()
+                PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
             )
             .putMetadata("utilisateurId", String.valueOf(utilisateur.getId()))
             .putMetadata("typePaiement", typePaiement)
@@ -122,7 +150,6 @@ public class StripeService {
     }
 
     public PaymentIntent executeStripePayment(String token, PaiementRequestDTO dto) throws StripeException {
-        // Validation manuelle minimale (au cas où l’annotation @Valid ne suffit pas)
         if (dto.getAmount() == null || dto.getAmount() <= 0) {
             throw new IllegalArgumentException("Montant invalide.");
         }
@@ -154,5 +181,4 @@ public class StripeService {
         }
     }
 }
-
 

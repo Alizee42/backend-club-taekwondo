@@ -50,5 +50,16 @@ public class EcheanceDTO {
 	public void setNumero(Integer numero) {
 		this.numero = numero;
 	}
+	
+	@Override
+	public String toString() {
+	    return "EcheanceDTO{" +
+	            "id=" + id +
+	            ", numero=" + numero +
+	            ", dateEcheance=" + dateEcheance +
+	            ", montant=" + montant +
+	            ", statut='" + statut + '\'' +
+	            '}';
+	}
 }
 

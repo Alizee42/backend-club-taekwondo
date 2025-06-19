@@ -3,7 +3,6 @@ package club.taekwondo.entity.jpa;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Echeance {
@@ -17,11 +16,12 @@ public class Echeance {
     private double montant;
 
     private String statut; 
+    @Column(name = "numero")
     private Integer numero;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paiement_id")
-    @JsonBackReference
     private Paiement paiement;
 
     // Getters & Setters

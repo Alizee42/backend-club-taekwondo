@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Repository
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
-
+	
     // 🔥 Requête : trouver les paiements par utilisateur
     List<Paiement> findByUtilisateurId(Long utilisateurId);
 

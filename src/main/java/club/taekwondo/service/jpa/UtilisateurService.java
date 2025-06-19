@@ -21,53 +21,48 @@ public class UtilisateurService {
     private PasswordEncoder passwordEncoder;
 
     public List<UtilisateurDTO> getAllUtilisateurs() {
-    	List<UtilisateurDTO> utilisateursDTO = new ArrayList<>();
-    	List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
-    	for (Utilisateur utilisateur: utilisateurs) {
-    		utilisateursDTO.add(toUtilisateurDTO(utilisateur));
-    	}
+        List<UtilisateurDTO> utilisateursDTO = new ArrayList<>();
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
+        for (Utilisateur utilisateur : utilisateurs) {
+            utilisateursDTO.add(toUtilisateurDTO(utilisateur));
+        }
         return utilisateursDTO;
     }
 
-	public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
-		System.out.println("Recherche de l'utilisateur avec l'email : " + email);
-		Optional<Utilisateur> utilisateurOptional = utilisateurRepository.findByEmail(email);
-
-		if (utilisateurOptional.isPresent()) {
-			return Optional.of(toUtilisateurDTO(utilisateurOptional.get()));
-		}
-		return Optional.empty();
-	}
+    public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
+        System.out.println("Recherche de l'utilisateur avec l'email : " + email);
+        Optional<Utilisateur> utilisateurOptional = utilisateurRepository.findByEmail(email);
+        return utilisateurOptional.map(this::toUtilisateurDTO);
+    }
 
     public Optional<UtilisateurDTO> login(String email, String password) {
         System.out.println("Recherche de l'utilisateur avec l'email : " + email);
         Optional<Utilisateur> utilisateurOptional = utilisateurRepository.findByEmail(email);
-       
+
         if (utilisateurOptional.isPresent()) {
-        	Utilisateur utilisateur = utilisateurOptional.get();
-        	  // Comparer le mot de passe fourni avec le mot de passe haché
-        	boolean passwordMatches = passwordEncoder.matches(password, utilisateur.getPassword());
+            Utilisateur utilisateur = utilisateurOptional.get();
+            boolean passwordMatches = passwordEncoder.matches(password, utilisateur.getPassword());
             System.out.println("Résultat de la comparaison des mots de passe : " + passwordMatches);
 
             if (!passwordMatches) {
                 throw new RuntimeException("Email ou mot de passe incorrect");
             }
 
-        	return Optional.of(toUtilisateurDTO(utilisateur));
+            return Optional.of(toUtilisateurDTO(utilisateur));
         }
         return Optional.empty();
     }
-    
+
     public Optional<UtilisateurDTO> getUtilisateurById(Long id) {
         System.out.println("Recherche de l'utilisateur avec l'ID : " + id);
         Optional<Utilisateur> utilisateur = utilisateurRepository.findById(id);
-        if (utilisateur.isPresent()) {
-            System.out.println("Utilisateur trouvé : " + utilisateur.get().getNom());
-            return Optional.of(toUtilisateurDTO(utilisateur.get()));
-        } else {
-            System.out.println("Aucun utilisateur trouvé avec l'ID : " + id);
-        }
-        return Optional.empty();
+        utilisateur.ifPresent(u -> System.out.println("Utilisateur trouvé : " + u.getNom()));
+        return utilisateur.map(this::toUtilisateurDTO);
+    }
+
+    // ✅ AJOUT ICI
+    public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
+        return utilisateurRepository.findById(id);
     }
 
     public Utilisateur createUtilisateur(UtilisateurDTO utilisateur) {
@@ -78,7 +73,7 @@ public class UtilisateurService {
         }
         return utilisateurRepository.save(toUtilisateurEntity(utilisateur));
     }
-    
+
     public void updateUtilisateurFromDTO(Long id, UtilisateurDTO utilisateurDTO) {
         utilisateurRepository.findById(id).ifPresent(user -> {
             user.setNom(utilisateurDTO.getNom());
@@ -91,7 +86,6 @@ public class UtilisateurService {
                 user.setAdresse(utilisateurDTO.getAdresse());
             }
 
-            // Utilisez directement LocalDate sans conversio
             if (utilisateurDTO.getDateNaissance() != null) {
                 user.setDateNaissance(utilisateurDTO.getDateNaissance());
             }
@@ -104,48 +98,37 @@ public class UtilisateurService {
         });
     }
 
-    
     public void deleteUtilisateur(Long id) {
         utilisateurRepository.deleteById(id);
     }
+
     public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
         return utilisateurRepository.findByEmail(email);
     }
 
-
-
     private UtilisateurDTO toUtilisateurDTO(Utilisateur utilisateur) {
-    	
-    	UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
-    	utilisateurDTO.setId(utilisateur.getId());
-    	utilisateurDTO.setNom(utilisateur.getNom());
-    	utilisateurDTO.setPrenom(utilisateur.getPrenom());
-    	utilisateurDTO.setDateNaissance(utilisateur.getDateNaissance());
-    	utilisateurDTO.setAdresse(utilisateur.getAdresse());
-    	utilisateurDTO.setEmail(utilisateur.getEmail());
-    	utilisateurDTO.setTelephone(utilisateur.getTelephone());
-    	utilisateurDTO.setRole(utilisateur.getRole());
-        
-
-    	return utilisateurDTO;
+        UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
+        utilisateurDTO.setId(utilisateur.getId());
+        utilisateurDTO.setNom(utilisateur.getNom());
+        utilisateurDTO.setPrenom(utilisateur.getPrenom());
+        utilisateurDTO.setDateNaissance(utilisateur.getDateNaissance());
+        utilisateurDTO.setAdresse(utilisateur.getAdresse());
+        utilisateurDTO.setEmail(utilisateur.getEmail());
+        utilisateurDTO.setTelephone(utilisateur.getTelephone());
+        utilisateurDTO.setRole(utilisateur.getRole());
+        return utilisateurDTO;
     }
-    private Utilisateur toUtilisateurEntity(UtilisateurDTO utilisateurDTO) {
-    	
-    	Utilisateur utilisateur = new Utilisateur();
 
-    	utilisateur.setNom(utilisateurDTO.getNom());
-    	utilisateur.setPrenom(utilisateurDTO.getPrenom());
-    	utilisateur.setEmail(utilisateurDTO.getEmail());
-    	if (utilisateurDTO.getDateNaissance() != null) {
-    	    utilisateur.setDateNaissance(utilisateurDTO.getDateNaissance());
-    	}
-    	utilisateur.setAdresse(utilisateurDTO.getAdresse());
-    	utilisateur.setTelephone(utilisateurDTO.getTelephone());
-    	utilisateur.setRole(utilisateurDTO.getRole());
-    	utilisateur.setPassword(utilisateurDTO.getPassword());
-    	
-    	return utilisateur;
-    	
-    	
+    private Utilisateur toUtilisateurEntity(UtilisateurDTO utilisateurDTO) {
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setNom(utilisateurDTO.getNom());
+        utilisateur.setPrenom(utilisateurDTO.getPrenom());
+        utilisateur.setEmail(utilisateurDTO.getEmail());
+        utilisateur.setDateNaissance(utilisateurDTO.getDateNaissance());
+        utilisateur.setAdresse(utilisateurDTO.getAdresse());
+        utilisateur.setTelephone(utilisateurDTO.getTelephone());
+        utilisateur.setRole(utilisateurDTO.getRole());
+        utilisateur.setPassword(utilisateurDTO.getPassword());
+        return utilisateur;
     }
 }
