@@ -1,6 +1,7 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.EcheanceDTO;
+import club.taekwondo.dto.MembreRetardDTO;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.repository.jpa.EcheanceRepository;
@@ -8,7 +9,11 @@ import club.taekwondo.repository.jpa.PaiementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EcheanceService {
@@ -74,6 +79,52 @@ public class EcheanceService {
 
         return toDTO(echeance);
     }
+    public List<MembreRetardDTO> getMembresEnRetard() {
+        // Récupère toutes les échéances en retard (statut = "en attente" et date antérieure à aujourd'hui)
+        List<Echeance> echeancesEnRetard = echeanceRepository.findByStatutAndDateEcheanceBefore("en attente", LocalDate.now());
+
+        System.out.println("🔍 Nombre d'échéances en retard : " + echeancesEnRetard.size());
+        
+        // Affiche des informations sur les échéances en retard pour debugging
+        echeancesEnRetard.forEach(e -> {
+            System.out.println("  - ID: " + e.getId() +
+                    ", Date: " + e.getDateEcheance() +
+                    ", Montant: " + e.getMontant() +
+                    ", Statut: " + e.getStatut());
+        });
+
+        // Regroupe les échéances par utilisateur (par membre)
+        Map<Long, List<Echeance>> echeancesParMembre = echeancesEnRetard.stream()
+            .collect(Collectors.groupingBy(e -> e.getPaiement().getUtilisateur().getId()));
+
+        List<MembreRetardDTO> retards = new ArrayList<>();
+        for (Map.Entry<Long, List<Echeance>> entry : echeancesParMembre.entrySet()) {
+            List<Echeance> echeances = entry.getValue();
+
+            // Filtrer pour ne prendre en compte que les échéances non payées (statut = "en attente")
+            double totalRestant = echeances.stream()
+                .filter(e -> "en attente".equalsIgnoreCase(e.getStatut()))
+                .mapToDouble(Echeance::getMontant)
+                .sum();
+
+            // Récupère le nom du membre
+            String nom = echeances.get(0).getPaiement().getUtilisateur().getNom(); 
+
+            // Récupère la première échéance en retard (la plus proche)
+            Echeance echeanceEnRetard = echeances.stream()
+                .filter(e -> e.getDateEcheance().isBefore(LocalDate.now()) && "en attente".equalsIgnoreCase(e.getStatut()))
+                .findFirst().orElse(null);
+
+            if (echeanceEnRetard != null) {
+                // Crée un MembreRetardDTO avec les informations de l'échéance en retard
+                retards.add(new MembreRetardDTO(nom, totalRestant, echeanceEnRetard.getDateEcheance(), echeanceEnRetard.getMontant()));
+            }
+        }
+
+        System.out.println("📊 Membres en retard générés : " + retards.size());
+        return retards;
+    }
+
 
     // 🔁 Entity → DTO
     private EcheanceDTO toDTO(Echeance echeance) {

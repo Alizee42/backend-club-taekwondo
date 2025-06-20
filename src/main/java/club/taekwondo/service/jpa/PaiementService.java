@@ -4,7 +4,6 @@ import club.taekwondo.dto.*;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.repository.jpa.PaiementRepository;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,10 +15,14 @@ import java.util.Optional;
 public class PaiementService {
 
     private final PaiementRepository paiementRepository;
+    private final EcheanceService echeanceService;
 
-    public PaiementService(PaiementRepository paiementRepository) {
+
+    public PaiementService(PaiementRepository paiementRepository, EcheanceService echeanceService) {
         this.paiementRepository = paiementRepository;
+        this.echeanceService = echeanceService;
     }
+
 
     // 🔹 Récupérer tous les paiements avec leurs échéances
     public List<PaiementDTO> getAllWithEcheances() {
@@ -135,19 +138,23 @@ public class PaiementService {
                     .sum();
 
             // 🔷 Pourcentage des paiements payés ce mois-ci
-            double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
-            double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
+            Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
+            Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
+
+            // Évite les nulls
+            montantTotalMois = montantTotalMois != null ? montantTotalMois : 0.0;
+            montantPayesMois = montantPayesMois != null ? montantPayesMois : 0.0;
+
             double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
 
             // 🔷 Courbe : somme des paiements par jour sur 30 jours
-            var courbe = paiementRepository.sumByDay(minus30);
+            List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30);
 
-            // 🔷 Top 5 des membres en retard
-            var topRows = paiementRepository.topRetards(PageRequest.of(0, 5));
-            var top = topRows.stream()
-                    .map(o -> new MembreRetardDTO((String) o[0], (Double) o[1]))
-                    .toList();
+         // 🔷 Membres en retard selon échéances passées
+            List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
 
+
+            // ✅ Construction du DTO final (record = immutable)
             return new DashboardStatsDTO(
                     totalPayes,
                     totalAttente,

@@ -37,11 +37,15 @@ public class StripeController {
     public ResponseEntity<Map<String, String>> getPublicKey() {
         return ResponseEntity.ok(Map.of("publicKey", stripeService.getPublicKey()));
     }
+    
+ 
 
     @PostMapping("/create-payment-intent")
     public ResponseEntity<Map<String, String>> createPaymentIntent(
             @RequestHeader("Authorization") String token,
             @RequestBody Map<String, Object> request) {
+
+        System.out.println("🚀 [StripeController] createPaymentIntent déclenché");
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
@@ -54,7 +58,7 @@ public class StripeController {
             Utilisateur utilisateur = utilisateurService.getByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
 
-            double amount = Double.parseDouble(request.get("amount").toString());
+            double montantTotal = Double.parseDouble(request.get("amount").toString()); // ✅ ne pas écraser plus bas
             String currency = request.get("currency").toString();
             if (!currency.matches("(?i)eur|usd")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Devise non autorisée"));
@@ -65,42 +69,78 @@ public class StripeController {
             int nombreEcheances = request.containsKey("nombreEcheances")
                     ? Integer.parseInt(request.get("nombreEcheances").toString()) : 1;
 
-            // Vérifie les doublons
-            
+            System.out.println("🎯 Reçu typePaiement = " + typePaiement);
+            System.out.println("🎯 Reçu modePaiement = " + modePaiement);
+
             List<Paiement> paiementsExistants = paiementService.getByMembreId(utilisateur.getId());
             for (Paiement p : paiementsExistants) {
-                if (p.getMontantTotal() != null && p.getMontantTotal().equals(amount)
-                        && p.getModePaiement().equals(modePaiement)
-                        && p.getStatut().equals("en attente")) {
+                if (p.getMontantTotal() != null && p.getMontantTotal().equals(montantTotal)
+                        && p.getModePaiement().equalsIgnoreCase(modePaiement)
+                        && p.getStatut().equalsIgnoreCase("en attente")) {
                     return ResponseEntity.status(HttpStatus.CONFLICT)
                             .body(Map.of("error", "Un paiement similaire existe déjà."));
                 }
             }
-            
-            // Création du Paiement
+
             Paiement paiement = new Paiement();
-            paiement.setMontantTotal(amount);
             paiement.setModePaiement(modePaiement);
             paiement.setType(typePaiement);
-            paiement.setStatut("en attente");
             paiement.setUtilisateur(utilisateur);
+            paiement.setDatePaiement(LocalDate.now());
 
-            if ("echeances".equalsIgnoreCase(typePaiement)) {
+            boolean isEcheances = "echeances".equalsIgnoreCase(typePaiement);
+
+            if (isEcheances) {
+                System.out.println("🟡 Paiement échelonné détecté");
+
+                double montantParEcheance = montantTotal / nombreEcheances;
+                double montantRestant = 0.0;
+                int echeancesRestantes = 0;
+
                 List<Echeance> echeances = new ArrayList<>();
-                double montantParEcheance = amount / nombreEcheances;
+
                 for (int i = 0; i < nombreEcheances; i++) {
                     Echeance echeance = new Echeance();
                     echeance.setMontant(montantParEcheance);
-                    echeance.setDateEcheance(LocalDate.now().plusMonths(i + 1));
-                    echeance.setStatut("en attente");
+                    echeance.setDateEcheance(LocalDate.now().plusMonths(i));
                     echeance.setNumero(i + 1);
                     echeance.setPaiement(paiement);
+
+                    if (i == 0) {
+                        echeance.setStatut("payé");
+                    } else {
+                        echeance.setStatut("en attente");
+                        montantRestant += montantParEcheance;
+                        echeancesRestantes++;
+                    }
+
                     echeances.add(echeance);
                 }
+
+                paiement.setMontant(montantTotal);
+                paiement.setMontantTotal(montantTotal);
+                paiement.setMontantRestant(montantRestant);
+                paiement.setEcheancesTotales(nombreEcheances);
+                paiement.setEcheancesRestantes(echeancesRestantes);
+                paiement.setStatut("en attente");
                 paiement.setEcheances(echeances);
+
+            } else {
+                System.out.println("✅ Paiement unique détecté");
+
+                paiement.setMontant(montantTotal);
+                paiement.setMontantTotal(montantTotal);
+                paiement.setMontantRestant(0.0);
+                paiement.setStatut("payé");
+                paiement.setEcheancesTotales(1);
+                paiement.setEcheancesRestantes(0);
             }
 
             paiementService.save(paiement);
+            System.out.println("📌 Paiement enregistré avec statut = " + paiement.getStatut());
+
+            // ✅ Très important : on s’assure d’envoyer le montant total au service Stripe
+            request.put("amount", montantTotal);
 
             PaymentIntent paymentIntent = stripeService.executeStripePayment(jwt, request);
             return ResponseEntity.ok(Map.of("clientSecret", paymentIntent.getClientSecret()));
@@ -114,4 +154,5 @@ public class StripeController {
                     .body(Map.of("error", "Erreur interne : " + e.getMessage()));
         }
     }
+
 }

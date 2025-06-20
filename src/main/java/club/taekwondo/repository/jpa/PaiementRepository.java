@@ -51,14 +51,14 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
         FROM Paiement p
         WHERE p.datePaiement BETWEEN :start AND :end
     """)
-    Long sumByDatePaiementBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
+    Double sumByDatePaiementBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query("""
         SELECT COALESCE(SUM(p.montantTotal), 0)
         FROM Paiement p
         WHERE p.statut = :statut AND p.datePaiement BETWEEN :start AND :end
     """)
-    Long sumByStatutAndDatePaiementBetween(@Param("statut") String statut, @Param("start") LocalDate start, @Param("end") LocalDate end);
+    Double sumByStatutAndDatePaiementBetween(@Param("statut") String statut, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query("""
         SELECT p
