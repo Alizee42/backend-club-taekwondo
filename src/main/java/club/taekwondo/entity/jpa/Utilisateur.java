@@ -132,4 +132,11 @@ public class Utilisateur {
     public void setAdresse(String adresse) {
         this.adresse = adresse;
     }
+    public List<Paiement> getPaiements() {
+        return paiements;
+    }
+
+    public void setPaiements(List<Paiement> paiements) {
+        this.paiements = paiements;
+    }
 }

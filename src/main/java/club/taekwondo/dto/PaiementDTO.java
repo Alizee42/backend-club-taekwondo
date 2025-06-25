@@ -11,10 +11,14 @@ public class PaiementDTO {
 	private LocalDate datePaiement;
 	private String statut;
 	private String modePaiement;
-	private Long utilisateurId;
+	private Long utilisateurId;           
 	private List<EcheanceDTO> echeances;
 	private Double montantTotal;
 	private Double montantRestant;
+	private String utilisateurNom;
+	private String utilisateurPrenom;
+	private String utilisateurEmail;
+
 
 
 	public Long getId() {
@@ -96,5 +100,30 @@ public class PaiementDTO {
 	public void setMontantRestant(Double montantRestant) {
 		this.montantRestant = montantRestant;
 	}
+
+	public String getUtilisateurNom() {
+		return utilisateurNom;
+	}
+
+	public void setUtilisateurNom(String utilisateurNom) {
+		this.utilisateurNom = utilisateurNom;
+	}
+
+	public String getUtilisateurPrenom() {
+		return utilisateurPrenom;
+	}
+
+	public void setUtilisateurPrenom(String utilisateurPrenom) {
+		this.utilisateurPrenom = utilisateurPrenom;
+	}
+
+	public String getUtilisateurEmail() {
+		return utilisateurEmail;
+	}
+
+	public void setUtilisateurEmail(String utilisateurEmail) {
+		this.utilisateurEmail = utilisateurEmail;
+	}
+	
 	
 }

@@ -6,7 +6,7 @@ public class EcheanceDTO {
 
 	private Long id;
 	private LocalDate dateEcheance;
-	private double montant;
+	private Double montant;
 	private String statut;
 	private Integer numero; 
 
@@ -27,11 +27,11 @@ public class EcheanceDTO {
 		this.dateEcheance = dateEcheance;
 	}
 
-	public double getMontant() {
+	public Double getMontant() {
 		return montant;
 	}
-
-	public void setMontant(double montant) {
+	
+	public void setMontant(Double montant) {
 		this.montant = montant;
 	}
 

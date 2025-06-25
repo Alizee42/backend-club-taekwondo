@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -86,6 +87,7 @@ public class EcheanceService {
         System.out.println("🔍 Nombre d'échéances en retard : " + echeancesEnRetard.size());
         
         // Affiche des informations sur les échéances en retard pour debugging
+        System.out.println("🔍 Nombre d'échéances en retard : " + echeancesEnRetard.size());
         echeancesEnRetard.forEach(e -> {
             System.out.println("  - ID: " + e.getId() +
                     ", Date: " + e.getDateEcheance() +
@@ -124,7 +126,14 @@ public class EcheanceService {
         System.out.println("📊 Membres en retard générés : " + retards.size());
         return retards;
     }
-
+    public void delete(Long id) {
+        Optional<Echeance> echeanceOpt = echeanceRepository.findById(id);
+        if (echeanceOpt.isEmpty()) {
+            throw new RuntimeException("Échéance introuvable avec l'ID : " + id);
+        }
+        echeanceRepository.deleteById(id);
+        System.out.println("Échéance avec ID " + id + " supprimée avec succès.");
+    }
 
     // 🔁 Entity → DTO
     private EcheanceDTO toDTO(Echeance echeance) {

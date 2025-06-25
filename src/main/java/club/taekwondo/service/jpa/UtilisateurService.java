@@ -1,6 +1,9 @@
 package club.taekwondo.service.jpa;
 
+import club.taekwondo.dto.PaiementDTO;
 import club.taekwondo.dto.UtilisateurDTO;
+import club.taekwondo.dto.UtilisateurPaiementDTO;
+import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +66,11 @@ public class UtilisateurService {
     public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
         return utilisateurRepository.findById(id);
     }
+
+    public Utilisateur save(Utilisateur utilisateur) {
+        return utilisateurRepository.save(utilisateur);
+    }
+
     public Optional<Utilisateur> getByEmail(String email) {
         return utilisateurRepository.findByEmail(email);
     }
@@ -99,7 +107,23 @@ public class UtilisateurService {
             utilisateurRepository.save(user);
         });
     }
+    public List<UtilisateurPaiementDTO> getAllWithPaiements() {
+        List<UtilisateurPaiementDTO> utilisateursPaiementsDTO = new ArrayList<>();
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
 
+        for (Utilisateur utilisateur : utilisateurs) {
+            UtilisateurPaiementDTO utilisateurPaiementDTO = new UtilisateurPaiementDTO();
+            utilisateurPaiementDTO.setId(utilisateur.getId());
+            utilisateurPaiementDTO.setNom(utilisateur.getNom());
+            utilisateurPaiementDTO.setPrenom(utilisateur.getPrenom());
+            utilisateurPaiementDTO.setEmail(utilisateur.getEmail());
+            utilisateurPaiementDTO.setPaiements(toPaiementDTOList(utilisateur.getPaiements())); // Conversion ici
+            utilisateursPaiementsDTO.add(utilisateurPaiementDTO);
+        }
+
+        return utilisateursPaiementsDTO;
+    }
+    
     public void deleteUtilisateur(Long id) {
         utilisateurRepository.deleteById(id);
     }
@@ -107,6 +131,10 @@ public class UtilisateurService {
     public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
         return utilisateurRepository.findByEmail(email);
     }
+    public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
+        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
+    }
+
 
     private UtilisateurDTO toUtilisateurDTO(Utilisateur utilisateur) {
         UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
@@ -132,5 +160,20 @@ public class UtilisateurService {
         utilisateur.setRole(utilisateurDTO.getRole());
         utilisateur.setPassword(utilisateurDTO.getPassword());
         return utilisateur;
+    }
+    private PaiementDTO toPaiementDTO(Paiement paiement) {
+        PaiementDTO paiementDTO = new PaiementDTO();
+        paiementDTO.setId(paiement.getId());
+        paiementDTO.setMontant(paiement.getMontant());
+        paiementDTO.setDatePaiement(paiement.getDatePaiement());
+        return paiementDTO;
+    }
+
+    private List<PaiementDTO> toPaiementDTOList(List<Paiement> paiements) {
+        List<PaiementDTO> paiementDTOs = new ArrayList<>();
+        for (Paiement paiement : paiements) {
+            paiementDTOs.add(toPaiementDTO(paiement));
+        }
+        return paiementDTOs;
     }
 }
