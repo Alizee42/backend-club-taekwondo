@@ -154,6 +154,7 @@ public class PaiementService {
         paiement.setModePaiement(dto.getModePaiement());
         paiement.setDatePaiement(dto.getDatePaiement());
 
+        // 🔹 Recherche ou création de l'utilisateur
         Optional<Utilisateur> utilisateurOpt = Optional.empty();
 
         if (dto.getUtilisateurId() != null) {
@@ -177,6 +178,7 @@ public class PaiementService {
 
         paiement.setUtilisateur(utilisateurOpt.get());
 
+        // 🔹 Gestion avec échéances
         if (dto.getEcheances() != null && !dto.getEcheances().isEmpty()) {
             List<Echeance> echeances = new ArrayList<>();
             double total = 0.0;
@@ -195,9 +197,10 @@ public class PaiementService {
                 echeance.setStatut(edto.getStatut() != null ? edto.getStatut() : "en attente");
                 echeance.setNumero(numero++);
                 echeance.setPaiement(paiement);
-                echeances.add(echeance);
 
+                echeances.add(echeance);
                 total += edto.getMontant();
+
                 if (!"payé".equalsIgnoreCase(echeance.getStatut())) {
                     restantes++;
                 } else {
@@ -212,28 +215,32 @@ public class PaiementService {
             paiement.setEcheancesTotales(echeances.size());
             paiement.setEcheancesRestantes(restantes);
             paiement.setStatut(restantes == 0 ? "payé" : "en attente");
+
         } else {
-            paiement.setMontantTotal(dto.getMontantTotal() != null ? dto.getMontantTotal() : 0.0);
-            paiement.setMontantPaye("payé".equalsIgnoreCase(paiement.getStatut()) ? paiement.getMontantTotal() : 0.0);
+            // 🔹 Paiement sans échéance
+            double montant = dto.getMontantTotal() != null ? dto.getMontantTotal() : 0.0;
+            paiement.setMontantTotal(montant);
 
-            if (paiement.getModePaiement() != null &&
-                (paiement.getModePaiement().equalsIgnoreCase("espèces") ||
-                 paiement.getModePaiement().equalsIgnoreCase("virement") ||
-                 paiement.getModePaiement().equalsIgnoreCase("chèque") ||
-                 paiement.getModePaiement().equalsIgnoreCase("unique"))) {
+            String mode = paiement.getModePaiement() != null ? paiement.getModePaiement().toLowerCase() : "";
 
+            if (mode.equals("espèces") || mode.equals("virement") || mode.equals("chèque") || mode.equals("unique")) {
+                paiement.setMontantPaye(montant);
                 paiement.setMontantRestant(0.0);
-                paiement.setMontantPaye(paiement.getMontantTotal());
                 paiement.setStatut("payé");
             } else {
-                paiement.setMontantRestant(paiement.getMontantTotal());
                 paiement.setMontantPaye(0.0);
+                paiement.setMontantRestant(montant);
                 paiement.setStatut("en attente");
             }
+
+            paiement.setEcheancesTotales(0);
+            paiement.setEcheancesRestantes(0);
+            paiement.setEcheances(null);
         }
 
         return paiementRepository.save(paiement);
     }
+
 
     public PaiementDTO toPaiementDTO(Paiement paiement) {
         PaiementDTO dto = new PaiementDTO();

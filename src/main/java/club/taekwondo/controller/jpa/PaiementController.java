@@ -161,7 +161,10 @@ public class PaiementController {
                     Echeance echeance = new Echeance();
                     echeance.setDateEcheance(LocalDate.parse((String) e.get("dateEcheance")));
                     echeance.setMontant(Double.parseDouble(e.get("montant").toString()));
-                    echeance.setStatut("en attente");
+
+                    String statutStr = (String) e.get("statut");
+                    echeance.setStatut(statutStr != null ? statutStr : "en attente");
+
                     echeance.setNumero(i + 1);
                     echeanceList.add(echeance);
                 }
@@ -170,7 +173,7 @@ public class PaiementController {
                     EcheanceDTO edto = new EcheanceDTO();
                     edto.setDateEcheance(e.getDateEcheance());
                     edto.setMontant(e.getMontant());
-                    edto.setStatut("en attente");
+                    edto.setStatut(e.getStatut());
                     edto.setNumero(e.getNumero());
                     return edto;
                 }).toList());
@@ -184,6 +187,7 @@ public class PaiementController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePaiement(@PathVariable Long id) {

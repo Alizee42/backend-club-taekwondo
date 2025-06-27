@@ -14,7 +14,7 @@ public class PaiementDTO {
 	private List<EcheanceDTO> echeances;
 	private Double montantTotal;
 	private Double montantRestant;
-	private Double montantPaye; // ✅ Nouveau champ ajouté
+	private Double montantPaye; 
 	private String utilisateurNom;
 	private String utilisateurPrenom;
 	private String utilisateurEmail;
