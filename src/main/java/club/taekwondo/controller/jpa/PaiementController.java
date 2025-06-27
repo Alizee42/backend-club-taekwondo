@@ -1,42 +1,48 @@
 package club.taekwondo.controller.jpa;
 
-import java.util.*;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import club.taekwondo.dto.DashboardStatsDTO;
+import club.taekwondo.dto.EcheanceDTO;
 import club.taekwondo.dto.PaiementDTO;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.service.jpa.PaiementService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import java.time.LocalDate;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/paiements")
-@CrossOrigin(origins = "*") // (optionnel selon config CORS frontend)
+@CrossOrigin(origins = "*")
 public class PaiementController {
 
     private final PaiementService paiementService;
+    private final ObjectMapper objectMapper;
 
-    public PaiementController(PaiementService paiementService) {
+    public PaiementController(PaiementService paiementService, ObjectMapper objectMapper) {
         this.paiementService = paiementService;
+        this.objectMapper = objectMapper;
     }
 
-    // 🔹 Tous les paiements avec échéances
     @GetMapping
     public List<PaiementDTO> getAll() {
         return paiementService.getAllWithEcheances();
     }
 
-    // 🔹 Payer une échéance (partielle ou complète)
     @PostMapping("/{id}/payer-echeance")
-    public ResponseEntity<PaiementDTO> payerEcheance(@PathVariable Long id, @RequestBody List<Map<String, Object>> echeancesPayees) {
+    public ResponseEntity<PaiementDTO> payerEcheance(
+            @PathVariable Long id,
+            @RequestBody List<Map<String, Object>> echeancesPayees) {
+
         Optional<Paiement> optPaiement = paiementService.getById(id);
         if (optPaiement.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         Paiement paiement = optPaiement.get();
-
         double montantTotalAPayer = 0.0;
         int nombreEcheancesPayees = 0;
 
@@ -48,15 +54,13 @@ public class PaiementController {
 
             if (optEcheance.isPresent()) {
                 Echeance echeance = optEcheance.get();
-                if ("payé".equalsIgnoreCase(echeance.getStatut())) {
-                    continue; // Échéance déjà payée
+                if (!"payé".equalsIgnoreCase(echeance.getStatut())) {
+                    echeance.setStatut("payé");
+                    montantTotalAPayer += echeance.getMontant();
+                    nombreEcheancesPayees++;
                 }
-
-                echeance.setStatut("payé");
-                montantTotalAPayer += echeance.getMontant();
-                nombreEcheancesPayees++;
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // Échéance introuvable
+                return ResponseEntity.badRequest().body(null);
             }
         }
 
@@ -73,7 +77,6 @@ public class PaiementController {
         return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
     }
 
-    // 🔹 Filtrage par statut ou mode
     @GetMapping("/filter")
     public ResponseEntity<List<PaiementDTO>> filterPaiements(
             @RequestParam(required = false) String statut,
@@ -83,7 +86,6 @@ public class PaiementController {
         return ResponseEntity.ok(dtos);
     }
 
-    // 🔹 Marquer comme payé
     @PostMapping("/{id}/valider")
     public ResponseEntity<PaiementDTO> validerPaiement(@PathVariable Long id) {
         return paiementService.getById(id)
@@ -97,7 +99,6 @@ public class PaiementController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // 🔹 Marquer comme annulé
     @PostMapping("/{id}/annuler")
     public ResponseEntity<PaiementDTO> annulerPaiement(@PathVariable Long id) {
         return paiementService.getById(id)
@@ -109,13 +110,11 @@ public class PaiementController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // 🔹 Statistiques dashboard
     @GetMapping("/dashboard")
     public DashboardStatsDTO getDashboardStats() {
         return paiementService.buildDashboardStats();
     }
 
-    // 🔹 Ajouter un paiement manuel
     @PostMapping("/ajouter-manuel")
     public ResponseEntity<PaiementDTO> ajouterPaiementManuel(@RequestBody PaiementDTO dto) {
         try {
@@ -127,19 +126,76 @@ public class PaiementController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @PostMapping("/ajouter-complet")
+    public ResponseEntity<PaiementDTO> ajouterPaiementComplet(
+            @RequestParam String utilisateurNom,
+            @RequestParam String utilisateurPrenom,
+            @RequestParam(required = false) String utilisateurEmail,
+            @RequestParam String type,
+            @RequestParam Double montantTotal,
+            @RequestParam String modePaiement,
+            @RequestParam String datePaiement,
+            @RequestParam(required = false) String echeances,
+            @RequestParam(required = false) MultipartFile justificatif
+    ) {
+        try {
+            PaiementDTO dto = new PaiementDTO();
+            dto.setUtilisateurNom(utilisateurNom);
+            dto.setUtilisateurPrenom(utilisateurPrenom);
+            dto.setUtilisateurEmail(utilisateurEmail);
+            dto.setType(type);
+            dto.setMontantTotal(montantTotal);
+            dto.setModePaiement(modePaiement);
+            dto.setDatePaiement(LocalDate.parse(datePaiement));
+
+            if (echeances != null && !echeances.isEmpty()) {
+                List<Map<String, Object>> parsed = objectMapper.readValue(
+                        echeances,
+                        new TypeReference<List<Map<String, Object>>>() {}
+                );
+
+                List<Echeance> echeanceList = new ArrayList<>();
+                for (int i = 0; i < parsed.size(); i++) {
+                    Map<String, Object> e = parsed.get(i);
+                    Echeance echeance = new Echeance();
+                    echeance.setDateEcheance(LocalDate.parse((String) e.get("dateEcheance")));
+                    echeance.setMontant(Double.parseDouble(e.get("montant").toString()));
+                    echeance.setStatut("en attente");
+                    echeance.setNumero(i + 1);
+                    echeanceList.add(echeance);
+                }
+
+                dto.setEcheances(echeanceList.stream().map(e -> {
+                    EcheanceDTO edto = new EcheanceDTO();
+                    edto.setDateEcheance(e.getDateEcheance());
+                    edto.setMontant(e.getMontant());
+                    edto.setStatut("en attente");
+                    edto.setNumero(e.getNumero());
+                    return edto;
+                }).toList());
+            }
+
+            Paiement paiement = paiementService.ajouterPaiementManuel(dto);
+            return ResponseEntity.ok(paiementService.toPaiementDTO(paiement));
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'ajout complet : " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePaiement(@PathVariable Long id) {
         try {
-            System.out.println("Suppression du paiement avec ID : " + id);
             paiementService.delete(id);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            System.err.println("Erreur lors de la suppression du paiement : " + e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
-            System.err.println("Erreur inattendue lors de la suppression du paiement : " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
+
 

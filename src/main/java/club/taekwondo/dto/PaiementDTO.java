@@ -7,20 +7,19 @@ public class PaiementDTO {
 
 	private Long id;
 	private String type;
-	private Double montant;
 	private LocalDate datePaiement;
 	private String statut;
 	private String modePaiement;
-	private Long utilisateurId;           
+	private Long utilisateurId;
 	private List<EcheanceDTO> echeances;
 	private Double montantTotal;
 	private Double montantRestant;
+	private Double montantPaye; // ✅ Nouveau champ ajouté
 	private String utilisateurNom;
 	private String utilisateurPrenom;
 	private String utilisateurEmail;
 
-
-
+	// Getters et Setters
 	public Long getId() {
 		return id;
 	}
@@ -35,14 +34,6 @@ public class PaiementDTO {
 
 	public void setType(String type) {
 		this.type = type;
-	}
-
-	public Double getMontant() {
-		return montant;
-	}
-
-	public void setMontant(Double montant) {
-		this.montant = montant;
 	}
 
 	public LocalDate getDatePaiement() {
@@ -101,6 +92,14 @@ public class PaiementDTO {
 		this.montantRestant = montantRestant;
 	}
 
+	public Double getMontantPaye() {
+		return montantPaye;
+	}
+
+	public void setMontantPaye(Double montantPaye) {
+		this.montantPaye = montantPaye;
+	}
+
 	public String getUtilisateurNom() {
 		return utilisateurNom;
 	}
@@ -124,6 +123,5 @@ public class PaiementDTO {
 	public void setUtilisateurEmail(String utilisateurEmail) {
 		this.utilisateurEmail = utilisateurEmail;
 	}
-	
-	
 }
+

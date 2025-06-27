@@ -164,8 +164,8 @@ public class UtilisateurService {
     private PaiementDTO toPaiementDTO(Paiement paiement) {
         PaiementDTO paiementDTO = new PaiementDTO();
         paiementDTO.setId(paiement.getId());
-        paiementDTO.setMontant(paiement.getMontant());
         paiementDTO.setDatePaiement(paiement.getDatePaiement());
+       
         return paiementDTO;
     }
 

@@ -10,6 +10,9 @@ public class UtilisateurPaiementDTO {
     private String email;
     private String role;
     private List<PaiementDTO> paiements;
+    private Double montantRestant;
+    private String statut;
+
 
     // --- Getters & Setters ---
     public Long getId() {
@@ -59,5 +62,22 @@ public class UtilisateurPaiementDTO {
     public void setPaiements(List<PaiementDTO> paiements) {
         this.paiements = paiements;
     }
+
+	public Double getMontantRestant() {
+		return montantRestant;
+	}
+
+	public void setMontantRestant(Double montantRestant) {
+		this.montantRestant = montantRestant;
+	}
+
+	public String getStatut() {
+		return statut;
+	}
+
+	public void setStatut(String statut) {
+		this.statut = statut;
+	}
+    
 }
 

@@ -3,7 +3,6 @@ package club.taekwondo.entity.jpa;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
@@ -14,36 +13,39 @@ public class Paiement {
     private Long id;
 
     @Column(nullable = false)
-    private String type; 
+    private String type;
 
-    private Double montant; 
     @Column(name = "date_paiement", nullable = false)
     private LocalDate datePaiement;
 
-    private String statut; 
+    private String statut;
 
     @Column(name = "mode_paiement", nullable = false)
-    private String modePaiement; 
+    private String modePaiement;
 
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
-    
+
     @OneToMany(mappedBy = "paiement", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Echeance> echeances;
-    
+
     @Column(name = "montant_total")
     private Double montantTotal;
 
     @Column(name = "montant_restant")
     private Double montantRestant;
 
+    @Column(name = "montant_paye")
+    private Double montantPaye; // 🔹 Champ ajouté
+
     @Column(name = "echeances_totales")
     private Integer echeancesTotales;
 
     @Column(name = "echeances_restantes")
     private Integer echeancesRestantes;
+
     // Constructeur par défaut
     public Paiement() {}
 
@@ -62,14 +64,6 @@ public class Paiement {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public Double getMontant() {
-        return montant;
-    }
-
-    public void setMontant(Double montant) {
-        this.montant = montant;
     }
 
     public LocalDate getDatePaiement() {
@@ -120,6 +114,14 @@ public class Paiement {
         this.montantRestant = montantRestant;
     }
 
+    public Double getMontantPaye() {
+        return montantPaye;
+    }
+
+    public void setMontantPaye(Double montantPaye) {
+        this.montantPaye = montantPaye;
+    }
+
     public Integer getEcheancesTotales() {
         return echeancesTotales;
     }
@@ -135,6 +137,7 @@ public class Paiement {
     public void setEcheancesRestantes(Integer echeancesRestantes) {
         this.echeancesRestantes = echeancesRestantes;
     }
+
     public List<Echeance> getEcheances() {
         return echeances;
     }
@@ -143,4 +146,5 @@ public class Paiement {
         this.echeances = echeances;
     }
 }
+
 

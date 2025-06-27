@@ -6,6 +6,7 @@ import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.PaiementRepository;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,16 +58,13 @@ public class PaiementService {
         if ("unique".equalsIgnoreCase(paiement.getModePaiement())) {
             paiement.setEcheances(null);
             paiement.setEcheancesRestantes(0);
-        }
-
-        Optional<Paiement> duplicate = findPaiementByUtilisateurAndMontantAndStatut(
-            paiement.getUtilisateur().getId(),
-            paiement.getMontantTotal(),
-            paiement.getModePaiement(),
-            "en attente"
-        );
-        if (duplicate.isPresent()) {
-            throw new RuntimeException("Un paiement similaire existe déjà.");
+            paiement.setMontantRestant(0.0);
+            paiement.setMontantPaye(paiement.getMontantTotal());
+            paiement.setStatut("payé");
+        } else {
+            paiement.setMontantRestant(paiement.getMontantTotal());
+            paiement.setMontantPaye(0.0);
+            paiement.setStatut("en attente");
         }
 
         if (paiement.getType() == null || paiement.getType().isEmpty()) {
@@ -84,14 +82,12 @@ public class PaiementService {
 
         Paiement paiement = paiementOpt.get();
 
-        // Supprimer les échéances associées
         if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
             for (Echeance echeance : paiement.getEcheances()) {
-                echeanceService.delete(echeance.getId()); // Appelle le service pour supprimer chaque échéance
+                echeanceService.delete(echeance.getId());
             }
         }
 
-        // Supprimer le paiement
         paiementRepository.deleteById(id);
         System.out.println("Paiement avec ID " + id + " supprimé avec succès.");
     }
@@ -105,24 +101,6 @@ public class PaiementService {
             paiements = paiements.stream().filter(p -> p.getModePaiement().equalsIgnoreCase(modePaiement)).toList();
         }
         return paiements;
-    }
-
-    public void calculerPaiementDetails(Paiement paiement) {
-        if ("echeances".equalsIgnoreCase(paiement.getModePaiement())) {
-            paiement.setEcheancesRestantes(
-                paiement.getEcheancesRestantes() == null || paiement.getEcheancesRestantes() <= 0
-                    ? 1
-                    : paiement.getEcheancesRestantes()
-            );
-            paiement.setMontantRestant(
-                paiement.getMontantRestant() == null
-                    ? paiement.getMontantTotal()
-                    : paiement.getMontantRestant()
-            );
-        } else {
-            paiement.setMontantRestant(0.0);
-            paiement.setEcheancesRestantes(0);
-        }
     }
 
     public DashboardStatsDTO buildDashboardStats() {
@@ -171,70 +149,91 @@ public class PaiementService {
     }
 
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
-        try {
-            // Création du paiement
-            Paiement paiement = new Paiement();
-            paiement.setType(dto.getType());
-            paiement.setModePaiement(dto.getModePaiement());
-            paiement.setMontantTotal(dto.getMontantTotal());
-            paiement.setMontantRestant(dto.getMontantTotal()); // Montant restant initialisé au montant total
-            paiement.setStatut("en attente"); // Statut par défaut
-            paiement.setDatePaiement(dto.getDatePaiement());
+        Paiement paiement = new Paiement();
+        paiement.setType(dto.getType());
+        paiement.setModePaiement(dto.getModePaiement());
+        paiement.setDatePaiement(dto.getDatePaiement());
 
-            // Recherche ou création de l'utilisateur
-            Optional<Utilisateur> utilisateurOpt = Optional.empty();
+        Optional<Utilisateur> utilisateurOpt = Optional.empty();
 
-            if (dto.getUtilisateurId() != null) {
-                utilisateurOpt = utilisateurService.getUtilisateurEntityById(dto.getUtilisateurId());
-            } else if (dto.getUtilisateurNom() != null && dto.getUtilisateurPrenom() != null) {
-                utilisateurOpt = utilisateurService.findByNomPrenom(dto.getUtilisateurNom(), dto.getUtilisateurPrenom());
-
-                if (utilisateurOpt.isEmpty()) {
-                    Utilisateur nouveau = new Utilisateur();
-                    nouveau.setNom(dto.getUtilisateurNom());
-                    nouveau.setPrenom(dto.getUtilisateurPrenom());
-                    nouveau.setEmail(dto.getUtilisateurEmail() != null ? dto.getUtilisateurEmail() : "noemail@carelink.local");
-                    nouveau.setRole("membre");
-                    nouveau.setPassword("defaultPassword"); // Ajout d'une valeur par défaut
-                    utilisateurOpt = Optional.of(utilisateurService.save(nouveau));
-                }
-            }
-
+        if (dto.getUtilisateurId() != null) {
+            utilisateurOpt = utilisateurService.getUtilisateurEntityById(dto.getUtilisateurId());
+        } else if (dto.getUtilisateurNom() != null && dto.getUtilisateurPrenom() != null) {
+            utilisateurOpt = utilisateurService.findByNomPrenom(dto.getUtilisateurNom(), dto.getUtilisateurPrenom());
             if (utilisateurOpt.isEmpty()) {
-                throw new RuntimeException("Utilisateur non trouvé ou informations insuffisantes.");
+                Utilisateur nouveau = new Utilisateur();
+                nouveau.setNom(dto.getUtilisateurNom());
+                nouveau.setPrenom(dto.getUtilisateurPrenom());
+                nouveau.setEmail(dto.getUtilisateurEmail() != null ? dto.getUtilisateurEmail() : "noemail@carelink.local");
+                nouveau.setRole("membre");
+                nouveau.setPassword("defaultPassword");
+                utilisateurOpt = Optional.of(utilisateurService.save(nouveau));
             }
-
-            paiement.setUtilisateur(utilisateurOpt.get());
-
-            // Gestion des échéances
-            if (dto.getEcheances() != null && !dto.getEcheances().isEmpty()) {
-                List<Echeance> echeances = new ArrayList<>();
-                for (EcheanceDTO edto : dto.getEcheances()) {
-                	if (edto.getMontant() == null || edto.getMontant() <= 0) {
-                	    throw new RuntimeException("Échéance invalide : date ou montant manquant.");
-                	}
-
-                    Echeance echeance = new Echeance();
-                    echeance.setDateEcheance(edto.getDateEcheance());
-                    echeance.setMontant(edto.getMontant());
-                    echeance.setStatut("en attente"); // Statut par défaut pour les échéances
-                    echeance.setPaiement(paiement); // Association de l'échéance au paiement
-                    echeances.add(echeance);
-                }
-                paiement.setEcheances(echeances);
-            }
-
-            // Sauvegarde du paiement
-            Paiement savedPaiement = paiementRepository.save(paiement);
-            System.out.println("Paiement manuel ajouté avec succès : " + savedPaiement);
-            return savedPaiement;
-
-        } catch (Exception e) {
-            System.err.println("Erreur lors de l'ajout manuel du paiement : " + e.getMessage());
-            throw e;
         }
-    }
 
+        if (utilisateurOpt.isEmpty()) {
+            throw new RuntimeException("Utilisateur non trouvé ou informations insuffisantes.");
+        }
+
+        paiement.setUtilisateur(utilisateurOpt.get());
+
+        if (dto.getEcheances() != null && !dto.getEcheances().isEmpty()) {
+            List<Echeance> echeances = new ArrayList<>();
+            double total = 0.0;
+            int numero = 1;
+            int restantes = 0;
+            double montantPaye = 0.0;
+
+            for (EcheanceDTO edto : dto.getEcheances()) {
+                if (edto.getMontant() == null || edto.getMontant() <= 0) {
+                    throw new RuntimeException("Échéance invalide.");
+                }
+
+                Echeance echeance = new Echeance();
+                echeance.setDateEcheance(edto.getDateEcheance());
+                echeance.setMontant(edto.getMontant());
+                echeance.setStatut(edto.getStatut() != null ? edto.getStatut() : "en attente");
+                echeance.setNumero(numero++);
+                echeance.setPaiement(paiement);
+                echeances.add(echeance);
+
+                total += edto.getMontant();
+                if (!"payé".equalsIgnoreCase(echeance.getStatut())) {
+                    restantes++;
+                } else {
+                    montantPaye += echeance.getMontant();
+                }
+            }
+
+            paiement.setEcheances(echeances);
+            paiement.setMontantTotal(total);
+            paiement.setMontantPaye(montantPaye);
+            paiement.setMontantRestant(total - montantPaye);
+            paiement.setEcheancesTotales(echeances.size());
+            paiement.setEcheancesRestantes(restantes);
+            paiement.setStatut(restantes == 0 ? "payé" : "en attente");
+        } else {
+            paiement.setMontantTotal(dto.getMontantTotal() != null ? dto.getMontantTotal() : 0.0);
+            paiement.setMontantPaye("payé".equalsIgnoreCase(paiement.getStatut()) ? paiement.getMontantTotal() : 0.0);
+
+            if (paiement.getModePaiement() != null &&
+                (paiement.getModePaiement().equalsIgnoreCase("espèces") ||
+                 paiement.getModePaiement().equalsIgnoreCase("virement") ||
+                 paiement.getModePaiement().equalsIgnoreCase("chèque") ||
+                 paiement.getModePaiement().equalsIgnoreCase("unique"))) {
+
+                paiement.setMontantRestant(0.0);
+                paiement.setMontantPaye(paiement.getMontantTotal());
+                paiement.setStatut("payé");
+            } else {
+                paiement.setMontantRestant(paiement.getMontantTotal());
+                paiement.setMontantPaye(0.0);
+                paiement.setStatut("en attente");
+            }
+        }
+
+        return paiementRepository.save(paiement);
+    }
 
     public PaiementDTO toPaiementDTO(Paiement paiement) {
         PaiementDTO dto = new PaiementDTO();
@@ -246,6 +245,12 @@ public class PaiementService {
         dto.setUtilisateurId(paiement.getUtilisateur().getId());
         dto.setMontantTotal(paiement.getMontantTotal());
         dto.setMontantRestant(paiement.getMontantRestant());
+
+        // ✅ calcul du montant payé
+        double montantPaye = (paiement.getMontantTotal() != null ? paiement.getMontantTotal() : 0.0)
+                           - (paiement.getMontantRestant() != null ? paiement.getMontantRestant() : 0.0);
+        dto.setMontantPaye(montantPaye);
+
         dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
         dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
         dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
@@ -266,4 +271,7 @@ public class PaiementService {
 
         return dto;
     }
+
 }
+
+

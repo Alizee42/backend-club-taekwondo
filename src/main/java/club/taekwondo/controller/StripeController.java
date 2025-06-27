@@ -117,7 +117,7 @@ public class StripeController {
                     echeances.add(echeance);
                 }
 
-                paiement.setMontant(montantTotal);
+            
                 paiement.setMontantTotal(montantTotal);
                 paiement.setMontantRestant(montantRestant);
                 paiement.setEcheancesTotales(nombreEcheances);
@@ -128,7 +128,6 @@ public class StripeController {
             } else {
                 System.out.println("✅ Paiement unique détecté");
 
-                paiement.setMontant(montantTotal);
                 paiement.setMontantTotal(montantTotal);
                 paiement.setMontantRestant(0.0);
                 paiement.setStatut("payé");
