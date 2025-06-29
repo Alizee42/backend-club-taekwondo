@@ -6,8 +6,8 @@ import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.PaiementRepository;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +18,10 @@ public class PaiementService {
     private final PaiementRepository paiementRepository;
     private final EcheanceService echeanceService;
     private final UtilisateurService utilisateurService;
+    private double safeMontant(Double montant) {
+        return montant != null ? montant : 0.0;
+    }
+
 
     public PaiementService(
         PaiementRepository paiementRepository,
@@ -75,12 +79,8 @@ public class PaiementService {
     }
 
     public void delete(Long id) {
-        Optional<Paiement> paiementOpt = paiementRepository.findById(id);
-        if (paiementOpt.isEmpty()) {
-            throw new RuntimeException("Paiement introuvable avec l'ID : " + id);
-        }
-
-        Paiement paiement = paiementOpt.get();
+        Paiement paiement = paiementRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Paiement introuvable avec l'ID : " + id));
 
         if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
             for (Echeance echeance : paiement.getEcheances()) {
@@ -108,45 +108,55 @@ public class PaiementService {
         LocalDate firstDayMonth = today.withDayOfMonth(1);
         LocalDate minus30 = today.minusDays(30);
 
-        try {
-            List<Paiement> paiements = paiementRepository.findAll();
+        List<Paiement> paiements = paiementRepository.findAll();
 
-            double totalPayes = paiements.stream()
-                .filter(p -> !"annulé".equalsIgnoreCase(p.getStatut()))
-                .mapToDouble(p -> safeMontant(p.getMontantTotal()) - safeMontant(p.getMontantRestant()))
-                .sum();
+        double totalPayes = 0.0;
+        double totalAttente = 0.0;
+        double totalAnnules = 0.0;
 
-            double totalAttente = paiements.stream()
-                .filter(p -> !"annulé".equalsIgnoreCase(p.getStatut()))
-                .mapToDouble(p -> safeMontant(p.getMontantRestant()))
-                .sum();
+        for (Paiement paiement : paiements) {
+            double paye = safeMontant(paiement.getMontantPaye());
+            double restant = safeMontant(paiement.getMontantRestant());
 
-            double totalAnnules = paiements.stream()
-                .filter(p -> "annulé".equalsIgnoreCase(p.getStatut()))
-                .mapToDouble(p -> safeMontant(p.getMontantTotal()))
-                .sum();
+            switch (paiement.getStatut().toLowerCase()) {
+                case "payé":
+                    totalPayes += paye;
+                    break;
 
-            Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
-            Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
-            montantTotalMois = montantTotalMois != null ? montantTotalMois : 0.0;
-            montantPayesMois = montantPayesMois != null ? montantPayesMois : 0.0;
+                case "en attente":
+                    totalPayes += paye;
+                    totalAttente += restant;
+                    break;
 
-            double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
+                case "annulé":
+                    totalPayes += paye;
 
-            List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30);
-            List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
-
-            return new DashboardStatsDTO(totalPayes, totalAttente, totalAnnules, pctMois, courbe, top);
-
-        } catch (Exception e) {
-            System.err.println("❌ Erreur lors de la génération des statistiques : " + e.getMessage());
-            throw new RuntimeException("Erreur lors de la génération des statistiques", e);
+                    if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+                        double montantAnnule = paiement.getEcheances().stream()
+                            .filter(e -> "annulé".equalsIgnoreCase(e.getStatut()))
+                            .mapToDouble(e -> safeMontant(e.getMontant()))
+                            .sum();
+                        totalAnnules += montantAnnule;
+                    } else {
+                        totalAnnules += paiement.getMontantTotal() - paye;
+                    }
+                    break;
+            }
         }
+
+        Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
+        Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
+        montantTotalMois = montantTotalMois != null ? montantTotalMois : 0.0;
+        montantPayesMois = montantPayesMois != null ? montantPayesMois : 0.0;
+
+        double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
+
+        List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30);
+        List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
+
+        return new DashboardStatsDTO(totalPayes, totalAttente, totalAnnules, pctMois, courbe, top);
     }
 
-    private double safeMontant(Double montant) {
-        return montant != null ? montant : 0.0;
-    }
 
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
         Paiement paiement = new Paiement();
@@ -154,7 +164,6 @@ public class PaiementService {
         paiement.setModePaiement(dto.getModePaiement());
         paiement.setDatePaiement(dto.getDatePaiement());
 
-        // 🔹 Recherche ou création de l'utilisateur
         Optional<Utilisateur> utilisateurOpt = Optional.empty();
 
         if (dto.getUtilisateurId() != null) {
@@ -178,7 +187,6 @@ public class PaiementService {
 
         paiement.setUtilisateur(utilisateurOpt.get());
 
-        // 🔹 Gestion avec échéances
         if (dto.getEcheances() != null && !dto.getEcheances().isEmpty()) {
             List<Echeance> echeances = new ArrayList<>();
             double total = 0.0;
@@ -217,7 +225,6 @@ public class PaiementService {
             paiement.setStatut(restantes == 0 ? "payé" : "en attente");
 
         } else {
-            // 🔹 Paiement sans échéance
             double montant = dto.getMontantTotal() != null ? dto.getMontantTotal() : 0.0;
             paiement.setMontantTotal(montant);
 
@@ -241,7 +248,6 @@ public class PaiementService {
         return paiementRepository.save(paiement);
     }
 
-
     public PaiementDTO toPaiementDTO(Paiement paiement) {
         PaiementDTO dto = new PaiementDTO();
         dto.setId(paiement.getId());
@@ -252,12 +258,10 @@ public class PaiementService {
         dto.setUtilisateurId(paiement.getUtilisateur().getId());
         dto.setMontantTotal(paiement.getMontantTotal());
         dto.setMontantRestant(paiement.getMontantRestant());
-
-        // ✅ calcul du montant payé
-        double montantPaye = (paiement.getMontantTotal() != null ? paiement.getMontantTotal() : 0.0)
-                           - (paiement.getMontantRestant() != null ? paiement.getMontantRestant() : 0.0);
-        dto.setMontantPaye(montantPaye);
-
+        dto.setMotifAnnulation(paiement.getMotifAnnulation());
+        dto.setDateAnnulation(paiement.getDateAnnulation());
+        dto.setAdminResponsable(paiement.getAdminResponsable());
+        dto.setMontantPaye(paiement.getMontantPaye() != null ? paiement.getMontantPaye() : 0.0);
         dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
         dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
         dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
@@ -277,6 +281,42 @@ public class PaiementService {
         }
 
         return dto;
+    }
+
+    public PaiementDTO annulerPaiement(Long paiementId, AnnulationRequestDTO request) {
+        Paiement paiement = paiementRepository.findById(paiementId)
+            .orElseThrow(() -> new RuntimeException("Paiement introuvable"));
+
+        if ("payé".equalsIgnoreCase(paiement.getStatut()) || "annulé".equalsIgnoreCase(paiement.getStatut())) {
+            throw new IllegalStateException("Ce paiement ne peut pas être annulé (déjà payé ou déjà annulé).");
+        }
+
+        double montantAnnule = 0.0;
+
+        // Gérer les échéances : annuler uniquement celles non payées
+        if (paiement.getEcheances() != null) {
+            for (Echeance e : paiement.getEcheances()) {
+                if (!"payé".equalsIgnoreCase(e.getStatut())) {
+                    e.setStatut("annulé");
+                    montantAnnule += e.getMontant();
+                }
+            }
+        } else {
+            // Paiement unique
+            montantAnnule = paiement.getMontantRestant(); // ne pas compter ce qui est déjà payé
+        }
+
+        paiement.setStatut("annulé");
+        paiement.setMotifAnnulation(request.getMotif() != null ? request.getMotif() : "");
+        paiement.setDateAnnulation(request.getDateAnnulation() != null ? request.getDateAnnulation() : LocalDateTime.now());
+        paiement.setAdminResponsable(request.getAdminResponsable() != null ? request.getAdminResponsable() : "admin inconnu");
+
+        paiement.setMontantRestant(0.0);
+        paiement.setEcheancesRestantes(0);
+        paiement.setMontantPaye(paiement.getMontantTotal() - montantAnnule); // recalculé
+
+        Paiement saved = paiementRepository.save(paiement);
+        return toPaiementDTO(saved);
     }
 
 }

@@ -9,6 +9,9 @@ public class EcheanceDTO {
 	private Double montant;
 	private String statut;
 	private Integer numero; 
+	private String nom;
+	private String prenom;
+
 
 	// Getters & Setters
 	public Long getId() {
@@ -51,6 +54,22 @@ public class EcheanceDTO {
 		this.numero = numero;
 	}
 	
+	public String getNom() {
+		return nom;
+	}
+
+	public void setNom(String nom) {
+		this.nom = nom;
+	}
+
+	public String getPrenom() {
+		return prenom;
+	}
+
+	public void setPrenom(String prenom) {
+		this.prenom = prenom;
+	}
+
 	@Override
 	public String toString() {
 	    return "EcheanceDTO{" +

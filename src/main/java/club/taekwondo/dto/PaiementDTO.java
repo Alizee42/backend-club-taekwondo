@@ -1,6 +1,7 @@
 package club.taekwondo.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class PaiementDTO {
@@ -18,6 +19,10 @@ public class PaiementDTO {
 	private String utilisateurNom;
 	private String utilisateurPrenom;
 	private String utilisateurEmail;
+	private String motifAnnulation;
+	private LocalDateTime dateAnnulation;
+	private String adminResponsable;
+
 
 	// Getters et Setters
 	public Long getId() {
@@ -123,5 +128,30 @@ public class PaiementDTO {
 	public void setUtilisateurEmail(String utilisateurEmail) {
 		this.utilisateurEmail = utilisateurEmail;
 	}
+
+	public String getMotifAnnulation() {
+		return motifAnnulation;
+	}
+
+	public void setMotifAnnulation(String motifAnnulation) {
+		this.motifAnnulation = motifAnnulation;
+	}
+
+	public LocalDateTime getDateAnnulation() {
+		return dateAnnulation;
+	}
+
+	public void setDateAnnulation(LocalDateTime dateAnnulation) {
+		this.dateAnnulation = dateAnnulation;
+	}
+
+	public String getAdminResponsable() {
+		return adminResponsable;
+	}
+
+	public void setAdminResponsable(String adminResponsable) {
+		this.adminResponsable = adminResponsable;
+	}
+	
 }
 

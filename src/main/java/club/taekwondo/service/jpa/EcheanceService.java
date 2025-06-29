@@ -135,7 +135,7 @@ public class EcheanceService {
         System.out.println("Échéance avec ID " + id + " supprimée avec succès.");
     }
 
-    // 🔁 Entity → DTO
+ // 🔁 Entity → DTO
     private EcheanceDTO toDTO(Echeance echeance) {
         System.out.println("Conversion de l'entité Echeance en DTO : " + echeance);
         EcheanceDTO echeanceDTO = new EcheanceDTO();
@@ -144,11 +144,18 @@ public class EcheanceService {
         echeanceDTO.setMontant(echeance.getMontant());
         echeanceDTO.setStatut(echeance.getStatut());
         echeanceDTO.setNumero(echeance.getNumero());
+
+        // ✅ Ajout nom/prenom depuis la relation utilisateur
+        if (echeance.getPaiement() != null && echeance.getPaiement().getUtilisateur() != null) {
+            echeanceDTO.setNom(echeance.getPaiement().getUtilisateur().getNom());
+            echeanceDTO.setPrenom(echeance.getPaiement().getUtilisateur().getPrenom());
+        }
+
         System.out.println("DTO généré : " + echeanceDTO);
         return echeanceDTO;
     }
 
-    // 🔁 DTO → Entity (paiement à associer manuellement)
+    // 🔁 DTO → Entity (⚠️ Paiement à associer manuellement dans le service appelant)
     private Echeance toEntity(EcheanceDTO echeanceDTO) {
         Echeance echeance = new Echeance();
         echeance.setId(echeanceDTO.getId());
@@ -156,8 +163,10 @@ public class EcheanceService {
         echeance.setMontant(echeanceDTO.getMontant());
         echeance.setStatut(echeanceDTO.getStatut());
         echeance.setNumero(echeanceDTO.getNumero());
+        // ⚠️ Ne pas oublier d’associer le paiement manuellement ailleurs
         return echeance;
     }
+
 }
 
 

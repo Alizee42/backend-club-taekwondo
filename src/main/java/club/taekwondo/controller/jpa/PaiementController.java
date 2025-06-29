@@ -1,17 +1,15 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.dto.DashboardStatsDTO;
-import club.taekwondo.dto.EcheanceDTO;
-import club.taekwondo.dto.PaiementDTO;
+import club.taekwondo.dto.*;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.service.jpa.PaiementService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -99,15 +97,19 @@ public class PaiementController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @PostMapping("/{id}/annuler")
-    public ResponseEntity<PaiementDTO> annulerPaiement(@PathVariable Long id) {
-        return paiementService.getById(id)
-                .map(p -> {
-                    p.setStatut("annulé");
-                    Paiement saved = paiementService.save(p);
-                    return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
-                })
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    // ✅ Nouvelle méthode d’annulation avec AnnulationRequestDTO
+    @PutMapping("/{id}/annuler")
+    public ResponseEntity<PaiementDTO> annulerPaiement(
+            @PathVariable Long id,
+            @RequestBody AnnulationRequestDTO request) {
+        try {
+            PaiementDTO updated = paiementService.annulerPaiement(id, request);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
     @GetMapping("/dashboard")
@@ -161,10 +163,8 @@ public class PaiementController {
                     Echeance echeance = new Echeance();
                     echeance.setDateEcheance(LocalDate.parse((String) e.get("dateEcheance")));
                     echeance.setMontant(Double.parseDouble(e.get("montant").toString()));
-
                     String statutStr = (String) e.get("statut");
                     echeance.setStatut(statutStr != null ? statutStr : "en attente");
-
                     echeance.setNumero(i + 1);
                     echeanceList.add(echeance);
                 }
@@ -187,7 +187,6 @@ public class PaiementController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePaiement(@PathVariable Long id) {

@@ -2,6 +2,7 @@ package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -45,7 +46,18 @@ public class Paiement {
 
     @Column(name = "echeances_restantes")
     private Integer echeancesRestantes;
+    
+    @Column(name = "motif_annulation")
+    private String motifAnnulation;
 
+    @Column(name = "date_annulation")
+    private LocalDateTime dateAnnulation;
+
+    @Column(name = "admin_responsable")
+    private String adminResponsable;
+
+
+    
     // Constructeur par défaut
     public Paiement() {}
 
@@ -145,6 +157,31 @@ public class Paiement {
     public void setEcheances(List<Echeance> echeances) {
         this.echeances = echeances;
     }
+    public String getMotifAnnulation() {
+        return motifAnnulation;
+    }
+
+    public void setMotifAnnulation(String motifAnnulation) {
+        this.motifAnnulation = motifAnnulation;
+    }
+
+	public LocalDateTime getDateAnnulation() {
+		return dateAnnulation;
+	}
+
+	public void setDateAnnulation(LocalDateTime dateAnnulation) {
+		this.dateAnnulation = dateAnnulation;
+	}
+
+	public String getAdminResponsable() {
+		return adminResponsable;
+	}
+
+	public void setAdminResponsable(String adminResponsable) {
+		this.adminResponsable = adminResponsable;
+	}
+
 }
+
 
 
