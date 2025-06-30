@@ -23,15 +23,21 @@ public class FileController {
             Path file = uploadPath.resolve(folder).resolve(filename).normalize();
             Resource resource = new UrlResource(file.toUri());
 
-            if (resource.exists() && resource.isReadable()) {
-                return ResponseEntity.ok().body(resource);
-            } else {
+            if (!resource.exists() || !resource.isReadable()) {
                 return ResponseEntity.notFound().build();
             }
+
+            // Détecter le type MIME (image/jpeg, application/pdf, etc.)
+            String contentType = java.nio.file.Files.probeContentType(file);
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", contentType != null ? contentType : "application/octet-stream")
+                    .body(resource);
 
         } catch (Exception e) {
             System.err.println("Erreur accès fichier: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
+
 }

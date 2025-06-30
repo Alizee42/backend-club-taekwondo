@@ -9,6 +9,7 @@ import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -119,7 +120,14 @@ public class DocumentService {
         doc.setTypeDocument(dto.getTypeDocument());
         doc.setNomDocument(dto.getNomDocument());
         doc.setCheminFichier(dto.getCheminFichier());
-        doc.setDateDepot(dto.getDateDepot());
+
+    
+        if (dto.getDateDepot() == null) {
+            doc.setDateDepot(LocalDateTime.now());
+        } else {
+            doc.setDateDepot(dto.getDateDepot());
+        }
+
         doc.setStatus(dto.getStatus());
         doc.setUtilisateur(utilisateur);
         return doc;

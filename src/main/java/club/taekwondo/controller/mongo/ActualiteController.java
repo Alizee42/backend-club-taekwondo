@@ -58,7 +58,8 @@ public class ActualiteController {
         try {
             String imageUrl = null;
             if (imageFile != null && !imageFile.isEmpty()) {
-                imageUrl = fileUploadService.uploadFile(imageFile);
+        
+                imageUrl = fileUploadService.uploadFile(imageFile, "actualites");
             }
 
             ActualiteDTO actualiteDTO = new ActualiteDTO();
