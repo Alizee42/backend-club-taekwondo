@@ -25,18 +25,18 @@ public class Avis {
     private String pseudoVisiteur;
 
     @Column(name = "note", columnDefinition = "TINYINT")
-    private Integer note; // Note sur 5 étoiles
+    private Integer note;
 
     @Column(name = "type_avis", length = 50)
-    private String typeAvis; // Type d'avis : "cours", "événement", etc.
-    
-    @Column(name = "photo", nullable = true)
+    private String typeAvis;
+
+    // Augmenté pour permettre une URL longue ou un base64 raisonnable
+    @Column(name = "photo", nullable = true, length = 10000)
     private String photo;
-    
+
     @ManyToOne(optional = true)
     @JoinColumn(name = "utilisateur_id", nullable = true)
     private Utilisateur utilisateur;
-
 
     // Constructeurs
     public Avis() {}
@@ -106,6 +106,7 @@ public class Avis {
     public void setTypeAvis(String typeAvis) {
         this.typeAvis = typeAvis;
     }
+
     public String getPhoto() {
         return photo;
     }
@@ -113,6 +114,7 @@ public class Avis {
     public void setPhoto(String photo) {
         this.photo = photo;
     }
+
     public Utilisateur getUtilisateur() {
         return utilisateur;
     }

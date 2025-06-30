@@ -1,6 +1,7 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.DocumentDTO;
+import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.service.common.FileUploadService;
 import club.taekwondo.service.jpa.DocumentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +28,7 @@ public class DocumentController {
     @GetMapping
     public ResponseEntity<List<DocumentDTO>> getAllDocuments() {
         List<DocumentDTO> documents = documentService.getAllDocumentsWithUtilisateur();
-        if (documents.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(documents);
+        return documents.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(documents);
     }
 
     @GetMapping("/{id}")
@@ -44,41 +42,61 @@ public class DocumentController {
                                             @RequestParam("file") MultipartFile file,
                                             @RequestParam("utilisateurId") Long utilisateurId) {
         try {
-            if (typeDocument == null || typeDocument.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Le type de document est requis.");
+            if (typeDocument == null || typeDocument.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le type de document est requis.");
             }
             if (file == null || file.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Le fichier est requis.");
+                return ResponseEntity.badRequest().body("Le fichier est requis.");
+            }
+            if (utilisateurId == null || utilisateurId <= 0) {
+                return ResponseEntity.badRequest().body("L'ID de l'utilisateur est requis et doit être valide.");
             }
 
-            String cheminFichier = fileUploadService.uploadFile(file);
+            // 1. Upload du fichier
+            String cheminFichier = fileUploadService.uploadFile(file, "documents");
+
+            // 2. Création du DTO
+            UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
+            utilisateurDTO.setId(utilisateurId);
 
             DocumentDTO dto = new DocumentDTO();
             dto.setTypeDocument(typeDocument);
             dto.setNomDocument(file.getOriginalFilename());
             dto.setCheminFichier(cheminFichier);
             dto.setStatus("en attente");
-            dto.setUtilisateur(new club.taekwondo.dto.UtilisateurDTO());
-            dto.getUtilisateur().setId(utilisateurId);
+            dto.setUtilisateur(utilisateurDTO);
 
-            DocumentDTO newDocument = documentService.createDocument(dto);
-            return new ResponseEntity<>(newDocument, HttpStatus.CREATED);
+            // 3. Sauvegarde
+            DocumentDTO nouveauDocument = documentService.createDocument(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nouveauDocument);
+
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors du téléversement du fichier.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors du téléversement du fichier : " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Erreur de validation : " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur inattendue : " + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DocumentDTO> updateDocument(@PathVariable Long id, @RequestBody DocumentDTO dto) {
-        DocumentDTO updatedDocument = documentService.updateDocument(id, dto);
-        return updatedDocument != null ? ResponseEntity.ok(updatedDocument) : ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateDocument(@PathVariable Long id, @RequestBody DocumentDTO dto) {
+        try {
+            DocumentDTO updated = documentService.updateDocument(id, dto);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
+    public ResponseEntity<?> deleteDocument(@PathVariable Long id) {
         Optional<DocumentDTO> document = documentService.getDocumentById(id);
         if (document.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
         }
         documentService.deleteDocument(id);
         return ResponseEntity.noContent().build();
@@ -87,23 +105,19 @@ public class DocumentController {
     @GetMapping("/utilisateur/{utilisateurId}")
     public ResponseEntity<?> getDocumentsByUtilisateur(@PathVariable Long utilisateurId) {
         List<DocumentDTO> documents = documentService.getDocumentsByUtilisateurId(utilisateurId);
-        if (documents.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Aucun document trouvé pour cet utilisateur.");
-        }
-        return ResponseEntity.ok(documents);
+        return documents.isEmpty()
+                ? ResponseEntity.status(HttpStatus.NO_CONTENT).body("Aucun document trouvé pour cet utilisateur.")
+                : ResponseEntity.ok(documents);
     }
 
     @GetMapping("/en-attente")
     public ResponseEntity<List<DocumentDTO>> getDocumentsEnAttente() {
         List<DocumentDTO> documents = documentService.getDocumentsByStatus("en attente");
-        if (documents.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(documents);
+        return documents.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(documents);
     }
 
     @PutMapping("/{id}/valider")
-    public ResponseEntity<Void> validerDocument(@PathVariable Long id) {
+    public ResponseEntity<?> validerDocument(@PathVariable Long id) {
         Optional<DocumentDTO> document = documentService.getDocumentById(id);
         if (document.isPresent()) {
             DocumentDTO dto = document.get();
@@ -111,11 +125,11 @@ public class DocumentController {
             documentService.updateDocument(id, dto);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
     }
 
     @PutMapping("/{id}/refuser")
-    public ResponseEntity<Void> refuserDocument(@PathVariable Long id) {
+    public ResponseEntity<?> refuserDocument(@PathVariable Long id) {
         Optional<DocumentDTO> document = documentService.getDocumentById(id);
         if (document.isPresent()) {
             DocumentDTO dto = document.get();
@@ -123,6 +137,7 @@ public class DocumentController {
             documentService.updateDocument(id, dto);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
     }
 }
+

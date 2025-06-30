@@ -1,14 +1,17 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.AvisDTO;
+import club.taekwondo.entity.jpa.Avis;
 import club.taekwondo.service.jpa.AvisService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/avis")
@@ -24,13 +27,40 @@ public class AvisController {
         return ResponseEntity.ok(avisList);
     }
 
-    // 🔹 Ajouter un nouvel avis
-    @PostMapping
-    public ResponseEntity<AvisDTO> createAvis(@RequestBody AvisDTO avisDTO) {
-        avisDTO.setDatePub(LocalDate.now());
-        avisDTO.setApprouve(false); // Par défaut, l'avis n'est pas approuvé
-        AvisDTO savedAvis = avisService.createAvis(avisDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedAvis);
+    // 🔹 Ajouter un nouvel avis avec upload d'image
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createAvisAvecFichier(
+            @RequestParam("contenu") String contenu,
+            @RequestParam("note") Integer note,
+            @RequestParam("pseudoVisiteur") String pseudoVisiteur,
+            @RequestParam(value = "typeAvis", required = false) String typeAvis,
+            @RequestParam(value = "photo", required = false) MultipartFile photoFile
+    ) {
+        try {
+            String nomFichier = null;
+            if (photoFile != null && !photoFile.isEmpty()) {
+                String dossier = "uploads/avis/";
+                Files.createDirectories(Paths.get(dossier));
+                nomFichier = UUID.randomUUID() + "_" + photoFile.getOriginalFilename();
+                Path chemin = Paths.get(dossier + nomFichier);
+                photoFile.transferTo(chemin);
+            }
+
+            Avis avis = new Avis();
+            avis.setContenu(contenu);
+            avis.setNote(note);
+            avis.setPseudoVisiteur(pseudoVisiteur);
+            avis.setTypeAvis(typeAvis);
+            avis.setDatePub(LocalDate.now());
+            avis.setApprouve(false);
+            avis.setPhoto(nomFichier); // nom du fichier
+
+            avisService.ajouterAvis(avis);
+
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de l'envoi de l'avis : " + e.getMessage());
+        }
     }
 
     // 🔹 Mettre à jour un avis existant
@@ -62,3 +92,4 @@ public class AvisController {
         return ResponseEntity.noContent().build();
     }
 }
+

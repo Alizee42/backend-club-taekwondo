@@ -80,6 +80,7 @@ public class DocumentService {
                 .collect(Collectors.toList());
     }
 
+    // ✅ Correction ici : on set bien le utilisateurDTO dans le documentDTO
     private DocumentDTO toDTO(Document document) {
         DocumentDTO documentDTO = new DocumentDTO();
         documentDTO.setId(document.getId());
@@ -98,7 +99,10 @@ public class DocumentService {
             utilisateurDTO.setEmail(utilisateur.getEmail());
             utilisateurDTO.setTelephone(utilisateur.getTelephone());
             utilisateurDTO.setRole(utilisateur.getRole());
+
+            documentDTO.setUtilisateur(utilisateurDTO); // ❗ MANQUAIT ICI
         }
+
         return documentDTO;
     }
 
@@ -121,3 +125,4 @@ public class DocumentService {
         return doc;
     }
 }
+

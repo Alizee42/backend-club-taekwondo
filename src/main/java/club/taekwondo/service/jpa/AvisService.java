@@ -32,11 +32,16 @@ public class AvisService {
         return avisRepository.findById(id).map(this::convertToDTO);
     }
 
-    // 🔹 Ajouter un nouvel avis
+    // 🔹 Ajouter un nouvel avis via DTO
     public AvisDTO createAvis(AvisDTO avisDTO) {
         Avis avis = convertToEntity(avisDTO);
         Avis saved = avisRepository.save(avis);
         return convertToDTO(saved);
+    }
+
+    // 🔹 Ajouter un nouvel avis depuis le Controller (sans DTO)
+    public Avis ajouterAvis(Avis avis) {
+        return avisRepository.save(avis);
     }
 
     // 🔹 Mettre à jour un avis
@@ -103,3 +108,4 @@ public class AvisService {
         return avis;
     }
 }
+
