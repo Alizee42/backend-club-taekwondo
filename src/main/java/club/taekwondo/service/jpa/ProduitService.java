@@ -63,6 +63,7 @@ public class ProduitService {
         produitDTO.setPrix(produit.getPrix());
         produitDTO.setStock(produit.getStock());
         produitDTO.setCategorie(produit.getCategorie());
+        produitDTO.setImageUrl(produit.getImageUrl());
         return produitDTO;
     }
 
@@ -75,6 +76,7 @@ public class ProduitService {
         produit.setPrix(produitDTO.getPrix());
         produit.setStock(produitDTO.getStock());
         produit.setCategorie(produitDTO.getCategorie());
+        produit.setImageUrl(produitDTO.getImageUrl());
         return produit;
     }
 }

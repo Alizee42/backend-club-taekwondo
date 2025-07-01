@@ -26,6 +26,10 @@ public class Produit {
 
     @Column(length = 100)
     private String categorie;
+    
+    @Column(name = "image_url")
+    private String imageUrl;
+
 
     // Constructeur par défaut
     public Produit() {}
@@ -88,4 +92,12 @@ public class Produit {
     public void setCategorie(String categorie) {
         this.categorie = categorie;
     }
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
 }

@@ -1,7 +1,6 @@
 package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 
 @Entity
 @Access(AccessType.FIELD)
@@ -23,23 +22,36 @@ public class LigneCommande {
     @Column(nullable = false)
     private Integer quantite;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal prixUnitaire;
+    @Column(nullable = false)
+    private Double prixUnitaire;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal sousTotal;
+    @Column(nullable = false)
+    private Double sousTotal;
+
+    // Ajout des nouveaux champs pour correspondre au frontend
+    @Column(nullable = true)
+    private String taille;
+
+    @Column(nullable = true)
+    private String couleur;
+
+    @Column(nullable = true)
+    private String flocage;
 
     // Constructeur par défaut
     public LigneCommande() {}
 
     // Constructeur avec paramètres
-    public LigneCommande(Long id, Commande commande, Produit produit, Integer quantite, BigDecimal prixUnitaire, BigDecimal sousTotal) {
+    public LigneCommande(Long id, Commande commande, Produit produit, Integer quantite, Double prixUnitaire, Double sousTotal, String taille, String couleur, String flocage) {
         this.id = id;
         this.commande = commande;
         this.produit = produit;
         this.quantite = quantite;
         this.prixUnitaire = prixUnitaire;
         this.sousTotal = sousTotal;
+        this.taille = taille;
+        this.couleur = couleur;
+        this.flocage = flocage;
     }
 
     // Getters et Setters
@@ -75,19 +87,43 @@ public class LigneCommande {
         this.quantite = quantite;
     }
 
-    public BigDecimal getPrixUnitaire() {
+    public Double getPrixUnitaire() {
         return prixUnitaire;
     }
 
-    public void setPrixUnitaire(BigDecimal prixUnitaire) {
+    public void setPrixUnitaire(Double prixUnitaire) {
         this.prixUnitaire = prixUnitaire;
     }
 
-    public BigDecimal getSousTotal() {
+    public Double getSousTotal() {
         return sousTotal;
     }
 
-    public void setSousTotal(BigDecimal sousTotal) {
+    public void setSousTotal(Double sousTotal) {
         this.sousTotal = sousTotal;
+    }
+
+    public String getTaille() {
+        return taille;
+    }
+
+    public void setTaille(String taille) {
+        this.taille = taille;
+    }
+
+    public String getCouleur() {
+        return couleur;
+    }
+
+    public void setCouleur(String couleur) {
+        this.couleur = couleur;
+    }
+
+    public String getFlocage() {
+        return flocage;
+    }
+
+    public void setFlocage(String flocage) {
+        this.flocage = flocage;
     }
 }

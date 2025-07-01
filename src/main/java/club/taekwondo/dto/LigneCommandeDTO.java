@@ -1,15 +1,32 @@
 package club.taekwondo.dto;
 
-import java.math.BigDecimal;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 public class LigneCommandeDTO {
 
     private Long id;
     private Long commandeId;
-    private Long produitId;
+
+    @NotNull(message = "L'identifiant du produit est obligatoire.")
+    private Long produitId; // 🔹 Ajout ici
+
+    @NotNull(message = "Le nom du produit est obligatoire.")
+    private String produitNom;
+
+    @NotNull(message = "La quantité est obligatoire.")
+    @Min(value = 1, message = "La quantité doit être au moins 1.")
     private Integer quantite;
-    private BigDecimal prixUnitaire;
-    private BigDecimal sousTotal;
+
+    @NotNull(message = "Le prix unitaire est obligatoire.")
+    private Double prixUnitaire;
+
+    @NotNull(message = "Le sous-total est obligatoire.")
+    private Double sousTotal;
+
+    private String taille;
+    private String couleur;
+    private String flocage;
 
     // Getters et Setters
     public Long getId() {
@@ -36,6 +53,14 @@ public class LigneCommandeDTO {
         this.produitId = produitId;
     }
 
+    public String getProduitNom() {
+        return produitNom;
+    }
+
+    public void setProduitNom(String produitNom) {
+        this.produitNom = produitNom;
+    }
+
     public Integer getQuantite() {
         return quantite;
     }
@@ -44,19 +69,43 @@ public class LigneCommandeDTO {
         this.quantite = quantite;
     }
 
-    public BigDecimal getPrixUnitaire() {
+    public Double getPrixUnitaire() {
         return prixUnitaire;
     }
 
-    public void setPrixUnitaire(BigDecimal prixUnitaire) {
+    public void setPrixUnitaire(Double prixUnitaire) {
         this.prixUnitaire = prixUnitaire;
     }
 
-    public BigDecimal getSousTotal() {
+    public Double getSousTotal() {
         return sousTotal;
     }
 
-    public void setSousTotal(BigDecimal sousTotal) {
+    public void setSousTotal(Double sousTotal) {
         this.sousTotal = sousTotal;
+    }
+
+    public String getTaille() {
+        return taille;
+    }
+
+    public void setTaille(String taille) {
+        this.taille = taille;
+    }
+
+    public String getCouleur() {
+        return couleur;
+    }
+
+    public void setCouleur(String couleur) {
+        this.couleur = couleur;
+    }
+
+    public String getFlocage() {
+        return flocage;
+    }
+
+    public void setFlocage(String flocage) {
+        this.flocage = flocage;
     }
 }

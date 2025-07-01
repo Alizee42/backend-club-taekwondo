@@ -10,6 +10,8 @@ public class ProduitDTO {
     private BigDecimal prix;
     private Integer stock;
     private String categorie;
+    private String imageUrl;
+
 
     // Getters et Setters
 
@@ -60,4 +62,13 @@ public class ProduitDTO {
     public void setCategorie(String categorie) {
         this.categorie = categorie;
     }
+
+	public String getImageUrl() {
+		return imageUrl;
+	}
+
+	public void setImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
+	}
+    
 }

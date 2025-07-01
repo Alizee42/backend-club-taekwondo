@@ -1,6 +1,7 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.security.JwtUtil;
+import club.taekwondo.dto.LoginDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
@@ -108,8 +109,11 @@ public class UtilisateurController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam("email") String email, @RequestParam("password") String password) {
+    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         try {
+            String email = loginDTO.getEmail();
+            String password = loginDTO.getPassword();
+
             Optional<UtilisateurDTO> optionalUtilisateurDTO = utilisateurService.login(email, password);
             if (optionalUtilisateurDTO.isPresent()) {
                 UtilisateurDTO utilisateurDTO = optionalUtilisateurDTO.get();
@@ -118,7 +122,8 @@ public class UtilisateurController {
                 return ResponseEntity.ok(Map.of(
                     "token", token,
                     "role", utilisateurDTO.getRole(),
-                    "email", utilisateurDTO.getEmail()
+                    "email", utilisateurDTO.getEmail(),
+                    "utilisateur", utilisateurDTO
                 ));
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou mot de passe incorrect."));
@@ -127,7 +132,7 @@ public class UtilisateurController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Erreur interne."));
         }
     }
-
+    
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
         try {
