@@ -63,6 +63,7 @@ public class CommandeService {
         commande.setMontantTotal(BigDecimal.ZERO);
         commande.setStatut("EN_COURS"); // Ajout d'une valeur par défaut pour statut
 
+        // Vérification de l'utilisateur
         if (commandeDTO.getUtilisateurId() != null) {
             Utilisateur utilisateur = utilisateurRepository.findById(commandeDTO.getUtilisateurId())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDTO.getUtilisateurId()));
@@ -74,11 +75,11 @@ public class CommandeService {
         BigDecimal total = BigDecimal.ZERO;
         List<LigneCommande> lignes = new ArrayList<>();
 
+        // Création des lignes de commande
         if (commandeDTO.getLignesCommande() != null) {
             for (LigneCommandeDTO ligneDTO : commandeDTO.getLignesCommande()) {
-            	Produit produit = produitRepository.findById(ligneDTO.getProduitId())
-            		    .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID : " + ligneDTO.getProduitId()));
-
+                Produit produit = produitRepository.findById(ligneDTO.getProduitId())
+                        .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'ID : " + ligneDTO.getProduitId()));
 
                 LigneCommande ligne = new LigneCommande();
                 ligne.setCommande(commande);
@@ -103,6 +104,7 @@ public class CommandeService {
         resultDTO.setLignesCommande(lignes.stream().map(this::convertLigneToDTO).collect(Collectors.toList())); // Retourne les lignes avec leurs IDs
         return resultDTO;
     }
+
     // 🔹 Mettre à jour une commande existante
     public CommandeDTO updateCommande(Long id, CommandeDTO commandeDTO) {
         Commande existing = commandeRepository.findById(id)
@@ -111,6 +113,7 @@ public class CommandeService {
         existing.setDateCommande(commandeDTO.getDateCommande());
         existing.setMontantTotal(commandeDTO.getMontantTotal());
 
+        // Mise à jour de l'utilisateur
         if (commandeDTO.getUtilisateurId() != null) {
             Utilisateur utilisateur = utilisateurRepository.findById(commandeDTO.getUtilisateurId())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
@@ -153,13 +156,13 @@ public class CommandeService {
         dto.setFlocage(ligne.getFlocage());
         return dto;
     }
-    
+
     // 🔁 Conversion DTO -> Commande (pour create simple)
     private Commande convertToEntity(CommandeDTO dto) {
         Commande commande = new Commande();
         commande.setDateCommande(dto.getDateCommande());
         commande.setMontantTotal(dto.getMontantTotal());
-        commande.setStatut("EN_COURS"); // Ajout d'une valeur par défaut pour statut
+        commande.setStatut("EN_COURS"); 
 
         if (dto.getUtilisateurId() != null) {
             Utilisateur utilisateur = utilisateurRepository.findById(dto.getUtilisateurId())

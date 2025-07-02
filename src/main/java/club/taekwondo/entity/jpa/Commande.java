@@ -21,7 +21,8 @@ public class Commande {
 
     @Column(name = "montant_total", precision = 10, scale = 2)
     private BigDecimal montantTotal; // Utilisation de BigDecimal pour les montants financiers
-
+    
+    
     // Clé étrangère vers Utilisateur
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
