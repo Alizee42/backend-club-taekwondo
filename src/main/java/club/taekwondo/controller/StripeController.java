@@ -72,16 +72,9 @@ public class StripeController {
             System.out.println("🎯 Reçu typePaiement = " + typePaiement);
             System.out.println("🎯 Reçu modePaiement = " + modePaiement);
 
-            List<Paiement> paiementsExistants = paiementService.getByMembreId(utilisateur.getId());
-            for (Paiement p : paiementsExistants) {
-                if (p.getMontantTotal() != null && p.getMontantTotal().equals(montantTotal)
-                        && p.getModePaiement().equalsIgnoreCase(modePaiement)
-                        && p.getStatut().equalsIgnoreCase("en attente")) {
-                    return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(Map.of("error", "Un paiement similaire existe déjà."));
-                }
-            }
 
+            
+            
             Paiement paiement = new Paiement();
             paiement.setModePaiement(modePaiement);
             paiement.setType(typePaiement);

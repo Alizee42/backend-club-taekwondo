@@ -22,7 +22,7 @@ public class Commande {
     @Column(name = "montant_total", precision = 10, scale = 2)
     private BigDecimal montantTotal; // Utilisation de BigDecimal pour les montants financiers
     
-    
+    private String modePaiement;
     // Clé étrangère vers Utilisateur
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
@@ -80,4 +80,13 @@ public class Commande {
     public void setUtilisateur(Utilisateur utilisateur) {
         this.utilisateur = utilisateur;
     }
+
+	public String getModePaiement() {
+		return modePaiement;
+	}
+
+	public void setModePaiement(String modePaiement) {
+		this.modePaiement = modePaiement;
+	}
+    
 }

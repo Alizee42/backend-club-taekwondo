@@ -9,6 +9,7 @@ public class CommandeDTO {
     private Long id;
     private LocalDate dateCommande;
     private BigDecimal montantTotal;
+    private String modePaiement;
     private Long utilisateurId;
     private List<LigneCommandeDTO> lignesCommande; // ✅ AJOUT
 
@@ -52,6 +53,15 @@ public class CommandeDTO {
     public void setLignesCommande(List<LigneCommandeDTO> lignesCommande) {
         this.lignesCommande = lignesCommande;
     }
+
+	public String getModePaiement() {
+		return modePaiement;
+	}
+
+	public void setModePaiement(String modePaiement) {
+		this.modePaiement = modePaiement;
+	}
+    
 }
 
 
