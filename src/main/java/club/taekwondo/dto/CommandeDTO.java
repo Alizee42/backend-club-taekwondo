@@ -4,16 +4,22 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+
 public class CommandeDTO {
 
     private Long id;
     private LocalDate dateCommande;
     private BigDecimal montantTotal;
     private String modePaiement;
+    private LocalDate datePaiement;
+    private String statut;
+    private Boolean disponibleAuClub; 
     private Long utilisateurId;
-    private List<LigneCommandeDTO> lignesCommande; // ✅ AJOUT
+    private UtilisateurCommandeDTO utilisateur;
 
-    // Getters et setters
+    private List<LigneCommandeDTO> lignesCommande;
+
+    // --- Getters & Setters ---
     public Long getId() {
         return id;
     }
@@ -38,6 +44,22 @@ public class CommandeDTO {
         this.montantTotal = montantTotal;
     }
 
+    public String getModePaiement() {
+        return modePaiement;
+    }
+
+    public void setModePaiement(String modePaiement) {
+        this.modePaiement = modePaiement;
+    }
+
+    public String getStatut() {
+        return statut;
+    }
+
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
+
     public Long getUtilisateurId() {
         return utilisateurId;
     }
@@ -46,7 +68,15 @@ public class CommandeDTO {
         this.utilisateurId = utilisateurId;
     }
 
-    public List<LigneCommandeDTO> getLignesCommande() {
+    public UtilisateurCommandeDTO getUtilisateur() {
+		return utilisateur;
+	}
+
+	public void setUtilisateur(UtilisateurCommandeDTO utilisateur) {
+		this.utilisateur = utilisateur;
+	}
+
+	public List<LigneCommandeDTO> getLignesCommande() {
         return lignesCommande;
     }
 
@@ -54,14 +84,22 @@ public class CommandeDTO {
         this.lignesCommande = lignesCommande;
     }
 
-	public String getModePaiement() {
-		return modePaiement;
+	public Boolean getDisponibleAuClub() {
+		return disponibleAuClub;
 	}
 
-	public void setModePaiement(String modePaiement) {
-		this.modePaiement = modePaiement;
+	public void setDisponibleAuClub(Boolean disponibleAuClub) {
+		this.disponibleAuClub = disponibleAuClub;
 	}
+
+	public LocalDate getDatePaiement() {
+		return datePaiement;
+	}
+
+	public void setDatePaiement(LocalDate datePaiement) {
+		this.datePaiement = datePaiement;
+	}
+
     
 }
-
 

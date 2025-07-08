@@ -2,7 +2,7 @@ package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Echeance {
@@ -12,16 +12,15 @@ public class Echeance {
     private Long id;
 
     private LocalDate dateEcheance;
-
     private double montant;
+    private String statut;
 
-    private String statut; 
     @Column(name = "numero")
     private Integer numero;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paiement_id")
+    @JsonBackReference
     private Paiement paiement;
 
     // Getters & Setters
@@ -39,11 +38,8 @@ public class Echeance {
 
     public Paiement getPaiement() { return paiement; }
     public void setPaiement(Paiement paiement) { this.paiement = paiement; }
-    
-    public Integer getNumero() {
-        return numero;
-    }
-    public void setNumero(Integer numero) {
-        this.numero = numero;
-    }
+
+    public Integer getNumero() { return numero; }
+    public void setNumero(Integer numero) { this.numero = numero; }
 }
+

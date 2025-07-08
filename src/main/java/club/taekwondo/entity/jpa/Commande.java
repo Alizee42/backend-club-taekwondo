@@ -20,9 +20,18 @@ public class Commande {
     private String statut;
 
     @Column(name = "montant_total", precision = 10, scale = 2)
-    private BigDecimal montantTotal; // Utilisation de BigDecimal pour les montants financiers
+    private BigDecimal montantTotal; 
     
+    @Column(name = "mode_paiement")
     private String modePaiement;
+    
+    @Column(name = "date_paiement")
+    private LocalDate datePaiement;
+
+    
+    @Column(name = "disponible_au_club")
+    private Boolean disponibleAuClub;
+
     // Clé étrangère vers Utilisateur
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
@@ -88,5 +97,21 @@ public class Commande {
 	public void setModePaiement(String modePaiement) {
 		this.modePaiement = modePaiement;
 	}
+
+	 public Boolean getDisponibleAuClub() {
+	        return disponibleAuClub;
+	    }
+
+	    public void setDisponibleAuClub(Boolean disponibleAuClub) {
+	        this.disponibleAuClub = disponibleAuClub;
+	    }
+
+		public LocalDate getDatePaiement() {
+			return datePaiement;
+		}
+
+		public void setDatePaiement(LocalDate datePaiement) {
+			this.datePaiement = datePaiement;
+		}
     
 }

@@ -64,8 +64,15 @@ public class LigneCommandeService {
         ligneCommandeDTO.setQuantite(ligneCommande.getQuantite());
         ligneCommandeDTO.setPrixUnitaire(ligneCommande.getPrixUnitaire());
         ligneCommandeDTO.setSousTotal(ligneCommande.getSousTotal());
+
+        // Champs manquants :
+        ligneCommandeDTO.setTaille(ligneCommande.getTaille());
+        ligneCommandeDTO.setCouleur(ligneCommande.getCouleur());
+        ligneCommandeDTO.setFlocage(ligneCommande.getFlocage());
+
         return ligneCommandeDTO;
     }
+
 
     // Conversion DTO → Entity
     private LigneCommande convertToEntity(LigneCommandeDTO ligneCommandeDTO) {
@@ -73,6 +80,10 @@ public class LigneCommandeService {
         ligneCommande.setQuantite(ligneCommandeDTO.getQuantite());
         ligneCommande.setPrixUnitaire(ligneCommandeDTO.getPrixUnitaire());
         ligneCommande.setSousTotal(ligneCommandeDTO.getSousTotal());
+
+        ligneCommande.setTaille(ligneCommandeDTO.getTaille());
+        ligneCommande.setCouleur(ligneCommandeDTO.getCouleur());
+        ligneCommande.setFlocage(ligneCommandeDTO.getFlocage());
 
         Commande commande = commandeRepository.findById(ligneCommandeDTO.getCommandeId())
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
@@ -84,4 +95,5 @@ public class LigneCommandeService {
 
         return ligneCommande;
     }
+
 }

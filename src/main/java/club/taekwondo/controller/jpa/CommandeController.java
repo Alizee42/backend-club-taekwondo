@@ -1,87 +1,146 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.CommandeDTO;
+import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.service.jpa.CommandeService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+
+//... (imports identiques)
 
 @RestController
 @RequestMapping("/api/commandes")
 public class CommandeController {
 
-    @Autowired
-    private CommandeService commandeService;
+ private static final Logger logger = LoggerFactory.getLogger(CommandeController.class);
 
-    // 🔹 Récupérer toutes les commandes
-    @GetMapping
-    public ResponseEntity<List<CommandeDTO>> getAllCommandes() {
-        System.out.println("Récupération de toutes les commandes");
-        List<CommandeDTO> commandes = commandeService.getAllCommandes();
-        return ResponseEntity.ok(commandes);
-    }
+ @Autowired
+ private CommandeService commandeService;
 
-    // 🔹 Récupérer une commande par ID
-    @GetMapping("/{id}")
-    public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
-        System.out.println("Récupération de la commande avec ID : " + id);
-        Optional<CommandeDTO> commande = commandeService.getCommandeById(id);
-        return commande.map(ResponseEntity::ok)
-                       .orElseGet(() -> {
-                           System.out.println("Commande avec ID " + id + " non trouvée");
-                           return ResponseEntity.notFound().build();
-                       });
-    }
+ @GetMapping
+ public ResponseEntity<List<CommandeDTO>> getAllCommandes() {
+     logger.info("📦 Récupération de toutes les commandes");
+     return ResponseEntity.ok(commandeService.getAllCommandes());
+ }
 
-    // 🔹 Créer une commande simple (sans lignes)
-    @PostMapping
-    public ResponseEntity<CommandeDTO> createCommande(@RequestBody CommandeDTO commandeDTO) {
-        System.out.println("Création d'une commande simple : " + commandeDTO);
-        CommandeDTO saved = commandeService.createCommande(commandeDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
+ @GetMapping("/{id}")
+ public ResponseEntity<CommandeDTO> getCommandeById(@PathVariable Long id) {
+     logger.info("🔍 Récupération de la commande avec ID : {}", id);
+     return commandeService.getCommandeById(id)
+             .map(ResponseEntity::ok)
+             .orElseGet(() -> {
+                 logger.warn("❌ Commande ID {} non trouvée", id);
+                 return ResponseEntity.notFound().build();
+             });
+ }
 
-    // 🔹 Créer une commande avec ses lignes (boutique)
-    @PostMapping("/with-lignes")
-    public ResponseEntity<CommandeDTO> createCommandeAvecLignes(@RequestBody CommandeDTO commandeDTO) {
-        try {
-            System.out.println("Création d'une commande avec lignes : " + commandeDTO);
-            CommandeDTO saved = commandeService.createCommandeWithLignes(commandeDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-        } catch (RuntimeException e) {
-            System.out.println("Erreur lors de la création de la commande avec lignes : " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-    }
+ @PostMapping
+ public ResponseEntity<CommandeDTO> createCommande(@RequestBody CommandeDTO commandeDTO) {
+     logger.info("📝 Création d'une commande simple : {}", commandeDTO);
+     try {
+         CommandeDTO saved = commandeService.createCommande(commandeDTO);
+         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+     } catch (RuntimeException e) {
+         logger.error("❌ Erreur création commande : {}", e.getMessage());
+         return ResponseEntity.badRequest().build();
+     }
+ }
 
-    // 🔹 Mettre à jour une commande
-    @PutMapping("/{id}")
-    public ResponseEntity<CommandeDTO> updateCommande(@PathVariable Long id, @RequestBody CommandeDTO commandeDTO) {
-        try {
-            System.out.println("Mise à jour de la commande avec ID : " + id);
-            CommandeDTO updated = commandeService.updateCommande(id, commandeDTO);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            System.out.println("Erreur lors de la mise à jour de la commande avec ID " + id + " : " + e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
-    }
+ @PostMapping("/with-lignes")
+ public ResponseEntity<CommandeDTO> createCommandeAvecLignes(@RequestBody CommandeDTO commandeDTO) {
+     logger.info("🛒 Création commande avec lignes : {}", commandeDTO);
+     try {
+         CommandeDTO saved = commandeService.createCommandeWithLignes(commandeDTO);
+         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+     } catch (RuntimeException e) {
+         logger.error("❌ Erreur commande with-lignes : {}", e.getMessage());
+         return ResponseEntity.badRequest().build();
+     }
+ }
 
-    // 🔹 Supprimer une commande
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCommande(@PathVariable Long id) {
-        try {
-            System.out.println("Suppression de la commande avec ID : " + id);
-            commandeService.deleteCommande(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            System.out.println("Erreur lors de la suppression de la commande avec ID " + id + " : " + e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
-    }
+ @PutMapping("/{id}")
+ public ResponseEntity<Void> mettreAJourCommande(@PathVariable Long id, @RequestBody CommandeUpdateDTO updateDTO) {
+     logger.info("✏️ MAJ commande ID {} → statut='{}', modePaiement='{}', datePaiement={}",
+             id, updateDTO.getStatut(), updateDTO.getModePaiement(), updateDTO.getDatePaiement());
+
+     try {
+         commandeService.mettreAJourCommande(id, updateDTO);
+         return ResponseEntity.ok().build();
+     } catch (RuntimeException e) {
+         logger.error("❌ Erreur MAJ commande ID {} : {}", id, e.getMessage());
+         return ResponseEntity.badRequest().build();
+     }
+ }
+
+ @DeleteMapping("/{id}")
+ public ResponseEntity<Void> deleteCommande(@PathVariable Long id) {
+     logger.info("🗑️ Suppression commande ID : {}", id);
+     try {
+         commandeService.deleteCommande(id);
+         return ResponseEntity.noContent().build();
+     } catch (IllegalArgumentException e) {
+         logger.error("❌ Erreur suppression commande ID {} : {}", id, e.getMessage());
+         return ResponseEntity.notFound().build();
+     }
+ }
+
+ @PutMapping("/{id}/statut")
+ public ResponseEntity<Void> changerStatutCommande(@PathVariable Long id, @RequestBody String nouveauStatut) {
+     logger.info("🔄 Changement de statut commande ID {} → {}", id, nouveauStatut);
+     try {
+         CommandeUpdateDTO updateDTO = new CommandeUpdateDTO();
+         updateDTO.setStatut(nouveauStatut);
+         commandeService.mettreAJourCommande(id, updateDTO);
+         return ResponseEntity.ok().build();
+     } catch (RuntimeException e) {
+         logger.error("❌ Erreur changement statut ID {} : {}", id, e.getMessage());
+         return ResponseEntity.notFound().build();
+     }
+ }
+
+ @PutMapping("/{id}/disponibilite-club")
+ public ResponseEntity<Void> definirDisponibiliteAuClub(
+         @PathVariable Long id,
+         @RequestBody Map<String, Boolean> payload) {
+     boolean dispo = payload.getOrDefault("disponible", false);
+     commandeService.definirDisponibiliteAuClub(id, dispo);
+     return ResponseEntity.ok().build();
+ }
+
+ @GetMapping("/paiement-club")
+ public ResponseEntity<List<CommandeDTO>> getCommandesPaiementClub() {
+     logger.info("📥 Récupération des commandes à payer au club");
+     List<CommandeDTO> commandes = commandeService.getCommandesPaiementClub();
+     return ResponseEntity.ok(commandes);
+ }
+
+ @PutMapping("/{id}/valider")
+ public ResponseEntity<Void> validerPaiementManuel(
+         @PathVariable Long id,
+         @RequestBody Map<String, Object> payload) {
+     logger.info("💶 Validation manuelle du paiement pour commande ID : {}", id);
+     try {
+         String statut = (String) payload.get("statut");
+         String modePaiement = (String) payload.get("modePaiement");
+         String datePaiement = (String) payload.get("datePaiement");
+
+         if (statut == null || modePaiement == null || datePaiement == null) {
+             logger.error("❌ Données manquantes pour la validation du paiement");
+             return ResponseEntity.badRequest().build();
+         }
+
+         commandeService.validerPaiementManuel(id, statut, modePaiement, datePaiement);
+         return ResponseEntity.ok().build();
+     } catch (RuntimeException e) {
+         logger.error("❌ Erreur validation manuelle commande ID {} : {}", id, e.getMessage());
+         return ResponseEntity.badRequest().build();
+     }
+ }
 }
