@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
-@CrossOrigin(origins = "*") // À restreindre en production
+@CrossOrigin(origins = "*")
 public class UtilisateurController {
 
     private final JwtUtil jwtUtil;
@@ -34,26 +34,14 @@ public class UtilisateurController {
 
     @GetMapping
     public ResponseEntity<List<UtilisateurDTO>> getAllUtilisateurs() {
-        try {
-            List<UtilisateurDTO> utilisateurs = utilisateurService.getAllUtilisateurs();
-            return ResponseEntity.ok(utilisateurs);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        return ResponseEntity.ok(utilisateurService.getAllUtilisateurs());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUtilisateurById(@PathVariable Long id) {
-        try {
-            Optional<UtilisateurDTO> utilisateur = utilisateurService.getUtilisateurById(id);
-            if (utilisateur.isPresent()) {
-                return ResponseEntity.ok(utilisateur.get());
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé avec l'ID : " + id));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue."));
-        }
+        return utilisateurService.getUtilisateurById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé avec l'ID : " + id)));
     }
 
     @PostMapping
@@ -61,85 +49,61 @@ public class UtilisateurController {
         try {
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "message", "Utilisateur créé avec succès.",
-                "id", nouvelUtilisateur.getId(),
-                "email", nouvelUtilisateur.getEmail(),
-                "role", nouvelUtilisateur.getRole()
+                    "message", "Utilisateur créé avec succès.",
+                    "id", nouvelUtilisateur.getId(),
+                    "email", nouvelUtilisateur.getEmail(),
+                    "role", nouvelUtilisateur.getRole()
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de la création de l'utilisateur."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la création de l'utilisateur."));
         }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUtilisateur(@PathVariable Long id, @RequestBody UtilisateurDTO utilisateurDTO) {
-        try {
-            Optional<UtilisateurDTO> existingUserOptional = utilisateurService.getUtilisateurById(id);
-            if (existingUserOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé avec l'ID : " + id));
-            }
-
-            utilisateurService.updateUtilisateurFromDTO(id, utilisateurDTO);
-            return ResponseEntity.ok(Map.of("message", "Utilisateur mis à jour avec succès."));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de la mise à jour de l'utilisateur."));
+        if (utilisateurService.getUtilisateurById(id).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé."));
         }
-    }
 
-    @GetMapping("/paiements")
-    public ResponseEntity<List<UtilisateurPaiementDTO>> getUtilisateursAvecPaiements() {
-        try {
-            List<UtilisateurPaiementDTO> utilisateursPaiements = utilisateurService.getAllWithPaiements();
-            return ResponseEntity.ok(utilisateursPaiements);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        utilisateurService.updateUtilisateurFromDTO(id, utilisateurDTO);
+        return ResponseEntity.ok(Map.of("message", "Utilisateur mis à jour avec succès."));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUtilisateur(@PathVariable Long id) {
-        try {
-            utilisateurService.deleteUtilisateur(id);
-            return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé avec succès."));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de la suppression de l'utilisateur."));
-        }
+        utilisateurService.deleteUtilisateur(id);
+        return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé avec succès."));
+    }
+
+    @GetMapping("/paiements")
+    public ResponseEntity<List<UtilisateurPaiementDTO>> getUtilisateursAvecPaiements() {
+        return ResponseEntity.ok(utilisateurService.getAllWithPaiements());
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
-        try {
-            String email = loginDTO.getEmail();
-            String password = loginDTO.getPassword();
-
-            Optional<UtilisateurDTO> optionalUtilisateurDTO = utilisateurService.login(email, password);
-            if (optionalUtilisateurDTO.isPresent()) {
-                UtilisateurDTO utilisateurDTO = optionalUtilisateurDTO.get();
-                String token = jwtUtil.generateToken(email, utilisateurDTO.getRole());
-
-                return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "role", utilisateurDTO.getRole(),
-                    "email", utilisateurDTO.getEmail(),
-                    "utilisateur", utilisateurDTO
-                ));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou mot de passe incorrect."));
-            }
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Erreur interne."));
+        Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.login(loginDTO.getEmail(), loginDTO.getPassword());
+        if (utilisateurOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou mot de passe incorrect."));
         }
+
+        UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
+        String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), utilisateurDTO.getRole());
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "role", utilisateurDTO.getRole(),
+                "email", utilisateurDTO.getEmail(),
+                "utilisateur", utilisateurDTO
+        ));
     }
-    
+
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
         try {
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
-            }
-
+            token = token.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(token);
 
             UtilisateurDTO utilisateur = utilisateurService.getUtilisateurByEmail(email)
@@ -152,51 +116,45 @@ public class UtilisateurController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<?> updateCurrentUser(@RequestHeader("Authorization") String token, @RequestBody Utilisateur updatedUser) {
+    public ResponseEntity<?> updateCurrentUser(@RequestHeader("Authorization") String token, @RequestBody UtilisateurDTO updatedDTO) {
         try {
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
-            }
-
+            token = token.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(token);
-            UtilisateurDTO utilisateur = utilisateurService.getUtilisateurByEmail(email)
+
+            Utilisateur utilisateur = utilisateurService.getUtilisateurEntityByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-            utilisateur.setNom(updatedUser.getNom());
-            utilisateur.setPrenom(updatedUser.getPrenom());
-            utilisateur.setTelephone(updatedUser.getTelephone());
-            utilisateur.setEmail(updatedUser.getEmail());
-
-            utilisateurService.createUtilisateur(utilisateur);
+            updatedDTO.setId(utilisateur.getId());
+            utilisateurService.updateUtilisateurFromDTO(utilisateur.getId(), updatedDTO);
 
             return ResponseEntity.ok(Map.of("message", "Profil mis à jour avec succès."));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Token invalide ou utilisateur non trouvé."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la mise à jour du profil."));
         }
     }
 
     @PutMapping("/me/password")
     public ResponseEntity<?> updatePassword(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> passwordData) {
         try {
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
-            }
-
+            token = token.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(token);
-            UtilisateurDTO utilisateurDTO = utilisateurService.getUtilisateurByEmail(email)
+
+            Utilisateur utilisateur = utilisateurService.getUtilisateurEntityByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
             String newPassword = passwordData.get("password");
-            if (newPassword == null || newPassword.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Le mot de passe ne peut pas être vide."));
+            if (newPassword == null || newPassword.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Le mot de passe est requis."));
             }
 
-            utilisateurDTO.setPassword(passwordEncoder.encode(newPassword));
-            utilisateurService.createUtilisateur(utilisateurDTO);
+            UtilisateurDTO dto = utilisateurService.getUtilisateurById(utilisateur.getId()).get();
+            dto.setPassword(passwordEncoder.encode(newPassword));
+
+            utilisateurService.updateUtilisateurFromDTO(utilisateur.getId(), dto);
 
             return ResponseEntity.ok(Map.of("message", "Mot de passe mis à jour avec succès."));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de la mise à jour du mot de passe."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la mise à jour du mot de passe."));
         }
     }
 
@@ -207,20 +165,20 @@ public class UtilisateurController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            if (utilisateurDTO.getRole() == null || utilisateurDTO.getRole().isEmpty()) {
+            if (utilisateurDTO.getRole() == null || utilisateurDTO.getRole().isBlank()) {
                 utilisateurDTO.setRole("membre");
             }
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "message", "Utilisateur créé avec succès.",
-                "id", nouvelUtilisateur.getId(),
-                "email", nouvelUtilisateur.getEmail(),
-                "role", nouvelUtilisateur.getRole()
+                    "message", "Utilisateur créé avec succès.",
+                    "id", nouvelUtilisateur.getId(),
+                    "email", nouvelUtilisateur.getEmail(),
+                    "role", nouvelUtilisateur.getRole()
             ));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Une erreur est survenue lors de l'inscription."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de l'inscription."));
         }
     }
 }

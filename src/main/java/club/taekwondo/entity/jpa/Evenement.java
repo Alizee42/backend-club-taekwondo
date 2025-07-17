@@ -13,7 +13,7 @@ public class Evenement {
     private Long id;
 
     @Column(nullable = false)
-    private String titre; // Titre de l'événement
+    private String titre;
 
     @Column(nullable = false)
     private LocalDateTime dateDebut;
@@ -25,30 +25,16 @@ public class Evenement {
     private String lieu;
 
     @Column(nullable = false)
-    private Integer capacite; // Capacité maximale de l'événement
+    private Integer capacite;
 
     @Column(nullable = true)
     private String description;
 
-    // Relation avec Utilisateur (organisateur)
-    @ManyToOne
-    @JoinColumn(name = "organisateur_id", nullable = false)
-    private Utilisateur organisateur;
+    @Column(nullable = true)
+    private String imageFilename; // ✅ nouveau nom clair pour l'image
 
-    // Constructeur sans argument
+    // Constructeur vide
     public Evenement() {
-    }
-
-    // Constructeur avec tous les arguments
-    public Evenement(Long id, String titre, LocalDateTime dateDebut, LocalDateTime dateFin, String lieu, Integer capacite, String description, Utilisateur organisateur) {
-        this.id = id;
-        this.titre = titre;
-        this.dateDebut = dateDebut;
-        this.dateFin = dateFin;
-        this.lieu = lieu;
-        this.capacite = capacite;
-        this.description = description;
-        this.organisateur = organisateur;
     }
 
     // Getters et Setters
@@ -108,11 +94,11 @@ public class Evenement {
         this.description = description;
     }
 
-    public Utilisateur getOrganisateur() {
-        return organisateur;
+    public String getImageFilename() {
+        return imageFilename;
     }
 
-    public void setOrganisateur(Utilisateur organisateur) {
-        this.organisateur = organisateur;
+    public void setImageFilename(String imageFilename) {
+        this.imageFilename = imageFilename;
     }
 }

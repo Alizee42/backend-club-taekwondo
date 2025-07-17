@@ -1,5 +1,7 @@
 package club.taekwondo.dto;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDateTime;
 
 public class EvenementDTO {
@@ -11,9 +13,13 @@ public class EvenementDTO {
     private String lieu;
     private Integer capacite;
     private String description;
-    private Long organisateurId; // Pour référencer l'utilisateur organisateur
 
-    // Getters et Setters
+    private String imageFilename; // nom du fichier enregistré
+    private String imageUrl;      // URL complète pour l'affichage
+
+    private MultipartFile image;  // 📌 nécessaire pour @ModelAttribute
+
+    // Getters & Setters
     public Long getId() {
         return id;
     }
@@ -70,12 +76,29 @@ public class EvenementDTO {
         this.description = description;
     }
 
-    public Long getOrganisateurId() {
-        return organisateurId;
+    public String getImageFilename() {
+        return imageFilename;
     }
 
-    public void setOrganisateurId(Long organisateurId) {
-        this.organisateurId = organisateurId;
+    public void setImageFilename(String imageFilename) {
+        this.imageFilename = imageFilename;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public MultipartFile getImage() {
+        return image;
+    }
+
+    public void setImage(MultipartFile image) {
+        this.image = image;
     }
 }
+
 

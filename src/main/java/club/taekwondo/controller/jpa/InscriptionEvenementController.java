@@ -21,7 +21,15 @@ public class InscriptionEvenementController {
         return ResponseEntity.ok(inscriptionService.getAllInscriptions());
     }
 
-    // 🔹 Récupérer une inscription par son ID
+    // 🔹 Récupérer les inscriptions par événement et statut
+    @GetMapping("/evenement/{evenementId}")
+    public ResponseEntity<List<InscriptionEvenementDTO>> getInscriptionsByEvenement(
+            @PathVariable Long evenementId,
+            @RequestParam(required = false) String statut) {
+        return ResponseEntity.ok(inscriptionService.getInscriptionsByEvenementAndStatut(evenementId, statut));
+    }
+
+    // 🔹 Récupérer une inscription par ID
     @GetMapping("/{id}")
     public ResponseEntity<InscriptionEvenementDTO> getInscriptionById(@PathVariable Long id) {
         return inscriptionService.getInscriptionById(id)
@@ -32,22 +40,23 @@ public class InscriptionEvenementController {
     // 🔹 Créer une nouvelle inscription
     @PostMapping
     public ResponseEntity<InscriptionEvenementDTO> inscrireMembre(@RequestBody InscriptionEvenementDTO dto) {
-        try {
-            InscriptionEvenementDTO created = inscriptionService.inscrireMembre(dto);
-            return ResponseEntity.status(201).body(created);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.status(201).body(inscriptionService.inscrireMembre(dto));
     }
 
     // 🔹 Mettre à jour une inscription
     @PutMapping("/{id}")
     public ResponseEntity<InscriptionEvenementDTO> updateInscription(@PathVariable Long id, @RequestBody InscriptionEvenementDTO dto) {
+        return ResponseEntity.ok(inscriptionService.updateInscription(id, dto));
+    }
+
+    // 🔹 Mettre à jour uniquement le statut d'une inscription
+    @PatchMapping("/{id}/statut")
+    public ResponseEntity<Void> updateStatutInscription(@PathVariable Long id, @RequestParam String statut) {
         try {
-            InscriptionEvenementDTO updated = inscriptionService.updateInscription(id, dto);
-            return ResponseEntity.ok(updated);
+            inscriptionService.updateStatutInscription(id, statut);
+            return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build(); // Renvoie une erreur 400 en cas de problème
         }
     }
 
@@ -58,5 +67,3 @@ public class InscriptionEvenementController {
         return ResponseEntity.noContent().build();
     }
 }
-
-

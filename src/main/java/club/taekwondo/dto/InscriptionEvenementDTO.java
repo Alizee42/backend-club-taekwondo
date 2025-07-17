@@ -2,15 +2,49 @@ package club.taekwondo.dto;
 
 import java.time.LocalDate;
 
+import club.taekwondo.enums.StatutInscription;
+import jakarta.validation.constraints.NotNull;
+
 public class InscriptionEvenementDTO {
 
     private Long id;
+
+    @NotNull(message = "L'ID de l'événement est obligatoire.")
     private Long evenementId;
+
+    @NotNull(message = "L'ID de l'utilisateur est obligatoire.")
     private Long utilisateurId;
+
     private LocalDate dateInscription;
-    private String statut;
+    private StatutInscription statut;
     private Boolean presence;
     private String commentaire;
+
+    // Champs supplémentaires pour l'affichage
+    private String utilisateurNom;
+    private String utilisateurPrenom;
+    private String utilisateurEmail;
+    private String evenementTitre;
+
+    // Constructeurs
+    public InscriptionEvenementDTO() {}
+
+    public InscriptionEvenementDTO(Long id, Long evenementId, Long utilisateurId, LocalDate dateInscription,
+                                    StatutInscription statut, Boolean presence, String commentaire,
+                                    String utilisateurNom, String utilisateurPrenom, String utilisateurEmail,
+                                    String evenementTitre) {
+        this.id = id;
+        this.evenementId = evenementId;
+        this.utilisateurId = utilisateurId;
+        this.dateInscription = dateInscription;
+        this.statut = statut;
+        this.presence = presence;
+        this.commentaire = commentaire;
+        this.utilisateurNom = utilisateurNom;
+        this.utilisateurPrenom = utilisateurPrenom;
+        this.utilisateurEmail = utilisateurEmail;
+        this.evenementTitre = evenementTitre;
+    }
 
     // Getters et Setters
     public Long getId() {
@@ -45,15 +79,16 @@ public class InscriptionEvenementDTO {
         this.dateInscription = dateInscription;
     }
 
-    public String getStatut() {
-        return statut;
-    }
+   
+    public StatutInscription getStatut() {
+		return statut;
+	}
 
-    public void setStatut(String statut) {
-        this.statut = statut;
-    }
+	public void setStatut(StatutInscription statut) {
+		this.statut = statut;
+	}
 
-    public Boolean getPresence() {
+	public Boolean getPresence() {
         return presence;
     }
 
@@ -68,5 +103,37 @@ public class InscriptionEvenementDTO {
     public void setCommentaire(String commentaire) {
         this.commentaire = commentaire;
     }
+
+	public String getUtilisateurNom() {
+		return utilisateurNom;
+	}
+
+	public void setUtilisateurNom(String utilisateurNom) {
+		this.utilisateurNom = utilisateurNom;
+	}
+
+	public String getUtilisateurPrenom() {
+		return utilisateurPrenom;
+	}
+
+	public void setUtilisateurPrenom(String utilisateurPrenom) {
+		this.utilisateurPrenom = utilisateurPrenom;
+	}
+
+	public String getUtilisateurEmail() {
+		return utilisateurEmail;
+	}
+
+	public void setUtilisateurEmail(String utilisateurEmail) {
+		this.utilisateurEmail = utilisateurEmail;
+	}
+
+	public String getEvenementTitre() {
+		return evenementTitre;
+	}
+
+	public void setEvenementTitre(String evenementTitre) {
+		this.evenementTitre = evenementTitre;
+	}
 }
 

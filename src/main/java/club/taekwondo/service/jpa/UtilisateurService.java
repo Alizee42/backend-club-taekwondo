@@ -6,7 +6,6 @@ import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,163 +16,156 @@ import java.util.Optional;
 @Service
 public class UtilisateurService {
 
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public UtilisateurService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder) {
+        this.utilisateurRepository = utilisateurRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
+    // 🔹 Récupérer tous les utilisateurs
     public List<UtilisateurDTO> getAllUtilisateurs() {
-        List<UtilisateurDTO> utilisateursDTO = new ArrayList<>();
-        List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
-        for (Utilisateur utilisateur : utilisateurs) {
-            utilisateursDTO.add(toUtilisateurDTO(utilisateur));
+        List<UtilisateurDTO> result = new ArrayList<>();
+        for (Utilisateur u : utilisateurRepository.findAll()) {
+            result.add(toUtilisateurDTO(u));
         }
-        return utilisateursDTO;
+        return result;
     }
 
+    // 🔹 Récupérer un utilisateur par email
     public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
-        System.out.println("Recherche de l'utilisateur avec l'email : " + email);
-        Optional<Utilisateur> utilisateurOptional = utilisateurRepository.findByEmail(email);
-        return utilisateurOptional.map(this::toUtilisateurDTO);
+        return utilisateurRepository.findByEmail(email).map(this::toUtilisateurDTO);
     }
 
+    // 🔹 Login par email + mot de passe
     public Optional<UtilisateurDTO> login(String email, String password) {
-        System.out.println("Recherche de l'utilisateur avec l'email : " + email);
-        Optional<Utilisateur> utilisateurOptional = utilisateurRepository.findByEmail(email);
-
-        if (utilisateurOptional.isPresent()) {
-            Utilisateur utilisateur = utilisateurOptional.get();
-            boolean passwordMatches = passwordEncoder.matches(password, utilisateur.getPassword());
-            System.out.println("Résultat de la comparaison des mots de passe : " + passwordMatches);
-
-            if (!passwordMatches) {
-                throw new RuntimeException("Email ou mot de passe incorrect");
-            }
-
-            return Optional.of(toUtilisateurDTO(utilisateur));
-        }
-        return Optional.empty();
+        return utilisateurRepository.findByEmail(email)
+                .filter(u -> passwordEncoder.matches(password, u.getPassword()))
+                .map(this::toUtilisateurDTO);
     }
 
+    // 🔹 Récupération DTO et entité par ID ou email
     public Optional<UtilisateurDTO> getUtilisateurById(Long id) {
-        System.out.println("Recherche de l'utilisateur avec l'ID : " + id);
-        Optional<Utilisateur> utilisateur = utilisateurRepository.findById(id);
-        utilisateur.ifPresent(u -> System.out.println("Utilisateur trouvé : " + u.getNom()));
-        return utilisateur.map(this::toUtilisateurDTO);
+        return utilisateurRepository.findById(id).map(this::toUtilisateurDTO);
     }
 
     public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
         return utilisateurRepository.findById(id);
     }
 
-    public Utilisateur save(Utilisateur utilisateur) {
-        return utilisateurRepository.save(utilisateur);
+    public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
+        return utilisateurRepository.findByEmail(email);
     }
 
     public Optional<Utilisateur> getByEmail(String email) {
         return utilisateurRepository.findByEmail(email);
     }
 
-    public Utilisateur createUtilisateur(UtilisateurDTO utilisateur) {
-        if (utilisateur.getPassword() != null && !utilisateur.getPassword().isEmpty()) {
-            utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
-        } else {
-            throw new IllegalArgumentException("Le mot de passe est requis.");
-        }
-        return utilisateurRepository.save(toUtilisateurEntity(utilisateur));
+    // 🔹 Trouver par nom + prénom
+    public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
+        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
     }
 
-    public void updateUtilisateurFromDTO(Long id, UtilisateurDTO utilisateurDTO) {
+    // 🔹 Sauvegarde directe
+    public Utilisateur save(Utilisateur utilisateur) {
+        return utilisateurRepository.save(utilisateur);
+    }
+
+    // 🔹 Création à partir d'un DTO
+    public Utilisateur createUtilisateur(UtilisateurDTO dto) {
+        if (dto.getPassword() == null || dto.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Le mot de passe est requis.");
+        }
+
+        if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
+        }
+
+        dto.setPassword(passwordEncoder.encode(dto.getPassword()));
+        return utilisateurRepository.save(toUtilisateurEntity(dto));
+    }
+
+    // 🔹 Mise à jour des infos d’un utilisateur depuis un DTO
+    public void updateUtilisateurFromDTO(Long id, UtilisateurDTO dto) {
         utilisateurRepository.findById(id).ifPresent(user -> {
-            user.setNom(utilisateurDTO.getNom());
-            user.setPrenom(utilisateurDTO.getPrenom());
-            user.setEmail(utilisateurDTO.getEmail());
-            user.setTelephone(utilisateurDTO.getTelephone());
-            user.setRole(utilisateurDTO.getRole());
+            user.setNom(dto.getNom());
+            user.setPrenom(dto.getPrenom());
+            user.setEmail(dto.getEmail());
+            user.setTelephone(dto.getTelephone());
+            user.setRole(dto.getRole());
+            user.setAdresse(dto.getAdresse());
+            user.setDateNaissance(dto.getDateNaissance());
 
-            if (utilisateurDTO.getAdresse() != null) {
-                user.setAdresse(utilisateurDTO.getAdresse());
-            }
-
-            if (utilisateurDTO.getDateNaissance() != null) {
-                user.setDateNaissance(utilisateurDTO.getDateNaissance());
-            }
-
-            if (utilisateurDTO.getPassword() != null && !utilisateurDTO.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(utilisateurDTO.getPassword()));
+            if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(dto.getPassword()));
             }
 
             utilisateurRepository.save(user);
         });
     }
-    public List<UtilisateurPaiementDTO> getAllWithPaiements() {
-        List<UtilisateurPaiementDTO> utilisateursPaiementsDTO = new ArrayList<>();
-        List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
 
-        for (Utilisateur utilisateur : utilisateurs) {
-            UtilisateurPaiementDTO utilisateurPaiementDTO = new UtilisateurPaiementDTO();
-            utilisateurPaiementDTO.setId(utilisateur.getId());
-            utilisateurPaiementDTO.setNom(utilisateur.getNom());
-            utilisateurPaiementDTO.setPrenom(utilisateur.getPrenom());
-            utilisateurPaiementDTO.setEmail(utilisateur.getEmail());
-            utilisateurPaiementDTO.setPaiements(toPaiementDTOList(utilisateur.getPaiements())); // Conversion ici
-            utilisateursPaiementsDTO.add(utilisateurPaiementDTO);
-        }
-
-        return utilisateursPaiementsDTO;
-    }
-    
+    // 🔹 Suppression
     public void deleteUtilisateur(Long id) {
         utilisateurRepository.deleteById(id);
     }
 
-    public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
-        return utilisateurRepository.findByEmail(email);
-    }
-    public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
-        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
+    // 🔹 Liste des utilisateurs avec leurs paiements (utilisé côté admin)
+    public List<UtilisateurPaiementDTO> getAllWithPaiements() {
+        List<UtilisateurPaiementDTO> result = new ArrayList<>();
+        for (Utilisateur u : utilisateurRepository.findAll()) {
+            UtilisateurPaiementDTO dto = new UtilisateurPaiementDTO();
+            dto.setId(u.getId());
+            dto.setNom(u.getNom());
+            dto.setPrenom(u.getPrenom());
+            dto.setEmail(u.getEmail());
+            dto.setPaiements(toPaiementDTOList(u.getPaiements()));
+            result.add(dto);
+        }
+        return result;
     }
 
+    // ==== MAPPERS ====
 
     private UtilisateurDTO toUtilisateurDTO(Utilisateur utilisateur) {
-        UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
-        utilisateurDTO.setId(utilisateur.getId());
-        utilisateurDTO.setNom(utilisateur.getNom());
-        utilisateurDTO.setPrenom(utilisateur.getPrenom());
-        utilisateurDTO.setDateNaissance(utilisateur.getDateNaissance());
-        utilisateurDTO.setAdresse(utilisateur.getAdresse());
-        utilisateurDTO.setEmail(utilisateur.getEmail());
-        utilisateurDTO.setTelephone(utilisateur.getTelephone());
-        utilisateurDTO.setRole(utilisateur.getRole());
-        return utilisateurDTO;
+        UtilisateurDTO dto = new UtilisateurDTO();
+        dto.setId(utilisateur.getId());
+        dto.setNom(utilisateur.getNom());
+        dto.setPrenom(utilisateur.getPrenom());
+        dto.setDateNaissance(utilisateur.getDateNaissance());
+        dto.setAdresse(utilisateur.getAdresse());
+        dto.setEmail(utilisateur.getEmail());
+        dto.setTelephone(utilisateur.getTelephone());
+        dto.setRole(utilisateur.getRole());
+        return dto;
     }
 
-    private Utilisateur toUtilisateurEntity(UtilisateurDTO utilisateurDTO) {
+    private Utilisateur toUtilisateurEntity(UtilisateurDTO dto) {
         Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setNom(utilisateurDTO.getNom());
-        utilisateur.setPrenom(utilisateurDTO.getPrenom());
-        utilisateur.setEmail(utilisateurDTO.getEmail());
-        utilisateur.setDateNaissance(utilisateurDTO.getDateNaissance());
-        utilisateur.setAdresse(utilisateurDTO.getAdresse());
-        utilisateur.setTelephone(utilisateurDTO.getTelephone());
-        utilisateur.setRole(utilisateurDTO.getRole());
-        utilisateur.setPassword(utilisateurDTO.getPassword());
+        utilisateur.setNom(dto.getNom());
+        utilisateur.setPrenom(dto.getPrenom());
+        utilisateur.setEmail(dto.getEmail());
+        utilisateur.setDateNaissance(dto.getDateNaissance());
+        utilisateur.setAdresse(dto.getAdresse());
+        utilisateur.setTelephone(dto.getTelephone());
+        utilisateur.setRole(dto.getRole());
+        utilisateur.setPassword(dto.getPassword()); // déjà encodé
         return utilisateur;
     }
+
     private PaiementDTO toPaiementDTO(Paiement paiement) {
-        PaiementDTO paiementDTO = new PaiementDTO();
-        paiementDTO.setId(paiement.getId());
-        paiementDTO.setDatePaiement(paiement.getDatePaiement());
-       
-        return paiementDTO;
+        PaiementDTO dto = new PaiementDTO();
+        dto.setId(paiement.getId());
+        dto.setDatePaiement(paiement.getDatePaiement());
+        return dto;
     }
 
     private List<PaiementDTO> toPaiementDTOList(List<Paiement> paiements) {
-        List<PaiementDTO> paiementDTOs = new ArrayList<>();
-        for (Paiement paiement : paiements) {
-            paiementDTOs.add(toPaiementDTO(paiement));
+        List<PaiementDTO> result = new ArrayList<>();
+        for (Paiement p : paiements) {
+            result.add(toPaiementDTO(p));
         }
-        return paiementDTOs;
+        return result;
     }
 }
+

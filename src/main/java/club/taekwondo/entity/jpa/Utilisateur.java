@@ -1,34 +1,28 @@
 package club.taekwondo.entity.jpa;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
 
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
 @Entity
-@Access(AccessType.FIELD)
 @Table(name = "utilisateur")
-@Inheritance(strategy = InheritanceType.JOINED)
+@Access(AccessType.FIELD)
 public class Utilisateur {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private String nom;
+
+    @Column(nullable = false)
     private String prenom;
+
     private LocalDate dateNaissance;
+
     private String adresse;
+
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -38,19 +32,26 @@ public class Utilisateur {
     private String telephone;
 
     @Column(nullable = false)
-    private String role;
+    private String role; // Exemple : "PARENT", "MEMBRE", "ADMIN"
 
+    // Paiements liés à ce compte utilisateur
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Paiement> paiements;
-    
+
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Avis> avis;
-    
-    // Constructeur sans argument
-    public Utilisateur() {
-    }
 
-    // Constructeur avec tous les arguments
+    // Enfants membres (si l'utilisateur est un parent)
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Membre> enfants;
+
+    // Si l'utilisateur est lui-même un membre (adulte pratiquant)
+    @OneToOne(mappedBy = "compteUtilisateur", cascade = CascadeType.ALL)
+    private Membre membre;
+
+    // --- Constructeurs ---
+    public Utilisateur() {}
+
     public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, String role) {
         this.id = id;
         this.nom = nom;
@@ -61,7 +62,7 @@ public class Utilisateur {
         this.role = role;
     }
 
-    // Getters et Setters
+    // --- Getters & Setters ---
     public Long getId() {
         return id;
     }
@@ -84,6 +85,22 @@ public class Utilisateur {
 
     public void setPrenom(String prenom) {
         this.prenom = prenom;
+    }
+
+    public LocalDate getDateNaissance() {
+        return dateNaissance;
+    }
+
+    public void setDateNaissance(LocalDate dateNaissance) {
+        this.dateNaissance = dateNaissance;
+    }
+
+    public String getAdresse() {
+        return adresse;
+    }
+
+    public void setAdresse(String adresse) {
+        this.adresse = adresse;
     }
 
     public String getEmail() {
@@ -117,21 +134,7 @@ public class Utilisateur {
     public void setRole(String role) {
         this.role = role;
     }
-    public LocalDate getDateNaissance() {
-        return dateNaissance;
-    }
 
-    public void setDateNaissance(LocalDate dateNaissance) {
-        this.dateNaissance = dateNaissance;
-    }
-
-    public String getAdresse() {
-        return adresse;
-    }
-
-    public void setAdresse(String adresse) {
-        this.adresse = adresse;
-    }
     public List<Paiement> getPaiements() {
         return paiements;
     }
@@ -139,4 +142,30 @@ public class Utilisateur {
     public void setPaiements(List<Paiement> paiements) {
         this.paiements = paiements;
     }
+
+    public List<Avis> getAvis() {
+        return avis;
+    }
+
+    public void setAvis(List<Avis> avis) {
+        this.avis = avis;
+    }
+
+    public List<Membre> getEnfants() {
+        return enfants;
+    }
+
+    public void setEnfants(List<Membre> enfants) {
+        this.enfants = enfants;
+    }
+
+    public Membre getMembre() {
+        return membre;
+    }
+
+    public void setMembre(Membre membre) {
+        this.membre = membre;
+    }
 }
+
+

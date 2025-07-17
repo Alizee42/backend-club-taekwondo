@@ -2,28 +2,31 @@ package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import club.taekwondo.enums.StatutInscription;
 
 @Entity
 @Access(AccessType.FIELD)
-@Table(name = "inscription_evenement")
+@Table(
+    name = "inscription_evenement",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"utilisateur_id", "evenement_id"}) // empêche les doublons
+)
 public class InscriptionEvenement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Clé étrangère vers Utilisateur
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id", nullable = false)
     private Utilisateur utilisateur;
 
-    // Clé étrangère vers Evenement
     @ManyToOne
     @JoinColumn(name = "evenement_id", referencedColumnName = "id", nullable = false)
     private Evenement evenement;
 
-    @Column(nullable = false, columnDefinition = "ENUM('en_attente', 'validée', 'annulée') DEFAULT 'en_attente'")
-    private String statut;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatutInscription statut = StatutInscription.EN_ATTENTE;
 
     @Column(name = "date_inscription", nullable = false)
     private LocalDate dateInscription;
@@ -34,13 +37,15 @@ public class InscriptionEvenement {
     @Column(nullable = true)
     private String commentaire;
 
-    // Constructeur sans argument
+    // 🔹 Constructeur sans argument
     public InscriptionEvenement() {
         this.dateInscription = LocalDate.now();
     }
 
-    // Constructeur avec tous les arguments
-    public InscriptionEvenement(Long id, Utilisateur utilisateur, Evenement evenement, String statut, LocalDate dateInscription, Boolean presence, String commentaire) {
+    // 🔹 Constructeur complet
+    public InscriptionEvenement(Long id, Utilisateur utilisateur, Evenement evenement,
+                                 StatutInscription statut, LocalDate dateInscription,
+                                 Boolean presence, String commentaire) {
         this.id = id;
         this.utilisateur = utilisateur;
         this.evenement = evenement;
@@ -50,7 +55,7 @@ public class InscriptionEvenement {
         this.commentaire = commentaire;
     }
 
-    // Getters et Setters
+    // 🔹 Getters et Setters
     public Long getId() {
         return id;
     }
@@ -75,11 +80,11 @@ public class InscriptionEvenement {
         this.evenement = evenement;
     }
 
-    public String getStatut() {
+    public StatutInscription getStatut() {
         return statut;
     }
 
-    public void setStatut(String statut) {
+    public void setStatut(StatutInscription statut) {
         this.statut = statut;
     }
 
@@ -107,3 +112,4 @@ public class InscriptionEvenement {
         this.commentaire = commentaire;
     }
 }
+

@@ -3,8 +3,10 @@ package club.taekwondo.controller.jpa;
 import club.taekwondo.dto.EvenementDTO;
 import club.taekwondo.service.jpa.EvenementService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,11 +32,25 @@ public class EvenementController {
         return evenement.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 🔹 Créer un nouvel événement
-    @PostMapping
-    public ResponseEntity<EvenementDTO> createEvenement(@RequestBody EvenementDTO dto) {
-        EvenementDTO newEvent = evenementService.createEvenement(dto);
-        return ResponseEntity.status(201).body(newEvent);
+    // ✅ Nouvelle méthode conforme au FormData Angular
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EvenementDTO> ajouterEvenement(
+            @RequestParam("titre") String titre,
+            @RequestParam("dateDebut") String dateDebut,
+            @RequestParam("dateFin") String dateFin,
+            @RequestParam("lieu") String lieu,
+            @RequestParam("capacite") int capacite,
+            @RequestParam("description") String description,
+            @RequestParam("image") MultipartFile image
+    ) {
+        try {
+            EvenementDTO created = evenementService.ajouterEvenement(
+                titre, dateDebut, dateFin, lieu, capacite, description, image
+            );
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // 🔹 Mettre à jour un événement
@@ -55,4 +71,3 @@ public class EvenementController {
         return ResponseEntity.noContent().build();
     }
 }
-

@@ -146,5 +146,4 @@ public class StripeController {
                     .body(Map.of("error", "Erreur interne : " + e.getMessage()));
         }
     }
-
 }

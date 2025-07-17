@@ -32,10 +32,10 @@ public class MembreController {
     @GetMapping
     public ResponseEntity<List<MembreDTO>> getAllMembres() {
         try {
-            List<MembreDTO> membres = membreService.getAllMembres();
-            return ResponseEntity.ok(membres);
+            return ResponseEntity.ok(membreService.getAllMembres());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
 
@@ -43,11 +43,13 @@ public class MembreController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getMembreById(@PathVariable Long id) {
         try {
-            Optional<MembreDTO> membre = membreService.getMembreById(id);
-            return membre.<ResponseEntity<?>>map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("Membre non trouvé avec l'ID : " + id));
+            return membreService.getMembreById(id)
+                    .<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body("Membre non trouvé avec l'ID : " + id));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la récupération du membre.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la récupération du membre.");
         }
     }
 
@@ -55,13 +57,11 @@ public class MembreController {
     @PostMapping
     public ResponseEntity<?> createMembre(@RequestBody MembreDTO membreDTO) {
         try {
-            if (membreDTO.getEmail() == null) {
-                return ResponseEntity.badRequest().body("L'email est requis.");
-            }
             MembreDTO nouveauMembre = membreService.createMembre(membreDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(nouveauMembre);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la création du membre.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la création du membre.");
         }
     }
 
@@ -69,14 +69,15 @@ public class MembreController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMembre(@PathVariable Long id, @RequestBody MembreDTO membreDTO) {
         try {
-            Optional<MembreDTO> membreExistant = membreService.getMembreById(id);
-            if (membreExistant.isEmpty()) {
+            if (membreService.getMembreById(id).isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Membre non trouvé avec l'ID : " + id);
             }
+
             MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
             return ResponseEntity.ok(membreMisAJour);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour du membre.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la mise à jour du membre.");
         }
     }
 
@@ -84,41 +85,42 @@ public class MembreController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMembre(@PathVariable Long id) {
         try {
-            Optional<MembreDTO> membreExistant = membreService.getMembreById(id);
-            if (membreExistant.isEmpty()) {
+            if (membreService.getMembreById(id).isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Membre non trouvé avec l'ID : " + id);
             }
+
             membreService.deleteMembre(id);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la suppression du membre.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la suppression du membre.");
         }
     }
 
-    // 🔹 Récupérer le membre connecté
+    // 🔹 Récupérer le membre ou utilisateur connecté
     @GetMapping("/me")
     public ResponseEntity<?> getMembreConnecte(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String token) {
         if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("En-tête Authorization manquant ou invalide.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("En-tête Authorization manquant ou invalide.");
         }
 
         try {
             String jwt = token.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(jwt);
 
-            Optional<MembreDTO> membreDTO = membreService.getMembreByEmail(email);
-            if (membreDTO.isPresent()) {
-                return ResponseEntity.ok(membreDTO.get());
+            Optional<MembreDTO> membreOpt = membreService.getMembreByEmail(email);
+            if (membreOpt.isPresent()) {
+                return ResponseEntity.ok(membreOpt.get());
             }
 
-            Optional<UtilisateurDTO> utilisateurDTO = utilisateurService.getUtilisateurByEmail(email);
-            return utilisateurDTO.<ResponseEntity<?>>map(ResponseEntity::ok)
+            Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
+            return utilisateurOpt.<ResponseEntity<?>>map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Utilisateur non trouvé avec l'email : " + email));
-
-
+                            .body("Aucun membre ou utilisateur trouvé avec l'email : " + email));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalide ou expiré.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token invalide ou expiré.");
         }
     }
 }

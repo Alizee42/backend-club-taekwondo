@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class UtilisateurDTO {
+
     private Long id;
     private String nom;
     private String prenom;
@@ -12,12 +13,20 @@ public class UtilisateurDTO {
     private String adresse;
     private String email;
     private String telephone;
+
+    /**
+     * Rôle de l'utilisateur : "PARENT", "MEMBRE", "ADMIN"
+     */
     private String role;
-    
+
+    /**
+     * Mot de passe non exposé en lecture (écriture uniquement)
+     */
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    // Getters et Setters
+    // --- Getters & Setters ---
+
     public Long getId() {
         return id;
     }
@@ -42,6 +51,22 @@ public class UtilisateurDTO {
         this.prenom = prenom;
     }
 
+    public LocalDate getDateNaissance() {
+        return dateNaissance;
+    }
+
+    public void setDateNaissance(LocalDate dateNaissance) {
+        this.dateNaissance = dateNaissance;
+    }
+
+    public String getAdresse() {
+        return adresse;
+    }
+
+    public void setAdresse(String adresse) {
+        this.adresse = adresse;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -58,37 +83,19 @@ public class UtilisateurDTO {
         this.telephone = telephone;
     }
 
-	public String getRole() {
-		return role;
-	}
+    public String getRole() {
+        return role;
+    }
 
-	public void setRole(String role) {
-		this.role = role;
-	}
+    public void setRole(String role) {
+        this.role = role;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public LocalDate getDateNaissance() {
-		return dateNaissance;
-	}
-
-	public void setDateNaissance(LocalDate dateNaissance) {
-		this.dateNaissance = dateNaissance;
-	}
-
-	public String getAdresse() {
-		return adresse;
-	}
-
-	public void setAdresse(String adresse) {
-		this.adresse = adresse;
-	}
-	
-    
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

@@ -2,12 +2,15 @@ package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.EvenementDTO;
 import club.taekwondo.entity.jpa.Evenement;
-import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,11 +18,30 @@ import java.util.stream.Collectors;
 @Service
 public class EvenementService {
 
+    private static final String UPLOAD_DIR = "uploads/evenements/";
+
     @Autowired
     private EvenementRepository evenementRepository;
 
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
+    // 🔹 Nouvelle méthode adaptée à l'envoi multipart
+    public EvenementDTO ajouterEvenement(String titre, String dateDebut, String dateFin, String lieu,
+                                         int capacite, String description, MultipartFile imageFile) {
+        String imageFilename = saveImage(imageFile);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+
+        Evenement evenement = new Evenement();
+        evenement.setTitre(titre);
+        evenement.setDateDebut(LocalDateTime.parse(dateDebut, formatter));
+        evenement.setDateFin(LocalDateTime.parse(dateFin, formatter));
+        evenement.setLieu(lieu);
+        evenement.setCapacite(capacite);
+        evenement.setDescription(description);
+        evenement.setImageFilename(imageFilename);
+
+        Evenement saved = evenementRepository.save(evenement);
+        return convertToDTO(saved);
+    }
 
     // 🔹 Récupérer tous les événements
     public List<EvenementDTO> getAllEvenements() {
@@ -33,7 +55,7 @@ public class EvenementService {
         return evenementRepository.findById(id).map(this::convertToDTO);
     }
 
-    // 🔹 Créer un événement
+    // 🔹 Créer un événement via DTO
     public EvenementDTO createEvenement(EvenementDTO dto) {
         Evenement evenement = convertToEntity(dto);
         Evenement saved = evenementRepository.save(evenement);
@@ -41,21 +63,19 @@ public class EvenementService {
     }
 
     // 🔹 Mettre à jour un événement
-    public EvenementDTO updateEvenement(Long id, EvenementDTO evenementDTO) {
+    public EvenementDTO updateEvenement(Long id, EvenementDTO dto) {
         Evenement existing = evenementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Événement non trouvé avec l'ID : " + id));
 
-        existing.setTitre(evenementDTO.getTitre());
-        existing.setDateDebut(evenementDTO.getDateDebut());
-        existing.setDateFin(evenementDTO.getDateFin());
-        existing.setLieu(evenementDTO.getLieu());
-        existing.setCapacite(evenementDTO.getCapacite());
-        existing.setDescription(evenementDTO.getDescription());
+        existing.setTitre(dto.getTitre());
+        existing.setDateDebut(dto.getDateDebut());
+        existing.setDateFin(dto.getDateFin());
+        existing.setLieu(dto.getLieu());
+        existing.setCapacite(dto.getCapacite());
+        existing.setDescription(dto.getDescription());
 
-        if (evenementDTO.getOrganisateurId() != null) {
-            Utilisateur organisateur = utilisateurRepository.findById(evenementDTO.getOrganisateurId())
-                    .orElseThrow(() -> new RuntimeException("Organisateur non trouvé avec l'ID : " + evenementDTO.getOrganisateurId()));
-            existing.setOrganisateur(organisateur);
+        if (dto.getImageFilename() != null) {
+            existing.setImageFilename(dto.getImageFilename());
         }
 
         Evenement updated = evenementRepository.save(existing);
@@ -66,38 +86,51 @@ public class EvenementService {
     public void deleteEvenement(Long id) {
         evenementRepository.deleteById(id);
     }
-
-    // 🔁 Convertisseur : Entity -> DTO
+ // 🔁 Convertisseur : Entity -> DTO
     private EvenementDTO convertToDTO(Evenement evenement) {
-        EvenementDTO evenementDTO = new EvenementDTO();
-        evenementDTO.setId(evenement.getId());
-        evenementDTO.setTitre(evenement.getTitre());
-        evenementDTO.setDateDebut(evenement.getDateDebut());
-        evenementDTO.setDateFin(evenement.getDateFin());
-        evenementDTO.setLieu(evenement.getLieu());
-        evenementDTO.setCapacite(evenement.getCapacite());
-        evenementDTO.setDescription(evenement.getDescription());
-        evenementDTO.setOrganisateurId(evenement.getOrganisateur() != null ? evenement.getOrganisateur().getId() : null);
-        return evenementDTO;
-    }
+        EvenementDTO dto = new EvenementDTO();
+        dto.setId(evenement.getId());
+        dto.setTitre(evenement.getTitre());
+        dto.setDateDebut(evenement.getDateDebut());
+        dto.setDateFin(evenement.getDateFin());
+        dto.setLieu(evenement.getLieu());
+        dto.setCapacite(evenement.getCapacite());
+        dto.setDescription(evenement.getDescription());
+        dto.setImageFilename(evenement.getImageFilename());
 
-    // 🔁 Convertisseur : DTO -> Entity
-    private Evenement convertToEntity(EvenementDTO evenementDTO) {
-        Evenement evenement = new Evenement();
-        evenement.setTitre(evenementDTO.getTitre());
-        evenement.setDateDebut(evenementDTO.getDateDebut());
-        evenement.setDateFin(evenementDTO.getDateFin());
-        evenement.setLieu(evenementDTO.getLieu());
-        evenement.setCapacite(evenementDTO.getCapacite());
-        evenement.setDescription(evenementDTO.getDescription());
-
-        if (evenementDTO.getOrganisateurId() != null) {
-            Utilisateur organisateur = utilisateurRepository.findById(evenementDTO.getOrganisateurId())
-                    .orElseThrow(() -> new RuntimeException("Organisateur non trouvé avec l'ID : " + evenementDTO.getOrganisateurId()));
-            evenement.setOrganisateur(organisateur);
+        if (evenement.getImageFilename() != null) {
+            // 🔄 URL absolue pour que Angular accède à l’image
+            String baseUrl = "http://localhost:8080"; 
+            dto.setImageUrl(baseUrl + "/uploads/evenements/" + evenement.getImageFilename());
         }
 
+        return dto;
+    }
+    // 🔁 Convertisseur : DTO -> Entity
+    private Evenement convertToEntity(EvenementDTO dto) {
+        Evenement evenement = new Evenement();
+        evenement.setTitre(dto.getTitre());
+        evenement.setDateDebut(dto.getDateDebut());
+        evenement.setDateFin(dto.getDateFin());
+        evenement.setLieu(dto.getLieu());
+        evenement.setCapacite(dto.getCapacite());
+        evenement.setDescription(dto.getDescription());
+        evenement.setImageFilename(dto.getImageFilename());
         return evenement;
     }
+
+    // 📦 Enregistrement du fichier image
+    public String saveImage(MultipartFile file) {
+        try {
+            Files.createDirectories(Paths.get(UPLOAD_DIR));
+            String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path path = Paths.get(UPLOAD_DIR + filename);
+            Files.write(path, file.getBytes());
+            return filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors de l’enregistrement de l’image", e);
+        }
+    }
 }
+
 
