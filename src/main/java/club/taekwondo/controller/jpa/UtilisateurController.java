@@ -5,6 +5,7 @@ import club.taekwondo.dto.LoginDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.enums.Role;
 import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
@@ -52,7 +54,7 @@ public class UtilisateurController {
                     "message", "Utilisateur créé avec succès.",
                     "id", nouvelUtilisateur.getId(),
                     "email", nouvelUtilisateur.getEmail(),
-                    "role", nouvelUtilisateur.getRole()
+                    "roles", nouvelUtilisateur.getRoles()
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
@@ -90,11 +92,12 @@ public class UtilisateurController {
         }
 
         UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
-        String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), utilisateurDTO.getRole());
+        // Attention : adapter la génération du token pour plusieurs rôles si besoin
+        String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), utilisateurDTO.getRoles().toString());
 
         return ResponseEntity.ok(Map.of(
                 "token", token,
-                "role", utilisateurDTO.getRole(),
+                "roles", utilisateurDTO.getRoles(),
                 "email", utilisateurDTO.getEmail(),
                 "utilisateur", utilisateurDTO
         ));
@@ -165,8 +168,9 @@ public class UtilisateurController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            if (utilisateurDTO.getRole() == null || utilisateurDTO.getRole().isBlank()) {
-                utilisateurDTO.setRole("membre");
+            // Si aucun rôle n'est fourni, on met MEMBRE par défaut
+            if (utilisateurDTO.getRoles() == null || utilisateurDTO.getRoles().isEmpty()) {
+                utilisateurDTO.setRoles(Set.of(Role.MEMBRE));
             }
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
@@ -175,7 +179,7 @@ public class UtilisateurController {
                     "message", "Utilisateur créé avec succès.",
                     "id", nouvelUtilisateur.getId(),
                     "email", nouvelUtilisateur.getEmail(),
-                    "role", nouvelUtilisateur.getRole()
+                    "roles", nouvelUtilisateur.getRoles()
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de l'inscription."));

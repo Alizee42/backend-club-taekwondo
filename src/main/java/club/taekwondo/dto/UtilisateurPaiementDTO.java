@@ -1,18 +1,18 @@
 package club.taekwondo.dto;
 
 import java.util.List;
-
+import java.util.Set;
+import club.taekwondo.enums.Role;
 
 public class UtilisateurPaiementDTO {
     private Long id;
     private String nom;
     private String prenom;
     private String email;
-    private String role;
+    private Set<Role> roles;
     private List<PaiementDTO> paiements;
     private Double montantRestant;
     private String statut;
-
 
     // --- Getters & Setters ---
     public Long getId() {
@@ -47,12 +47,12 @@ public class UtilisateurPaiementDTO {
         this.email = email;
     }
 
-    public String getRole() {
-        return role;
+    public Set<Role> getRoles() {
+        return roles;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 
     public List<PaiementDTO> getPaiements() {
@@ -63,21 +63,19 @@ public class UtilisateurPaiementDTO {
         this.paiements = paiements;
     }
 
-	public Double getMontantRestant() {
-		return montantRestant;
-	}
+    public Double getMontantRestant() {
+        return montantRestant;
+    }
 
-	public void setMontantRestant(Double montantRestant) {
-		this.montantRestant = montantRestant;
-	}
+    public void setMontantRestant(Double montantRestant) {
+        this.montantRestant = montantRestant;
+    }
 
-	public String getStatut() {
-		return statut;
-	}
+    public String getStatut() {
+        return statut;
+    }
 
-	public void setStatut(String statut) {
-		this.statut = statut;
-	}
-    
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
 }
-

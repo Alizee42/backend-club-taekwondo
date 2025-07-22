@@ -6,8 +6,10 @@ import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.service.jpa.PaiementService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +34,7 @@ public class PaiementController {
         return paiementService.getAllWithEcheances();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/payer-echeance")
     public ResponseEntity<PaiementDTO> payerEcheance(
             @PathVariable Long id,
@@ -84,6 +87,7 @@ public class PaiementController {
         return ResponseEntity.ok(dtos);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/valider")
     public ResponseEntity<PaiementDTO> validerPaiement(@PathVariable Long id) {
         return paiementService.getById(id)
@@ -97,11 +101,11 @@ public class PaiementController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // ✅ Nouvelle méthode d’annulation avec AnnulationRequestDTO
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/annuler")
     public ResponseEntity<PaiementDTO> annulerPaiement(
             @PathVariable Long id,
-            @RequestBody AnnulationRequestDTO request) {
+            @Valid @RequestBody AnnulationRequestDTO request) {
         try {
             PaiementDTO updated = paiementService.annulerPaiement(id, request);
             return ResponseEntity.ok(updated);
@@ -117,8 +121,9 @@ public class PaiementController {
         return paiementService.buildDashboardStats();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/ajouter-manuel")
-    public ResponseEntity<PaiementDTO> ajouterPaiementManuel(@RequestBody PaiementDTO dto) {
+    public ResponseEntity<PaiementDTO> ajouterPaiementManuel(@Valid @RequestBody PaiementDTO dto) {
         try {
             Paiement paiement = paiementService.ajouterPaiementManuel(dto);
             return ResponseEntity.ok(paiementService.toPaiementDTO(paiement));
@@ -129,6 +134,7 @@ public class PaiementController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/ajouter-complet")
     public ResponseEntity<PaiementDTO> ajouterPaiementComplet(
             @RequestParam String utilisateurNom,
@@ -188,6 +194,7 @@ public class PaiementController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePaiement(@PathVariable Long id) {
         try {
@@ -200,5 +207,3 @@ public class PaiementController {
         }
     }
 }
-
-

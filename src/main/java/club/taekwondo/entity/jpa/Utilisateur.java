@@ -1,8 +1,11 @@
 package club.taekwondo.entity.jpa;
 
+import club.taekwondo.enums.Role; // Ajoute cet import
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "utilisateur")
@@ -31,8 +34,12 @@ public class Utilisateur {
 
     private String telephone;
 
-    @Column(nullable = false)
-    private String role; // Exemple : "PARENT", "MEMBRE", "ADMIN"
+    // Remplace le champ role par un Set<Role>
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "utilisateur_roles", joinColumns = @JoinColumn(name = "utilisateur_id"))
+    @Column(name = "role")
+    private Set<Role> roles = new HashSet<>();
 
     // Paiements liés à ce compte utilisateur
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -52,14 +59,14 @@ public class Utilisateur {
     // --- Constructeurs ---
     public Utilisateur() {}
 
-    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, String role) {
+    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, Set<Role> roles) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.password = password;
         this.telephone = telephone;
-        this.role = role;
+        this.roles = roles;
     }
 
     // --- Getters & Setters ---
@@ -127,12 +134,12 @@ public class Utilisateur {
         this.telephone = telephone;
     }
 
-    public String getRole() {
-        return role;
+    public Set<Role> getRoles() {
+        return roles;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 
     public List<Paiement> getPaiements() {
@@ -167,5 +174,3 @@ public class Utilisateur {
         this.membre = membre;
     }
 }
-
-

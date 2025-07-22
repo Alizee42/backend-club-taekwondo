@@ -93,9 +93,9 @@ public class UtilisateurService {
             user.setPrenom(dto.getPrenom());
             user.setEmail(dto.getEmail());
             user.setTelephone(dto.getTelephone());
-            user.setRole(dto.getRole());
             user.setAdresse(dto.getAdresse());
             user.setDateNaissance(dto.getDateNaissance());
+            user.setRoles(dto.getRoles()); // Correction ici
 
             if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -119,6 +119,7 @@ public class UtilisateurService {
             dto.setNom(u.getNom());
             dto.setPrenom(u.getPrenom());
             dto.setEmail(u.getEmail());
+            dto.setRoles(u.getRoles()); // Correction ici
             dto.setPaiements(toPaiementDTOList(u.getPaiements()));
             result.add(dto);
         }
@@ -136,7 +137,7 @@ public class UtilisateurService {
         dto.setAdresse(utilisateur.getAdresse());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
-        dto.setRole(utilisateur.getRole());
+        dto.setRoles(utilisateur.getRoles()); // Correction ici
         return dto;
     }
 
@@ -148,7 +149,7 @@ public class UtilisateurService {
         utilisateur.setDateNaissance(dto.getDateNaissance());
         utilisateur.setAdresse(dto.getAdresse());
         utilisateur.setTelephone(dto.getTelephone());
-        utilisateur.setRole(dto.getRole());
+        utilisateur.setRoles(dto.getRoles()); // Correction ici
         utilisateur.setPassword(dto.getPassword()); // déjà encodé
         return utilisateur;
     }
@@ -168,4 +169,3 @@ public class UtilisateurService {
         return result;
     }
 }
-

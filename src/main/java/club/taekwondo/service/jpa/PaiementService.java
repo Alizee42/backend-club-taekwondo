@@ -175,7 +175,7 @@ public class PaiementService {
                 nouveau.setNom(dto.getUtilisateurNom());
                 nouveau.setPrenom(dto.getUtilisateurPrenom());
                 nouveau.setEmail(dto.getUtilisateurEmail() != null ? dto.getUtilisateurEmail() : "noemail@carelink.local");
-                nouveau.setRole("membre");
+               // nouveau.setRoles("membre");
                 nouveau.setPassword("defaultPassword");
                 utilisateurOpt = Optional.of(utilisateurService.save(nouveau));
             }

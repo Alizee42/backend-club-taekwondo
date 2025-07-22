@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -31,96 +32,60 @@ public class MembreController {
     // 🔹 Récupérer tous les membres
     @GetMapping
     public ResponseEntity<List<MembreDTO>> getAllMembres() {
-        try {
-            return ResponseEntity.ok(membreService.getAllMembres());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
-        }
+        return ResponseEntity.ok(membreService.getAllMembres());
     }
 
     // 🔹 Récupérer un membre par ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getMembreById(@PathVariable Long id) {
-        try {
-            return membreService.getMembreById(id)
-                    .<ResponseEntity<?>>map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body("Membre non trouvé avec l'ID : " + id));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de la récupération du membre.");
-        }
+        return membreService.getMembreById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID : " + id));
     }
 
     // 🔹 Créer un nouveau membre
     @PostMapping
     public ResponseEntity<?> createMembre(@RequestBody MembreDTO membreDTO) {
-        try {
-            MembreDTO nouveauMembre = membreService.createMembre(membreDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nouveauMembre);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de la création du membre.");
-        }
+        MembreDTO nouveauMembre = membreService.createMembre(membreDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nouveauMembre);
     }
 
     // 🔹 Mettre à jour un membre
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMembre(@PathVariable Long id, @RequestBody MembreDTO membreDTO) {
-        try {
-            if (membreService.getMembreById(id).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Membre non trouvé avec l'ID : " + id);
-            }
-
-            MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
-            return ResponseEntity.ok(membreMisAJour);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de la mise à jour du membre.");
+        if (membreService.getMembreById(id).isEmpty()) {
+            throw new RuntimeException("Membre non trouvé avec l'ID : " + id);
         }
+        MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
+        return ResponseEntity.ok(membreMisAJour);
     }
 
     // 🔹 Supprimer un membre
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMembre(@PathVariable Long id) {
-        try {
-            if (membreService.getMembreById(id).isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Membre non trouvé avec l'ID : " + id);
-            }
-
-            membreService.deleteMembre(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de la suppression du membre.");
+        if (membreService.getMembreById(id).isEmpty()) {
+            throw new RuntimeException("Membre non trouvé avec l'ID : " + id);
         }
+        membreService.deleteMembre(id);
+        return ResponseEntity.ok(Map.of("message", "Membre supprimé avec succès."));
     }
 
     // 🔹 Récupérer le membre ou utilisateur connecté
     @GetMapping("/me")
     public ResponseEntity<?> getMembreConnecte(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String token) {
         if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("En-tête Authorization manquant ou invalide.");
+            throw new RuntimeException("En-tête Authorization manquant ou invalide.");
+        }
+        String jwt = token.replace("Bearer ", "");
+        String email = jwtUtil.extractEmail(jwt);
+
+        Optional<MembreDTO> membreOpt = membreService.getMembreByEmail(email);
+        if (membreOpt.isPresent()) {
+            return ResponseEntity.ok(membreOpt.get());
         }
 
-        try {
-            String jwt = token.replace("Bearer ", "");
-            String email = jwtUtil.extractEmail(jwt);
-
-            Optional<MembreDTO> membreOpt = membreService.getMembreByEmail(email);
-            if (membreOpt.isPresent()) {
-                return ResponseEntity.ok(membreOpt.get());
-            }
-
-            Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
-            return utilisateurOpt.<ResponseEntity<?>>map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body("Aucun membre ou utilisateur trouvé avec l'email : " + email));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Token invalide ou expiré.");
-        }
+        Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
+        return utilisateurOpt.<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseThrow(() -> new RuntimeException("Aucun membre ou utilisateur trouvé avec l'email : " + email));
     }
 }

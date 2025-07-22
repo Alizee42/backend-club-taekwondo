@@ -1,157 +1,173 @@
 package club.taekwondo.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class PaiementDTO {
 
-	private Long id;
-	private String type;
-	private LocalDate datePaiement;
-	private String statut;
-	private String modePaiement;
-	private Long utilisateurId;
-	private List<EcheanceDTO> echeances;
-	private Double montantTotal;
-	private Double montantRestant;
-	private Double montantPaye; 
-	private String utilisateurNom;
-	private String utilisateurPrenom;
-	private String utilisateurEmail;
-	private String motifAnnulation;
-	private LocalDateTime dateAnnulation;
-	private String adminResponsable;
+    private Long id;
 
+    @NotBlank(message = "Le type de paiement est obligatoire")
+    private String type;
 
-	// Getters et Setters
-	public Long getId() {
-		return id;
-	}
+    private LocalDate datePaiement;
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @NotBlank(message = "Le statut est obligatoire")
+    private String statut;
 
-	public String getType() {
-		return type;
-	}
+    @NotBlank(message = "Le mode de paiement est obligatoire")
+    private String modePaiement;
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    @NotNull(message = "L'utilisateur est obligatoire")
+    private Long utilisateurId;
 
-	public LocalDate getDatePaiement() {
-		return datePaiement;
-	}
+    private List<EcheanceDTO> echeances;
 
-	public void setDatePaiement(LocalDate datePaiement) {
-		this.datePaiement = datePaiement;
-	}
+    @NotNull(message = "Le montant total est obligatoire")
+    @Positive(message = "Le montant total doit être positif")
+    private Double montantTotal;
 
-	public String getStatut() {
-		return statut;
-	}
+    private Double montantRestant;
 
-	public void setStatut(String statut) {
-		this.statut = statut;
-	}
+    private Double montantPaye;
 
-	public String getModePaiement() {
-		return modePaiement;
-	}
+    private String utilisateurNom;
+    private String utilisateurPrenom;
+    private String utilisateurEmail;
+    private String motifAnnulation;
+    private LocalDateTime dateAnnulation;
+    private String adminResponsable;
 
-	public void setModePaiement(String modePaiement) {
-		this.modePaiement = modePaiement;
-	}
+    // Getters et Setters
+    public Long getId() {
+        return id;
+    }
 
-	public Long getUtilisateurId() {
-		return utilisateurId;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setUtilisateurId(Long utilisateurId) {
-		this.utilisateurId = utilisateurId;
-	}
+    public String getType() {
+        return type;
+    }
 
-	public List<EcheanceDTO> getEcheances() {
-		return echeances;
-	}
+    public void setType(String type) {
+        this.type = type;
+    }
 
-	public void setEcheances(List<EcheanceDTO> echeances) {
-		this.echeances = echeances;
-	}
+    public LocalDate getDatePaiement() {
+        return datePaiement;
+    }
 
-	public Double getMontantTotal() {
-		return montantTotal;
-	}
+    public void setDatePaiement(LocalDate datePaiement) {
+        this.datePaiement = datePaiement;
+    }
 
-	public void setMontantTotal(Double montantTotal) {
-		this.montantTotal = montantTotal;
-	}
+    public String getStatut() {
+        return statut;
+    }
 
-	public Double getMontantRestant() {
-		return montantRestant;
-	}
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
 
-	public void setMontantRestant(Double montantRestant) {
-		this.montantRestant = montantRestant;
-	}
+    public String getModePaiement() {
+        return modePaiement;
+    }
 
-	public Double getMontantPaye() {
-		return montantPaye;
-	}
+    public void setModePaiement(String modePaiement) {
+        this.modePaiement = modePaiement;
+    }
 
-	public void setMontantPaye(Double montantPaye) {
-		this.montantPaye = montantPaye;
-	}
+    public Long getUtilisateurId() {
+        return utilisateurId;
+    }
 
-	public String getUtilisateurNom() {
-		return utilisateurNom;
-	}
+    public void setUtilisateurId(Long utilisateurId) {
+        this.utilisateurId = utilisateurId;
+    }
 
-	public void setUtilisateurNom(String utilisateurNom) {
-		this.utilisateurNom = utilisateurNom;
-	}
+    public List<EcheanceDTO> getEcheances() {
+        return echeances;
+    }
 
-	public String getUtilisateurPrenom() {
-		return utilisateurPrenom;
-	}
+    public void setEcheances(List<EcheanceDTO> echeances) {
+        this.echeances = echeances;
+    }
 
-	public void setUtilisateurPrenom(String utilisateurPrenom) {
-		this.utilisateurPrenom = utilisateurPrenom;
-	}
+    public Double getMontantTotal() {
+        return montantTotal;
+    }
 
-	public String getUtilisateurEmail() {
-		return utilisateurEmail;
-	}
+    public void setMontantTotal(Double montantTotal) {
+        this.montantTotal = montantTotal;
+    }
 
-	public void setUtilisateurEmail(String utilisateurEmail) {
-		this.utilisateurEmail = utilisateurEmail;
-	}
+    public Double getMontantRestant() {
+        return montantRestant;
+    }
 
-	public String getMotifAnnulation() {
-		return motifAnnulation;
-	}
+    public void setMontantRestant(Double montantRestant) {
+        this.montantRestant = montantRestant;
+    }
 
-	public void setMotifAnnulation(String motifAnnulation) {
-		this.motifAnnulation = motifAnnulation;
-	}
+    public Double getMontantPaye() {
+        return montantPaye;
+    }
 
-	public LocalDateTime getDateAnnulation() {
-		return dateAnnulation;
-	}
+    public void setMontantPaye(Double montantPaye) {
+        this.montantPaye = montantPaye;
+    }
 
-	public void setDateAnnulation(LocalDateTime dateAnnulation) {
-		this.dateAnnulation = dateAnnulation;
-	}
+    public String getUtilisateurNom() {
+        return utilisateurNom;
+    }
 
-	public String getAdminResponsable() {
-		return adminResponsable;
-	}
+    public void setUtilisateurNom(String utilisateurNom) {
+        this.utilisateurNom = utilisateurNom;
+    }
 
-	public void setAdminResponsable(String adminResponsable) {
-		this.adminResponsable = adminResponsable;
-	}
-	
+    public String getUtilisateurPrenom() {
+        return utilisateurPrenom;
+    }
+
+    public void setUtilisateurPrenom(String utilisateurPrenom) {
+        this.utilisateurPrenom = utilisateurPrenom;
+    }
+
+    public String getUtilisateurEmail() {
+        return utilisateurEmail;
+    }
+
+    public void setUtilisateurEmail(String utilisateurEmail) {
+        this.utilisateurEmail = utilisateurEmail;
+    }
+
+    public String getMotifAnnulation() {
+        return motifAnnulation;
+    }
+
+    public void setMotifAnnulation(String motifAnnulation) {
+        this.motifAnnulation = motifAnnulation;
+    }
+
+    public LocalDateTime getDateAnnulation() {
+        return dateAnnulation;
+    }
+
+    public void setDateAnnulation(LocalDateTime dateAnnulation) {
+        this.dateAnnulation = dateAnnulation;
+    }
+
+    public String getAdminResponsable() {
+        return adminResponsable;
+    }
+
+    public void setAdminResponsable(String adminResponsable) {
+        this.adminResponsable = adminResponsable;
+    }
 }
-

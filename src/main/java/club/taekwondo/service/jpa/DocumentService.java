@@ -99,7 +99,7 @@ public class DocumentService {
             utilisateurDTO.setPrenom(utilisateur.getPrenom());
             utilisateurDTO.setEmail(utilisateur.getEmail());
             utilisateurDTO.setTelephone(utilisateur.getTelephone());
-            utilisateurDTO.setRole(utilisateur.getRole());
+            utilisateurDTO.setRoles(utilisateur.getRoles());
 
             documentDTO.setUtilisateur(utilisateurDTO); // ❗ MANQUAIT ICI
         }
