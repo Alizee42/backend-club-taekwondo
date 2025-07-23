@@ -40,6 +40,9 @@ public class UtilisateurService {
 
     // 🔹 Login par email + mot de passe
     public Optional<UtilisateurDTO> login(String email, String password) {
+        if (email != null) {
+            email = email.toLowerCase();
+        }
         return utilisateurRepository.findByEmail(email)
                 .filter(u -> passwordEncoder.matches(password, u.getPassword()))
                 .map(this::toUtilisateurDTO);
@@ -74,9 +77,20 @@ public class UtilisateurService {
 
     // 🔹 Création à partir d'un DTO
     public Utilisateur createUtilisateur(UtilisateurDTO dto) {
-        if (dto.getPassword() == null || dto.getPassword().isEmpty()) {
+        if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom est requis.");
+        }
+        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("L'email est requis.");
+        }
+        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Le mot de passe est requis.");
         }
+        if (dto.getRoles() == null || dto.getRoles().isEmpty()) {
+            throw new IllegalArgumentException("Le rôle est requis.");
+        }
+
+        dto.setEmail(dto.getEmail().toLowerCase());
 
         if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");

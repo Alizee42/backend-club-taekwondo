@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UtilisateurController.class)
-@AutoConfigureMockMvc(addFilters = false) // Désactive la sécurité pour les tests
+@AutoConfigureMockMvc(addFilters = false)
 class UtilisateurControllerTest {
 
     @Autowired
@@ -155,8 +155,60 @@ class UtilisateurControllerTest {
 
     @Test
     void testDeleteUtilisateur() throws Exception {
+        Mockito.doNothing().when(utilisateurService).deleteUtilisateur(1L);
+
         mockMvc.perform(delete("/api/utilisateurs/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Utilisateur supprimé avec succès."));
+    }
+
+    @Test
+    void testUpdateUtilisateur_Success() throws Exception {
+        UtilisateurDTO dto = new UtilisateurDTO();
+        dto.setNom("ModifNom");
+        dto.setPrenom("ModifPrenom");
+        dto.setEmail("modif@email.com");
+        dto.setRoles(Set.of(Role.PARENT));
+
+        when(utilisateurService.getUtilisateurById(1L)).thenReturn(Optional.of(new UtilisateurDTO()));
+        Mockito.doNothing().when(utilisateurService).updateUtilisateurFromDTO(Mockito.eq(1L), any(UtilisateurDTO.class));
+
+        mockMvc.perform(put("/api/utilisateurs/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Utilisateur mis à jour avec succès."));
+    }
+
+    @Test
+    void testGetUtilisateurByEmail_Success() throws Exception {
+        UtilisateurDTO dto = new UtilisateurDTO();
+        dto.setEmail("email@test.com");
+        dto.setNom("Nom");
+
+        when(utilisateurService.getUtilisateurByEmail("email@test.com")).thenReturn(Optional.of(dto));
+
+        mockMvc.perform(get("/api/utilisateurs/email")
+                .param("value", "email@test.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("email@test.com"));
+    }
+
+    @Test
+    void testCreateUtilisateur_InternalServerError() throws Exception {
+        UtilisateurDTO dto = new UtilisateurDTO();
+        dto.setNom("Dupont");
+        dto.setPrenom("Jean");
+        dto.setEmail("error@test.com");
+        dto.setPassword("motdepasse");
+        dto.setRoles(Set.of(Role.MEMBRE));
+
+        when(utilisateurService.createUtilisateur(any())).thenThrow(new RuntimeException("Erreur serveur"));
+
+        mockMvc.perform(post("/api/utilisateurs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Erreur lors de la création de l'utilisateur."));
     }
 }

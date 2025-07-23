@@ -213,5 +213,48 @@ void testFindByNomPrenom_NotExist() {
     Optional<Utilisateur> result = utilisateurService.findByNomPrenom("Durand", "Paul");
     assertTrue(result.isEmpty());
 }
+@Test
+void testCreateUtilisateur_RoleVide() {
+    UtilisateurDTO dto = new UtilisateurDTO();
+    dto.setNom("Test");
+    dto.setPrenom("User");
+    dto.setEmail("test@email.com");
+    dto.setPassword("password");
+    dto.setRoles(Set.of()); // 
+
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+        utilisateurService.createUtilisateur(dto);
+    });
+
+    assertEquals("Le rôle est requis.", exception.getMessage());
+}
+@Test
+void testCreateUtilisateur_NomNull() {
+    UtilisateurDTO dto = new UtilisateurDTO();
+    dto.setNom(null); // Null
+    dto.setPrenom("User");
+    dto.setEmail("test@email.com");
+    dto.setPassword("password");
+    dto.setRoles(Set.of(Role.MEMBRE));
+
+    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+        utilisateurService.createUtilisateur(dto);
+    });
+
+    assertEquals("Le nom est requis.", exception.getMessage());
+}
+@Test
+void testLogin_EmailCaseInsensitive() {
+    Utilisateur utilisateur = new Utilisateur();
+    utilisateur.setEmail("test@email.com");
+    utilisateur.setPassword("encodedPwd");
+    utilisateur.setRoles(Set.of(Role.MEMBRE));
+
+    when(utilisateurRepository.findByEmail("test@email.com")).thenReturn(Optional.of(utilisateur));
+    when(passwordEncoder.matches("motdepasse", "encodedPwd")).thenReturn(true);
+
+    Optional<UtilisateurDTO> result = utilisateurService.login("TEST@EMAIL.COM", "motdepasse");
+    assertTrue(result.isPresent()); // Si findByEmail ignore la casse
+}
 
 }

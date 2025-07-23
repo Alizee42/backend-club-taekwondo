@@ -1,17 +1,28 @@
 package club.taekwondo.dto;
 
 import java.math.BigDecimal;
+import jakarta.validation.constraints.*;
 
 public class ProduitDTO {
 
     private Long id;
+
+    @NotBlank(message = "Le nom du produit est obligatoire")
     private String nom;
+
+    @NotBlank(message = "La description est obligatoire")
     private String description;
+
+    @NotNull(message = "Le prix est obligatoire")
+    @Positive(message = "Le prix doit être positif")
     private BigDecimal prix;
+
+    @NotNull(message = "Le stock est obligatoire")
+    @Min(value = 0, message = "Le stock ne peut pas être négatif")
     private Integer stock;
+
     private String categorie;
     private String imageUrl;
-
 
     // Getters et Setters
 
@@ -63,12 +74,11 @@ public class ProduitDTO {
         this.categorie = categorie;
     }
 
-	public String getImageUrl() {
-		return imageUrl;
-	}
+    public String getImageUrl() {
+        return imageUrl;
+    }
 
-	public void setImageUrl(String imageUrl) {
-		this.imageUrl = imageUrl;
-	}
-    
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 }

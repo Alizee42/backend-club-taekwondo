@@ -185,4 +185,15 @@ public class UtilisateurController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de l'inscription."));
         }
     }
+    @GetMapping("/email")
+    public ResponseEntity<Object> getUtilisateurByEmail(@RequestParam("value") String email) {
+        return utilisateurService.getUtilisateurByEmail(email)
+            .<ResponseEntity<Object>>map(utilisateur -> ResponseEntity.ok().body(utilisateur))
+            .orElseGet(() -> ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Map.of(
+                    "status", 404,
+                    "message", "Utilisateur non trouvé avec l'email : " + email
+                )));
+    }
 }
