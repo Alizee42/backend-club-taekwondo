@@ -38,7 +38,7 @@ public class MembreService {
 
     // 🔹 Récupérer un membre par email utilisateur
     public Optional<MembreDTO> getMembreByEmail(String email) {
-        return membreRepository.findByUtilisateurEmail(email)
+        return membreRepository.findByCompteUtilisateur_Email(email) 
                 .map(this::toMembreDTO);
     }
 
@@ -55,7 +55,7 @@ public class MembreService {
         if (idParent != null) {
             Utilisateur utilisateur = utilisateurRepository.findById(idParent)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + idParent));
-            membre.setUtilisateur(utilisateur);
+            membre.setCompteUtilisateur(utilisateur);
         } else {
             throw new RuntimeException("Impossible de créer un membre sans utilisateur associé.");
         }
@@ -92,8 +92,8 @@ public class MembreService {
         dto.setDateNaissance(membre.getDateNaissance());
         dto.setNumeroLicence(membre.getNumeroLicence());
         dto.setCeinture(membre.getCeinture());
-        if (membre.getUtilisateur() != null) {
-            dto.setUtilisateurId(membre.getUtilisateur().getId());
+        if (membre.getCompteUtilisateur() != null) {
+            dto.setUtilisateurId(membre.getCompteUtilisateur().getId());
         }
         return dto;
     }

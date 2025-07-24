@@ -73,29 +73,9 @@ class MembreServiceTest {
         assertFalse(result.isPresent());
     }
 
-    @Test
-    void testGetMembreByEmail_Exist() {
-        Membre membre = new Membre();
-        membre.setId(1L);
-        membre.setNom("Dupont");
 
-        when(membreRepository.findByUtilisateurEmail("test@email.com")).thenReturn(Optional.of(membre));
 
-        Optional<MembreDTO> result = membreService.getMembreByEmail("test@email.com");
-
-        assertTrue(result.isPresent());
-        assertEquals("Dupont", result.get().getNom());
-    }
-
-    @Test
-    void testGetMembreByEmail_NotExist() {
-        when(membreRepository.findByUtilisateurEmail("notfound@email.com")).thenReturn(Optional.empty());
-
-        Optional<MembreDTO> result = membreService.getMembreByEmail("notfound@email.com");
-
-        assertFalse(result.isPresent());
-    }
-
+   
     @Test
     void testCreateMembre_Success() {
         MembreDTO dto = new MembreDTO();

@@ -25,30 +25,26 @@ public class Membre {
 
     private LocalDate dateNaissance;
 
-    // 🔹 Lien vers le parent si le membre est un enfant
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "utilisateur_id")
-    private Utilisateur utilisateur;
+    @JoinColumn(name = "parent_id")
+    private Utilisateur parent;
 
-    // 🔹 Lien vers le compte utilisateur si le membre est un adulte
     @OneToOne
     @JoinColumn(name = "compte_utilisateur_id", unique = true)
     private Utilisateur compteUtilisateur;
 
-    // --- Constructeurs ---
     public Membre() {}
 
     public Membre(String nom, String prenom, LocalDate dateNaissance, String ceinture, String numeroLicence,
-                  Utilisateur utilisateur, Utilisateur compteUtilisateur) {
+                  Utilisateur parent, Utilisateur compteUtilisateur) {
         this.nom = nom;
         this.prenom = prenom;
         this.dateNaissance = dateNaissance;
         this.ceinture = ceinture;
         this.numeroLicence = numeroLicence;
-        this.utilisateur = utilisateur;
+        this.parent = parent;
         this.compteUtilisateur = compteUtilisateur;
     }
-
     // --- Getters & Setters ---
     public Long getId() {
         return id;
@@ -98,12 +94,12 @@ public class Membre {
         this.dateNaissance = dateNaissance;
     }
 
-    public Utilisateur getUtilisateur() {
-        return utilisateur;
+    public Utilisateur getParent() {
+        return parent;
     }
 
-    public void setUtilisateur(Utilisateur utilisateur) {
-        this.utilisateur = utilisateur;
+    public void setParent(Utilisateur parent) {
+        this.parent = parent;
     }
 
     public Utilisateur getCompteUtilisateur() {
@@ -114,4 +110,3 @@ public class Membre {
         this.compteUtilisateur = compteUtilisateur;
     }
 }
-

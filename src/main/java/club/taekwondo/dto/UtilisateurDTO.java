@@ -1,7 +1,6 @@
 package club.taekwondo.dto;
 
 import java.time.LocalDate;
-import java.util.Set;
 import club.taekwondo.enums.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -16,9 +15,9 @@ public class UtilisateurDTO {
     private String telephone;
 
     /**
-     * Rôles de l'utilisateur : PARENT, MEMBRE, ADMIN
+     * Rôle de l'utilisateur : PARENT, MEMBRE, ADMIN
      */
-    private Set<Role> roles;
+    private Role role;
 
     /**
      * Mot de passe non exposé en lecture (écriture uniquement)
@@ -27,7 +26,6 @@ public class UtilisateurDTO {
     private String password;
 
     // --- Getters & Setters ---
-
     public Long getId() {
         return id;
     }
@@ -84,12 +82,12 @@ public class UtilisateurDTO {
         this.telephone = telephone;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public Role getRole() {
+        return role;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public String getPassword() {

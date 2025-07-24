@@ -99,9 +99,9 @@ public class DocumentService {
             utilisateurDTO.setPrenom(utilisateur.getPrenom());
             utilisateurDTO.setEmail(utilisateur.getEmail());
             utilisateurDTO.setTelephone(utilisateur.getTelephone());
-            utilisateurDTO.setRoles(utilisateur.getRoles());
+            utilisateurDTO.setRole(utilisateur.getRole());
 
-            documentDTO.setUtilisateur(utilisateurDTO); // ❗ MANQUAIT ICI
+            documentDTO.setUtilisateur(utilisateurDTO); 
         }
 
         return documentDTO;

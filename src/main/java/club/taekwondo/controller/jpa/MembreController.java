@@ -29,63 +29,86 @@ public class MembreController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // 🔹 Récupérer tous les membres
+    // --- Récupérer tous les membres ---
     @GetMapping
     public ResponseEntity<List<MembreDTO>> getAllMembres() {
         return ResponseEntity.ok(membreService.getAllMembres());
     }
 
-    // 🔹 Récupérer un membre par ID
+    // --- Récupérer un membre par ID ---
     @GetMapping("/{id}")
     public ResponseEntity<?> getMembreById(@PathVariable Long id) {
         return membreService.getMembreById(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID : " + id));
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Membre non trouvé avec l'ID : " + id)));
     }
 
-    // 🔹 Créer un nouveau membre
+    // --- Créer un nouveau membre ---
     @PostMapping
     public ResponseEntity<?> createMembre(@RequestBody MembreDTO membreDTO) {
-        MembreDTO nouveauMembre = membreService.createMembre(membreDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nouveauMembre);
+        try {
+            MembreDTO nouveauMembre = membreService.createMembre(membreDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nouveauMembre);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la création du membre."));
+        }
     }
 
-    // 🔹 Mettre à jour un membre
+    // --- Mettre à jour un membre ---
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMembre(@PathVariable Long id, @RequestBody MembreDTO membreDTO) {
         if (membreService.getMembreById(id).isEmpty()) {
-            throw new RuntimeException("Membre non trouvé avec l'ID : " + id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
         }
-        MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
-        return ResponseEntity.ok(membreMisAJour);
+
+        try {
+            MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
+            return ResponseEntity.ok(membreMisAJour);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la mise à jour du membre."));
+        }
     }
 
-    // 🔹 Supprimer un membre
+    // --- Supprimer un membre ---
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMembre(@PathVariable Long id) {
         if (membreService.getMembreById(id).isEmpty()) {
-            throw new RuntimeException("Membre non trouvé avec l'ID : " + id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
         }
-        membreService.deleteMembre(id);
-        return ResponseEntity.ok(Map.of("message", "Membre supprimé avec succès."));
+
+        try {
+            membreService.deleteMembre(id);
+            return ResponseEntity.ok(Map.of("message", "Membre supprimé avec succès."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la suppression du membre."));
+        }
     }
 
-    // 🔹 Récupérer le membre ou utilisateur connecté
+    // --- Récupérer le membre ou utilisateur connecté ---
     @GetMapping("/me")
     public ResponseEntity<?> getMembreConnecte(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String token) {
         if (token == null || !token.startsWith("Bearer ")) {
-            throw new RuntimeException("En-tête Authorization manquant ou invalide.");
-        }
-        String jwt = token.replace("Bearer ", "");
-        String email = jwtUtil.extractEmail(jwt);
-
-        Optional<MembreDTO> membreOpt = membreService.getMembreByEmail(email);
-        if (membreOpt.isPresent()) {
-            return ResponseEntity.ok(membreOpt.get());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "En-tête Authorization manquant ou invalide."));
         }
 
-        Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
-        return utilisateurOpt.<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Aucun membre ou utilisateur trouvé avec l'email : " + email));
+        try {
+            String jwt = token.replace("Bearer ", "");
+            String email = jwtUtil.extractEmail(jwt);
+
+            // Vérifier si l'utilisateur est un membre
+            Optional<MembreDTO> membreOpt = membreService.getMembreByEmail(email);
+            if (membreOpt.isPresent()) {
+                return ResponseEntity.ok(membreOpt.get());
+            }
+
+            // Vérifier si l'utilisateur est un utilisateur non-membre
+            Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
+            return utilisateurOpt.<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Aucun membre ou utilisateur trouvé avec l'email : " + email)));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de la récupération des informations utilisateur."));
+        }
     }
 }

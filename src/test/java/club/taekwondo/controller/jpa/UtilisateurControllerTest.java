@@ -51,12 +51,12 @@ class UtilisateurControllerTest {
         dto.setPrenom("Jean");
         dto.setEmail("jean.dupont@email.com");
         dto.setPassword("motdepasse");
-        dto.setRoles(Set.of(Role.MEMBRE));
+       // dto.setRole(Set.of(Role.MEMBRE));
 
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setId(1L);
         utilisateur.setEmail(dto.getEmail());
-        utilisateur.setRoles(dto.getRoles());
+        utilisateur.setRole(dto.getRole());
 
         when(utilisateurService.createUtilisateur(any(UtilisateurDTO.class))).thenReturn(utilisateur);
 
@@ -76,7 +76,7 @@ class UtilisateurControllerTest {
         dto.setPrenom("Jean");
         dto.setEmail("jean.dupont@email.com");
         dto.setPassword("motdepasse");
-        dto.setRoles(Set.of(Role.MEMBRE));
+        //dto.setRole(Set.of(Role.MEMBRE));
 
         when(utilisateurService.createUtilisateur(any(UtilisateurDTO.class)))
                 .thenThrow(new IllegalArgumentException("Un utilisateur avec cet email existe déjà."));
@@ -98,7 +98,7 @@ class UtilisateurControllerTest {
         utilisateurDTO.setEmail("jean.dupont@email.com");
         utilisateurDTO.setNom("Dupont");
         utilisateurDTO.setPrenom("Jean");
-        utilisateurDTO.setRoles(Set.of(Role.MEMBRE));
+        //utilisateurDTO.setRole(Set.of(Role.MEMBRE));
 
         when(utilisateurService.login("jean.dupont@email.com", "motdepasse")).thenReturn(Optional.of(utilisateurDTO));
         when(jwtUtil.generateToken(Mockito.anyString(), Mockito.anyString())).thenReturn("fake-jwt-token");
@@ -134,7 +134,7 @@ class UtilisateurControllerTest {
         utilisateurDTO.setNom("Dupont");
         utilisateurDTO.setPrenom("Jean");
         utilisateurDTO.setEmail("jean.dupont@email.com");
-        utilisateurDTO.setRoles(Set.of(Role.MEMBRE));
+       // utilisateurDTO.setRole(Set.of(Role.MEMBRE));
 
         when(utilisateurService.getUtilisateurById(1L)).thenReturn(Optional.of(utilisateurDTO));
 
@@ -168,7 +168,7 @@ class UtilisateurControllerTest {
         dto.setNom("ModifNom");
         dto.setPrenom("ModifPrenom");
         dto.setEmail("modif@email.com");
-        dto.setRoles(Set.of(Role.PARENT));
+       // dto.setRole(Set.of(Role.PARENT));
 
         when(utilisateurService.getUtilisateurById(1L)).thenReturn(Optional.of(new UtilisateurDTO()));
         Mockito.doNothing().when(utilisateurService).updateUtilisateurFromDTO(Mockito.eq(1L), any(UtilisateurDTO.class));
@@ -201,7 +201,7 @@ class UtilisateurControllerTest {
         dto.setPrenom("Jean");
         dto.setEmail("error@test.com");
         dto.setPassword("motdepasse");
-        dto.setRoles(Set.of(Role.MEMBRE));
+        //dto.setRole(Set.of(Role.MEMBRE));
 
         when(utilisateurService.createUtilisateur(any())).thenThrow(new RuntimeException("Erreur serveur"));
 

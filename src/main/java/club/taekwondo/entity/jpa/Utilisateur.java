@@ -1,11 +1,9 @@
 package club.taekwondo.entity.jpa;
 
-import club.taekwondo.enums.Role; // Ajoute cet import
+import club.taekwondo.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 
 @Entity
 @Table(name = "utilisateur")
@@ -34,39 +32,32 @@ public class Utilisateur {
 
     private String telephone;
 
-    // Remplace le champ role par un Set<Role>
-    @ElementCollection(fetch = FetchType.EAGER)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "utilisateur_roles", joinColumns = @JoinColumn(name = "utilisateur_id"))
-    @Column(name = "role")
-    private Set<Role> roles = new HashSet<>();
+    @Enumerated(EnumType.STRING) // Stocke le rôle en tant que chaîne de caractères
+    @Column(nullable = false) // Assurez-vous que le rôle ne peut pas être NULL
+    private Role role;
 
-    // Paiements liés à ce compte utilisateur
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Paiement> paiements;
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Avis> avis;
 
-    // Enfants membres (si l'utilisateur est un parent)
-    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Membre> enfants;
 
-    // Si l'utilisateur est lui-même un membre (adulte pratiquant)
     @OneToOne(mappedBy = "compteUtilisateur", cascade = CascadeType.ALL)
     private Membre membre;
 
-    // --- Constructeurs ---
     public Utilisateur() {}
 
-    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, Set<Role> roles) {
+    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, Role role) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.password = password;
         this.telephone = telephone;
-        this.roles = roles;
+        this.role = role;
     }
 
     // --- Getters & Setters ---
@@ -134,12 +125,12 @@ public class Utilisateur {
         this.telephone = telephone;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public Role getRole() {
+        return role;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public List<Paiement> getPaiements() {

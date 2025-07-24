@@ -5,6 +5,7 @@ import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -86,8 +87,8 @@ public class UtilisateurService {
         if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Le mot de passe est requis.");
         }
-        if (dto.getRoles() == null || dto.getRoles().isEmpty()) {
-            throw new IllegalArgumentException("Le rôle est requis.");
+        if (dto.getRole() == null) {
+            dto.setRole(Role.MEMBRE); // Rôle par défaut
         }
 
         dto.setEmail(dto.getEmail().toLowerCase());
@@ -109,7 +110,7 @@ public class UtilisateurService {
             user.setTelephone(dto.getTelephone());
             user.setAdresse(dto.getAdresse());
             user.setDateNaissance(dto.getDateNaissance());
-            user.setRoles(dto.getRoles()); // Correction ici
+            user.setRole(dto.getRole()); // Mise à jour du rôle
 
             if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -133,7 +134,7 @@ public class UtilisateurService {
             dto.setNom(u.getNom());
             dto.setPrenom(u.getPrenom());
             dto.setEmail(u.getEmail());
-            dto.setRoles(u.getRoles()); // Correction ici
+            dto.setRole(u.getRole()); 
             dto.setPaiements(toPaiementDTOList(u.getPaiements()));
             result.add(dto);
         }
@@ -151,7 +152,7 @@ public class UtilisateurService {
         dto.setAdresse(utilisateur.getAdresse());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
-        dto.setRoles(utilisateur.getRoles()); // Correction ici
+        dto.setRole(utilisateur.getRole()); // Correction ici
         return dto;
     }
 
@@ -163,7 +164,7 @@ public class UtilisateurService {
         utilisateur.setDateNaissance(dto.getDateNaissance());
         utilisateur.setAdresse(dto.getAdresse());
         utilisateur.setTelephone(dto.getTelephone());
-        utilisateur.setRoles(dto.getRoles()); // Correction ici
+        utilisateur.setRole(dto.getRole()); // Correction ici
         utilisateur.setPassword(dto.getPassword()); // déjà encodé
         return utilisateur;
     }

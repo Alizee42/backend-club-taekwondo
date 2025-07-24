@@ -9,7 +9,7 @@ public class UtilisateurPaiementDTO {
     private String nom;
     private String prenom;
     private String email;
-    private Set<Role> roles;
+    private Role role; // Ajout du champ `role`
     private List<PaiementDTO> paiements;
     private Double montantRestant;
     private String statut;
@@ -46,13 +46,12 @@ public class UtilisateurPaiementDTO {
     public void setEmail(String email) {
         this.email = email;
     }
-
-    public Set<Role> getRoles() {
-        return roles;
+    public Role getRole() { // Getter pour `role`
+        return role;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setRole(Role role) { // Setter pour `role`
+        this.role = role;
     }
 
     public List<PaiementDTO> getPaiements() {
