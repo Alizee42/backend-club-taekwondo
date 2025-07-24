@@ -1,15 +1,13 @@
 package club.taekwondo.dto;
 
 import java.util.List;
-import java.util.Set;
-import club.taekwondo.enums.Role;
 
 public class UtilisateurPaiementDTO {
     private Long id;
     private String nom;
     private String prenom;
     private String email;
-    private Role role; // Ajout du champ `role`
+    private String role; // ⛔️ Remplacé Role par String
     private List<PaiementDTO> paiements;
     private Double montantRestant;
     private String statut;
@@ -46,11 +44,12 @@ public class UtilisateurPaiementDTO {
     public void setEmail(String email) {
         this.email = email;
     }
-    public Role getRole() { // Getter pour `role`
+
+    public String getRole() { // Getter pour `role`
         return role;
     }
 
-    public void setRole(Role role) { // Setter pour `role`
+    public void setRole(String role) { // Setter pour `role`
         this.role = role;
     }
 

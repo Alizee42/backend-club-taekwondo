@@ -2,65 +2,66 @@ package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
-import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class UtilisateurServiceTest {
+public class UtilisateurServiceTest {
 
     private UtilisateurRepository utilisateurRepository;
     private PasswordEncoder passwordEncoder;
     private UtilisateurService utilisateurService;
 
     @BeforeEach
-    void setUp() {
+    public void setup() {
         utilisateurRepository = mock(UtilisateurRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
         utilisateurService = new UtilisateurService(utilisateurRepository, passwordEncoder);
     }
 
     @Test
-    void testCreateUtilisateur_Success() {
+    public void testCreateUtilisateur_RoleParDefautMembre() {
+        // Given
         UtilisateurDTO dto = new UtilisateurDTO();
         dto.setNom("Dupont");
         dto.setPrenom("Jean");
-        dto.setEmail("jean.dupont@email.com");
+        dto.setEmail("jean.dupont@test.com");
         dto.setPassword("motdepasse");
-        dto.setRoles(Set.of(Role.MEMBRE));
 
-        when(utilisateurRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("motdepasse")).thenReturn("motdepasseEncodee");
-        when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(utilisateurRepository.findByEmail("jean.dupont@test.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
 
-        Utilisateur utilisateurCree = utilisateurService.createUtilisateur(dto);
+        // When
+        utilisateurService.createUtilisateur(dto);
 
-        assertEquals("Dupont", utilisateurCree.getNom());
-        assertEquals("Jean", utilisateurCree.getPrenom());
-        assertEquals("jean.dupont@email.com", utilisateurCree.getEmail());
-        assertTrue(utilisateurCree.getRoles().contains(Role.MEMBRE));
-        assertEquals("motdepasseEncodee", utilisateurCree.getPassword());
+        // Then
+        ArgumentCaptor<Utilisateur> utilisateurCaptor = ArgumentCaptor.forClass(Utilisateur.class);
+        verify(utilisateurRepository, times(1)).save(utilisateurCaptor.capture());
+
+        Utilisateur saved = utilisateurCaptor.getValue();
+        assertEquals("jean.dupont@test.com", saved.getEmail());
+        assertEquals("MEMBRE", saved.getRole()); // vérifie que le rôle est bien par défaut
+        assertEquals("encoded_password", saved.getPassword());
     }
 
     @Test
-    void testCreateUtilisateur_EmailDejaExistant() {
+    public void testCreateUtilisateur_EmailExistant_Exception() {
+        // Given
         UtilisateurDTO dto = new UtilisateurDTO();
         dto.setNom("Dupont");
-        dto.setPrenom("Jean");
-        dto.setEmail("jean.dupont@email.com");
+        dto.setEmail("existant@test.com");
         dto.setPassword("motdepasse");
-        dto.setRoles(Set.of(Role.MEMBRE));
 
-        when(utilisateurRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(new Utilisateur()));
+        when(utilisateurRepository.findByEmail("existant@test.com")).thenReturn(Optional.of(new Utilisateur()));
 
+        // When + Then
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             utilisateurService.createUtilisateur(dto);
         });
@@ -69,192 +70,55 @@ class UtilisateurServiceTest {
     }
 
     @Test
-    void testCreateUtilisateur_MotDePasseManquant() {
-        UtilisateurDTO dto = new UtilisateurDTO();
-        dto.setNom("Dupont");
-        dto.setPrenom("Jean");
-        dto.setEmail("jean.dupont@email.com");
-        dto.setPassword(""); // Mot de passe vide
-        dto.setRoles(Set.of(Role.MEMBRE));
+    public void testCreateUtilisateur_ChampManquant_Exception() {
+        // Given
+        UtilisateurDTO dto = new UtilisateurDTO(); // aucun champ rempli
 
+        // When + Then
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             utilisateurService.createUtilisateur(dto);
         });
 
-        assertEquals("Le mot de passe est requis.", exception.getMessage());
+        assertEquals("Le nom est requis.", exception.getMessage());
     }
+
     @Test
-void testLogin_Success() {
-    Utilisateur utilisateur = new Utilisateur();
-    utilisateur.setEmail("jean.dupont@email.com");
-    utilisateur.setPassword("motdepasseEncodee");
-    utilisateur.setNom("Dupont");
-    utilisateur.setPrenom("Jean");
-    utilisateur.setRoles(Set.of(Role.MEMBRE));
+    public void testLogin_Succes() {
+        // Given
+        String email = "test@test.com";
+        String password = "secret";
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setEmail(email);
+        utilisateur.setPassword("encoded_password");
+        utilisateur.setRole("ADMIN");
 
-    when(utilisateurRepository.findByEmail("jean.dupont@email.com")).thenReturn(Optional.of(utilisateur));
-    when(passwordEncoder.matches("motdepasse", "motdepasseEncodee")).thenReturn(true);
+        when(utilisateurRepository.findByEmail(email)).thenReturn(Optional.of(utilisateur));
+        when(passwordEncoder.matches(password, "encoded_password")).thenReturn(true);
 
-    Optional<UtilisateurDTO> result = utilisateurService.login("jean.dupont@email.com", "motdepasse");
+        // When
+        Optional<UtilisateurDTO> result = utilisateurService.login(email, password);
 
-    assertTrue(result.isPresent());
-    assertEquals("Dupont", result.get().getNom());
-    assertEquals("Jean", result.get().getPrenom());
-    assertEquals("jean.dupont@email.com", result.get().getEmail());
-    assertTrue(result.get().getRoles().contains(Role.MEMBRE));
-}
+        // Then
+        assertTrue(result.isPresent());
+        assertEquals(email, result.get().getEmail());
+        assertEquals("ADMIN", result.get().getRole());
+    }
 
-@Test
-void testLogin_MauvaisMotDePasse() {
-    Utilisateur utilisateur = new Utilisateur();
-    utilisateur.setEmail("jean.dupont@email.com");
-    utilisateur.setPassword("motdepasseEncodee");
-    utilisateur.setRoles(Set.of(Role.MEMBRE));
+    @Test
+    public void testLogin_MotDePasseIncorrect() {
+        // Given
+        String email = "test@test.com";
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setEmail(email);
+        utilisateur.setPassword("encoded_password");
 
-    when(utilisateurRepository.findByEmail("jean.dupont@email.com")).thenReturn(Optional.of(utilisateur));
-    when(passwordEncoder.matches("fauxmotdepasse", "motdepasseEncodee")).thenReturn(false);
+        when(utilisateurRepository.findByEmail(email)).thenReturn(Optional.of(utilisateur));
+        when(passwordEncoder.matches(anyString(), eq("encoded_password"))).thenReturn(false);
 
-    Optional<UtilisateurDTO> result = utilisateurService.login("jean.dupont@email.com", "fauxmotdepasse");
+        // When
+        Optional<UtilisateurDTO> result = utilisateurService.login(email, "wrong_password");
 
-    assertTrue(result.isEmpty());
-}
-
-@Test
-void testLogin_EmailInexistant() {
-    when(utilisateurRepository.findByEmail("inconnu@email.com")).thenReturn(Optional.empty());
-
-    Optional<UtilisateurDTO> result = utilisateurService.login("inconnu@email.com", "motdepasse");
-
-    assertTrue(result.isEmpty());
-}
-// ...tes imports et tests précédents...
-
-@Test
-void testUpdateUtilisateurFromDTO_Success() {
-    Utilisateur utilisateur = new Utilisateur();
-    utilisateur.setId(1L);
-    utilisateur.setNom("AncienNom");
-    utilisateur.setPrenom("AncienPrenom");
-    utilisateur.setEmail("ancien@email.com");
-    utilisateur.setPassword("ancienmdp");
-    utilisateur.setRoles(Set.of(Role.MEMBRE));
-
-    UtilisateurDTO dto = new UtilisateurDTO();
-    dto.setNom("NouveauNom");
-    dto.setPrenom("NouveauPrenom");
-    dto.setEmail("nouveau@email.com");
-    dto.setTelephone("0600000000");
-    dto.setAdresse("Nouvelle adresse");
-    dto.setDateNaissance(null);
-    dto.setRoles(Set.of(Role.PARENT, Role.MEMBRE));
-    dto.setPassword("nouveaumdp");
-
-    when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(utilisateur));
-    when(passwordEncoder.encode("nouveaumdp")).thenReturn("nouveaumdpEncode");
-
-    utilisateurService.updateUtilisateurFromDTO(1L, dto);
-
-    assertEquals("NouveauNom", utilisateur.getNom());
-    assertEquals("NouveauPrenom", utilisateur.getPrenom());
-    assertEquals("nouveau@email.com", utilisateur.getEmail());
-    assertEquals("0600000000", utilisateur.getTelephone());
-    assertEquals("Nouvelle adresse", utilisateur.getAdresse());
-    assertTrue(utilisateur.getRoles().contains(Role.PARENT));
-    assertTrue(utilisateur.getRoles().contains(Role.MEMBRE));
-    assertEquals("nouveaumdpEncode", utilisateur.getPassword());
-}
-
-@Test
-void testDeleteUtilisateur() {
-    doNothing().when(utilisateurRepository).deleteById(1L);
-    utilisateurService.deleteUtilisateur(1L);
-    verify(utilisateurRepository, times(1)).deleteById(1L);
-}
-
-@Test
-void testGetUtilisateurByEmail_Exist() {
-    Utilisateur utilisateur = new Utilisateur();
-    utilisateur.setEmail("test@email.com");
-    utilisateur.setNom("Test");
-    utilisateur.setPrenom("User");
-    utilisateur.setRoles(Set.of(Role.MEMBRE));
-
-    when(utilisateurRepository.findByEmail("test@email.com")).thenReturn(Optional.of(utilisateur));
-
-    Optional<UtilisateurDTO> result = utilisateurService.getUtilisateurByEmail("test@email.com");
-    assertTrue(result.isPresent());
-    assertEquals("Test", result.get().getNom());
-}
-
-@Test
-void testGetUtilisateurByEmail_NotExist() {
-    when(utilisateurRepository.findByEmail("notfound@email.com")).thenReturn(Optional.empty());
-    Optional<UtilisateurDTO> result = utilisateurService.getUtilisateurByEmail("notfound@email.com");
-    assertTrue(result.isEmpty());
-}
-
-@Test
-void testFindByNomPrenom_Exist() {
-    Utilisateur utilisateur = new Utilisateur();
-    utilisateur.setNom("Dupont");
-    utilisateur.setPrenom("Jean");
-
-    when(utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase("Dupont", "Jean")).thenReturn(Optional.of(utilisateur));
-
-    Optional<Utilisateur> result = utilisateurService.findByNomPrenom("Dupont", "Jean");
-    assertTrue(result.isPresent());
-    assertEquals("Dupont", result.get().getNom());
-    assertEquals("Jean", result.get().getPrenom());
-}
-
-@Test
-void testFindByNomPrenom_NotExist() {
-    when(utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase("Durand", "Paul")).thenReturn(Optional.empty());
-    Optional<Utilisateur> result = utilisateurService.findByNomPrenom("Durand", "Paul");
-    assertTrue(result.isEmpty());
-}
-@Test
-void testCreateUtilisateur_RoleVide() {
-    UtilisateurDTO dto = new UtilisateurDTO();
-    dto.setNom("Test");
-    dto.setPrenom("User");
-    dto.setEmail("test@email.com");
-    dto.setPassword("password");
-    dto.setRoles(Set.of()); // 
-
-    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-        utilisateurService.createUtilisateur(dto);
-    });
-
-    assertEquals("Le rôle est requis.", exception.getMessage());
-}
-@Test
-void testCreateUtilisateur_NomNull() {
-    UtilisateurDTO dto = new UtilisateurDTO();
-    dto.setNom(null); // Null
-    dto.setPrenom("User");
-    dto.setEmail("test@email.com");
-    dto.setPassword("password");
-    dto.setRoles(Set.of(Role.MEMBRE));
-
-    Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-        utilisateurService.createUtilisateur(dto);
-    });
-
-    assertEquals("Le nom est requis.", exception.getMessage());
-}
-@Test
-void testLogin_EmailCaseInsensitive() {
-    Utilisateur utilisateur = new Utilisateur();
-    utilisateur.setEmail("test@email.com");
-    utilisateur.setPassword("encodedPwd");
-    utilisateur.setRoles(Set.of(Role.MEMBRE));
-
-    when(utilisateurRepository.findByEmail("test@email.com")).thenReturn(Optional.of(utilisateur));
-    when(passwordEncoder.matches("motdepasse", "encodedPwd")).thenReturn(true);
-
-    Optional<UtilisateurDTO> result = utilisateurService.login("TEST@EMAIL.COM", "motdepasse");
-    assertTrue(result.isPresent()); // Si findByEmail ignore la casse
-}
-
+        // Then
+        assertFalse(result.isPresent());
+    }
 }

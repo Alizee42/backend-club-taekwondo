@@ -37,8 +37,6 @@ public class StripeController {
     public ResponseEntity<Map<String, String>> getPublicKey() {
         return ResponseEntity.ok(Map.of("publicKey", stripeService.getPublicKey()));
     }
-    
- 
 
     @PostMapping("/create-payment-intent")
     public ResponseEntity<Map<String, String>> createPaymentIntent(
@@ -55,26 +53,24 @@ public class StripeController {
 
             String jwt = token.substring(7);
             String email = jwtUtil.extractEmail(jwt);
-            Utilisateur utilisateur = utilisateurService.getByEmail(email)
+            Utilisateur utilisateur = utilisateurService.getUtilisateurEntityByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
 
-            double montantTotal = Double.parseDouble(request.get("amount").toString()); // ✅ ne pas écraser plus bas
-            String currency = request.get("currency").toString();
-            if (!currency.matches("(?i)eur|usd")) {
+            double montantTotal = Double.parseDouble(request.get("amount").toString());
+            String currency = request.get("currency").toString().toLowerCase();
+
+            if (!currency.matches("eur|usd")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Devise non autorisée"));
             }
 
             String typePaiement = request.get("typePaiement").toString();
-            String modePaiement = request.get("modePaiement").toString();
+            String modePaiement = request.getOrDefault("modePaiement", "inconnu").toString();
             int nombreEcheances = request.containsKey("nombreEcheances")
                     ? Integer.parseInt(request.get("nombreEcheances").toString()) : 1;
 
             System.out.println("🎯 Reçu typePaiement = " + typePaiement);
             System.out.println("🎯 Reçu modePaiement = " + modePaiement);
 
-
-            
-            
             Paiement paiement = new Paiement();
             paiement.setModePaiement(modePaiement);
             paiement.setType(typePaiement);
@@ -110,7 +106,6 @@ public class StripeController {
                     echeances.add(echeance);
                 }
 
-            
                 paiement.setMontantTotal(montantTotal);
                 paiement.setMontantRestant(montantRestant);
                 paiement.setEcheancesTotales(nombreEcheances);
@@ -131,8 +126,10 @@ public class StripeController {
             paiementService.save(paiement);
             System.out.println("📌 Paiement enregistré avec statut = " + paiement.getStatut());
 
-            // ✅ Très important : on s’assure d’envoyer le montant total au service Stripe
             request.put("amount", montantTotal);
+            request.put("modePaiement", modePaiement);
+            request.put("typePaiement", typePaiement);
+            request.put("nombreEcheances", nombreEcheances);
 
             PaymentIntent paymentIntent = stripeService.executeStripePayment(jwt, request);
             return ResponseEntity.ok(Map.of("clientSecret", paymentIntent.getClientSecret()));
@@ -147,3 +144,4 @@ public class StripeController {
         }
     }
 }
+

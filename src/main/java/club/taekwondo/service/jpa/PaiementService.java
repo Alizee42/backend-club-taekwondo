@@ -318,7 +318,6 @@ public class PaiementService {
         Paiement saved = paiementRepository.save(paiement);
         return toPaiementDTO(saved);
     }
-
 }
 
 

@@ -1,6 +1,5 @@
 package club.taekwondo.entity.jpa;
 
-import club.taekwondo.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
@@ -32,9 +31,8 @@ public class Utilisateur {
 
     private String telephone;
 
-    @Enumerated(EnumType.STRING) // Stocke le rôle en tant que chaîne de caractères
-    @Column(nullable = false) // Assurez-vous que le rôle ne peut pas être NULL
-    private Role role;
+    @Column(nullable = false)
+    private String role; 
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Paiement> paiements;
@@ -50,7 +48,7 @@ public class Utilisateur {
 
     public Utilisateur() {}
 
-    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, Role role) {
+    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, String role) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -125,15 +123,15 @@ public class Utilisateur {
         this.telephone = telephone;
     }
 
-    public Role getRole() {
-        return role;
-    }
+    public String getRole() {
+		return role;
+	}
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
+	public void setRole(String role) {
+		this.role = role;
+	}
 
-    public List<Paiement> getPaiements() {
+	public List<Paiement> getPaiements() {
         return paiements;
     }
 
