@@ -24,55 +24,8 @@ public class UtilisateurService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<UtilisateurDTO> getAllUtilisateurs() {
-        List<UtilisateurDTO> result = new ArrayList<>();
-        for (Utilisateur u : utilisateurRepository.findAll()) {
-            result.add(toUtilisateurDTO(u));
-        }
-        return result;
-    }
-
-    public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
-        return utilisateurRepository.findByEmail(email).map(this::toUtilisateurDTO);
-    }
-
-    public Optional<UtilisateurDTO> login(String email, String password) {
-        if (email != null) {
-            email = email.toLowerCase();
-        }
-        return utilisateurRepository.findByEmail(email)
-                .filter(u -> passwordEncoder.matches(password, u.getPassword()))
-                .map(this::toUtilisateurDTO);
-    }
-
-    public Utilisateur createUtilisateur(UtilisateurDTO dto) {
-        if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
-            throw new IllegalArgumentException("Le nom est requis.");
-        }
-        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("L'email est requis.");
-        }
-        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("Le mot de passe est requis.");
-        }
-
-        if (dto.getRole() == null || dto.getRole().isEmpty()) {
-            dto.setRole("MEMBRE");
-        }
-
-        dto.setEmail(dto.getEmail().toLowerCase());
-
-        if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
-        }
-
-        dto.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-        Utilisateur utilisateur = toUtilisateurEntity(dto);
-        return utilisateurRepository.save(utilisateur);
-    }
-
-    private UtilisateurDTO toUtilisateurDTO(Utilisateur utilisateur) {
+    // ========== CONVERSION ==========
+    public UtilisateurDTO convertToDTO(Utilisateur utilisateur) {
         UtilisateurDTO dto = new UtilisateurDTO();
         dto.setId(utilisateur.getId());
         dto.setNom(utilisateur.getNom());
@@ -98,6 +51,69 @@ public class UtilisateurService {
         return utilisateur;
     }
 
+    // ========== LECTURE ==========
+    public List<UtilisateurDTO> getAllUtilisateurs() {
+        List<UtilisateurDTO> result = new ArrayList<>();
+        for (Utilisateur u : utilisateurRepository.findAll()) {
+            result.add(convertToDTO(u));
+        }
+        return result;
+    }
+
+    public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
+        return utilisateurRepository.findByEmail(email).map(this::convertToDTO);
+    }
+
+    public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
+        return utilisateurRepository.findById(id);
+    }
+
+    public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
+        return utilisateurRepository.findByEmail(email);
+    }
+
+    public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
+        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
+    }
+
+    // ========== AUTHENTIFICATION ==========
+    public Optional<UtilisateurDTO> login(String email, String password) {
+        if (email != null) {
+            email = email.toLowerCase();
+        }
+        return utilisateurRepository.findByEmail(email)
+                .filter(u -> passwordEncoder.matches(password, u.getPassword()))
+                .map(this::convertToDTO);
+    }
+
+    // ========== CRÉATION ==========
+    public Utilisateur createUtilisateur(UtilisateurDTO dto) {
+        if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom est requis.");
+        }
+        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("L'email est requis.");
+        }
+        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le mot de passe est requis.");
+        }
+
+        if (dto.getRole() == null || dto.getRole().isEmpty()) {
+            dto.setRole("MEMBRE");
+        }
+
+        dto.setEmail(dto.getEmail().toLowerCase());
+
+        if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
+        }
+
+        dto.setPassword(passwordEncoder.encode(dto.getPassword()));
+        Utilisateur utilisateur = toUtilisateurEntity(dto);
+        return utilisateurRepository.save(utilisateur);
+    }
+
+    // ========== MISE À JOUR ==========
     public void updateUtilisateurFromDTO(Long id, UtilisateurDTO dto) {
         utilisateurRepository.findById(id).ifPresent(user -> {
             user.setNom(dto.getNom());
@@ -116,10 +132,12 @@ public class UtilisateurService {
         });
     }
 
+    // ========== SUPPRESSION ==========
     public void deleteUtilisateur(Long id) {
         utilisateurRepository.deleteById(id);
     }
 
+    // ========== PAIEMENTS ==========
     public List<UtilisateurPaiementDTO> getAllWithPaiements() {
         List<UtilisateurPaiementDTO> result = new ArrayList<>();
         for (Utilisateur u : utilisateurRepository.findAll()) {
@@ -134,20 +152,10 @@ public class UtilisateurService {
         return result;
     }
 
-    public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
-        return utilisateurRepository.findById(id);
-    }
-
-    public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
-        return utilisateurRepository.findByEmail(email);
-    }
-
-    public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
-        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
-    }
-
+    // ========== SAUVEGARDE ==========
     public Utilisateur save(Utilisateur utilisateur) {
         return utilisateurRepository.save(utilisateur);
     }
 }
+
 

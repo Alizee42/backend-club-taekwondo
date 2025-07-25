@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,14 +28,21 @@ public class UtilisateurController {
         this.utilisateurService = utilisateurService;
     }
 
+    // ✅ NOUVEAU ENDPOINT : /api/utilisateurs
+    @GetMapping("")
+    public ResponseEntity<List<UtilisateurDTO>> getAllUtilisateurs() {
+        List<UtilisateurDTO> utilisateurs = utilisateurService.getAllUtilisateurs();
+        return ResponseEntity.ok(utilisateurs);
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UtilisateurDTO utilisateurDTO) {
         try {
             if (utilisateurService.getUtilisateurByEmail(utilisateurDTO.getEmail()).isPresent()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Cet email est déjà utilisé."));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            // Assign default role if none is provided
             if (utilisateurDTO.getRole() == null || utilisateurDTO.getRole().isBlank()) {
                 utilisateurDTO.setRole("MEMBRE");
             }
@@ -49,7 +58,8 @@ public class UtilisateurController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de l'inscription."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de l'inscription."));
         }
     }
 
@@ -58,7 +68,8 @@ public class UtilisateurController {
         try {
             Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.login(loginDTO.getEmail(), loginDTO.getPassword());
             if (utilisateurOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email ou mot de passe incorrect."));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Email ou mot de passe incorrect."));
             }
 
             UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
@@ -72,7 +83,43 @@ public class UtilisateurController {
             ));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur lors de l'authentification."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de l'authentification."));
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Token manquant ou invalide."));
+            }
+
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
+
+            if (email == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Token invalide."));
+            }
+
+            Optional<Utilisateur> utilisateurOpt = utilisateurService.getUtilisateurEntityByEmail(email);
+
+            if (utilisateurOpt.isPresent()) {
+                UtilisateurDTO dto = utilisateurService.convertToDTO(utilisateurOpt.get());
+                return ResponseEntity.ok(dto);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Utilisateur non trouvé."));
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de la récupération de l'utilisateur connecté."));
         }
     }
 }
+
+
+
