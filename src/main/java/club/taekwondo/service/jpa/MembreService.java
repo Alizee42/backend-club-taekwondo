@@ -51,13 +51,25 @@ public class MembreService {
     public MembreDTO createMembre(MembreDTO membreDTO, Long utilisateurId) {
         Membre membre = fromMembreDTO(membreDTO);
 
-        Long idParent = utilisateurId != null ? utilisateurId : membreDTO.getUtilisateurId();
-        if (idParent != null) {
-            Utilisateur utilisateur = utilisateurRepository.findById(idParent)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + idParent));
-            membre.setCompteUtilisateur(utilisateur);
-        } else {
-            throw new RuntimeException("Impossible de créer un membre sans utilisateur associé.");
+        // Si membre adulte → utilisateur = compteUtilisateur
+        if (membreDTO.isEstAdulte()) {
+            if (utilisateurId != null) {
+                Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
+                        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + utilisateurId));
+                membre.setCompteUtilisateur(utilisateur);
+            } else {
+                throw new RuntimeException("Impossible de créer un membre adulte sans utilisateur associé.");
+            }
+        }
+        // Si membre enfant → utilisateur = parent
+        else {
+            if (utilisateurId != null) {
+                Utilisateur parent = utilisateurRepository.findById(utilisateurId)
+                        .orElseThrow(() -> new RuntimeException("Parent non trouvé avec l'ID : " + utilisateurId));
+                membre.setParent(parent);
+            } else {
+                throw new RuntimeException("Impossible de créer un membre enfant sans parent associé.");
+            }
         }
 
         return toMembreDTO(membreRepository.save(membre));
@@ -71,6 +83,7 @@ public class MembreService {
             membre.setDateNaissance(membreDTO.getDateNaissance());
             membre.setNumeroLicence(membreDTO.getNumeroLicence());
             membre.setCeinture(membreDTO.getCeinture());
+            membre.setEstAdulte(membreDTO.isEstAdulte());
             return toMembreDTO(membreRepository.save(membre));
         }).orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID : " + id));
     }
@@ -92,8 +105,11 @@ public class MembreService {
         dto.setDateNaissance(membre.getDateNaissance());
         dto.setNumeroLicence(membre.getNumeroLicence());
         dto.setCeinture(membre.getCeinture());
+        dto.setEstAdulte(membre.isEstAdulte());
         if (membre.getCompteUtilisateur() != null) {
             dto.setUtilisateurId(membre.getCompteUtilisateur().getId());
+        } else if (membre.getParent() != null) {
+            dto.setUtilisateurId(membre.getParent().getId());
         }
         return dto;
     }
@@ -106,6 +122,7 @@ public class MembreService {
         membre.setDateNaissance(dto.getDateNaissance());
         membre.setNumeroLicence(dto.getNumeroLicence());
         membre.setCeinture(dto.getCeinture());
+        membre.setEstAdulte(dto.isEstAdulte());
         return membre;
     }
 }

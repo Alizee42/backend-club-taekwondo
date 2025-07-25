@@ -10,14 +10,8 @@ public class MembreDTO {
     private LocalDate dateNaissance;
     private String ceinture;
     private String numeroLicence;
-
-    /**
-     * ID de l'utilisateur auquel le membre est rattaché.
-     * Il peut s'agir :
-     * - d’un parent (dans le cas d’un enfant membre)
-     * - du membre lui-même (si c’est un adulte pratiquant)
-     */
     private Long utilisateurId;
+    private boolean estAdulte;
 
     // --- Getters & Setters ---
 
@@ -75,6 +69,14 @@ public class MembreDTO {
 
     public void setUtilisateurId(Long utilisateurId) {
         this.utilisateurId = utilisateurId;
+    }
+
+    public boolean isEstAdulte() {
+        return estAdulte;
+    }
+
+    public void setEstAdulte(boolean estAdulte) {
+        this.estAdulte = estAdulte;
     }
 }
 

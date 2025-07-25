@@ -1,6 +1,8 @@
 package club.taekwondo.entity.jpa;
 
+import club.taekwondo.enums.Role;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,8 +33,9 @@ public class Utilisateur {
 
     private String telephone;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role; 
+    private Role role;
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Paiement> paiements;
@@ -48,7 +51,7 @@ public class Utilisateur {
 
     public Utilisateur() {}
 
-    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, String role) {
+    public Utilisateur(Long id, String nom, String prenom, String email, String password, String telephone, Role role) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -59,6 +62,7 @@ public class Utilisateur {
     }
 
     // --- Getters & Setters ---
+
     public Long getId() {
         return id;
     }
@@ -123,15 +127,15 @@ public class Utilisateur {
         this.telephone = telephone;
     }
 
-    public String getRole() {
-		return role;
-	}
+    public Role getRole() {
+        return role;
+    }
 
-	public void setRole(String role) {
-		this.role = role;
-	}
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
-	public List<Paiement> getPaiements() {
+    public List<Paiement> getPaiements() {
         return paiements;
     }
 

@@ -25,6 +25,9 @@ public class Membre {
 
     private LocalDate dateNaissance;
 
+    @Column(nullable = false)
+    private boolean estAdulte;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Utilisateur parent;
@@ -36,15 +39,17 @@ public class Membre {
     public Membre() {}
 
     public Membre(String nom, String prenom, LocalDate dateNaissance, String ceinture, String numeroLicence,
-                  Utilisateur parent, Utilisateur compteUtilisateur) {
+                  boolean estAdulte, Utilisateur parent, Utilisateur compteUtilisateur) {
         this.nom = nom;
         this.prenom = prenom;
         this.dateNaissance = dateNaissance;
         this.ceinture = ceinture;
         this.numeroLicence = numeroLicence;
+        this.estAdulte = estAdulte;
         this.parent = parent;
         this.compteUtilisateur = compteUtilisateur;
     }
+
     // --- Getters & Setters ---
     public Long getId() {
         return id;
@@ -94,6 +99,14 @@ public class Membre {
         this.dateNaissance = dateNaissance;
     }
 
+    public boolean isEstAdulte() {
+        return estAdulte;
+    }
+
+    public void setEstAdulte(boolean estAdulte) {
+        this.estAdulte = estAdulte;
+    }
+
     public Utilisateur getParent() {
         return parent;
     }
@@ -110,3 +123,4 @@ public class Membre {
         this.compteUtilisateur = compteUtilisateur;
     }
 }
+

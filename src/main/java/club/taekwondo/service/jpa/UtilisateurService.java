@@ -3,6 +3,7 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +43,7 @@ public class UtilisateurService {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(dto.getNom());
         utilisateur.setPrenom(dto.getPrenom());
-        utilisateur.setEmail(dto.getEmail());
+        utilisateur.setEmail(dto.getEmail().toLowerCase());
         utilisateur.setDateNaissance(dto.getDateNaissance());
         utilisateur.setAdresse(dto.getAdresse());
         utilisateur.setTelephone(dto.getTelephone());
@@ -61,7 +62,7 @@ public class UtilisateurService {
     }
 
     public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
-        return utilisateurRepository.findByEmail(email).map(this::convertToDTO);
+        return utilisateurRepository.findByEmail(email.toLowerCase()).map(this::convertToDTO);
     }
 
     public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
@@ -69,7 +70,7 @@ public class UtilisateurService {
     }
 
     public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
-        return utilisateurRepository.findByEmail(email);
+        return utilisateurRepository.findByEmail(email.toLowerCase());
     }
 
     public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
@@ -98,14 +99,14 @@ public class UtilisateurService {
             throw new IllegalArgumentException("Le mot de passe est requis.");
         }
 
-        if (dto.getRole() == null || dto.getRole().isEmpty()) {
-            dto.setRole("MEMBRE");
-        }
-
         dto.setEmail(dto.getEmail().toLowerCase());
 
         if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
+        }
+
+        if (dto.getRole() == null) {
+            dto.setRole(Role.MEMBRE);
         }
 
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -118,7 +119,7 @@ public class UtilisateurService {
         utilisateurRepository.findById(id).ifPresent(user -> {
             user.setNom(dto.getNom());
             user.setPrenom(dto.getPrenom());
-            user.setEmail(dto.getEmail());
+            user.setEmail(dto.getEmail().toLowerCase());
             user.setTelephone(dto.getTelephone());
             user.setAdresse(dto.getAdresse());
             user.setDateNaissance(dto.getDateNaissance());
@@ -146,7 +147,7 @@ public class UtilisateurService {
             dto.setNom(u.getNom());
             dto.setPrenom(u.getPrenom());
             dto.setEmail(u.getEmail());
-            dto.setRole(u.getRole());
+            dto.setRole(u.getRole() != null ? u.getRole().name() : "MEMBRE");
             result.add(dto);
         }
         return result;
@@ -154,8 +155,8 @@ public class UtilisateurService {
 
     // ========== SAUVEGARDE ==========
     public Utilisateur save(Utilisateur utilisateur) {
+        utilisateur.setEmail(utilisateur.getEmail().toLowerCase());
         return utilisateurRepository.save(utilisateur);
     }
 }
-
 

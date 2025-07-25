@@ -3,8 +3,9 @@ package club.taekwondo.controller.jpa;
 import club.taekwondo.dto.LoginDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
-import club.taekwondo.service.jpa.UtilisateurService;
+import club.taekwondo.enums.Role;
 import club.taekwondo.security.JwtUtil;
+import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +29,14 @@ public class UtilisateurController {
         this.utilisateurService = utilisateurService;
     }
 
-    // ✅ NOUVEAU ENDPOINT : /api/utilisateurs
+    // ✅ Lister tous les utilisateurs
     @GetMapping("")
     public ResponseEntity<List<UtilisateurDTO>> getAllUtilisateurs() {
         List<UtilisateurDTO> utilisateurs = utilisateurService.getAllUtilisateurs();
         return ResponseEntity.ok(utilisateurs);
     }
 
+    // ✅ Enregistrement d'un nouvel utilisateur
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UtilisateurDTO utilisateurDTO) {
         try {
@@ -43,8 +45,9 @@ public class UtilisateurController {
                         .body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            if (utilisateurDTO.getRole() == null || utilisateurDTO.getRole().isBlank()) {
-                utilisateurDTO.setRole("MEMBRE");
+            // ✅ Utilisation propre du fallback enum
+            if (utilisateurDTO.getRole() == null) {
+                utilisateurDTO.setRole(Role.MEMBRE);
             }
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
@@ -52,7 +55,7 @@ public class UtilisateurController {
                     "message", "Utilisateur créé avec succès.",
                     "id", nouvelUtilisateur.getId(),
                     "email", nouvelUtilisateur.getEmail(),
-                    "role", nouvelUtilisateur.getRole()
+                    "role", nouvelUtilisateur.getRole().name()
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
@@ -63,6 +66,7 @@ public class UtilisateurController {
         }
     }
 
+    // ✅ Authentification
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         try {
@@ -73,7 +77,7 @@ public class UtilisateurController {
             }
 
             UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
-            String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), utilisateurDTO.getRole());
+            String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), utilisateurDTO.getRole().toString());
 
             return ResponseEntity.ok(Map.of(
                     "token", token,
@@ -88,6 +92,7 @@ public class UtilisateurController {
         }
     }
 
+    // ✅ Récupération de l'utilisateur connecté
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         try {
@@ -120,6 +125,3 @@ public class UtilisateurController {
         }
     }
 }
-
-
-
