@@ -12,20 +12,32 @@ public class ParametresPaiementService {
     @Autowired
     private ParametresPaiementRepository parametresPaiementRepository;
 
-    // Récupérer les paramètres
+    // ✅ Récupérer les paramètres avec fallback par défaut
     public ParametresPaiementDTO getParametresPaiement() {
-        ParametresPaiement entity = parametresPaiementRepository.findById(1L).orElse(new ParametresPaiement());
-        return mapToDTO(entity);
+        return parametresPaiementRepository.findById(1L)
+                .map(this::mapToDTO)
+                .orElseGet(() -> {
+                    // 👇 Valeurs par défaut si aucun enregistrement trouvé
+                    ParametresPaiementDTO defaut = new ParametresPaiementDTO();
+                    defaut.setMontantCotisation(100); // valeur par défaut
+                    defaut.setVirement(true);
+                    defaut.setEspeces(true);
+                    defaut.setStripe(true);
+                    defaut.setModePaiementParDefaut("stripe");
+                    defaut.setEcheancesAutorisees(1);
+                    defaut.setIntervalleEcheance("30 jours"); // ✅ corrigé : string au lieu d’un entier
+                    return defaut;
+                });
     }
 
-    // Mettre à jour les paramètres
+    // ✅ Mettre à jour les paramètres
     public void updateParametresPaiement(ParametresPaiementDTO parametres) {
         ParametresPaiement entity = mapToEntity(parametres);
-        entity.setId(1L); // Utilisez un ID fixe si vous gérez un seul ensemble de paramètres
+        entity.setId(1L); // ID fixe si un seul jeu de paramètres
         parametresPaiementRepository.save(entity);
     }
 
-    // Mapper l'entité vers le DTO
+    // 🔁 Mapper l'entité vers le DTO
     private ParametresPaiementDTO mapToDTO(ParametresPaiement entity) {
         ParametresPaiementDTO dto = new ParametresPaiementDTO();
         dto.setMontantCotisation(entity.getMontantCotisation());
@@ -38,7 +50,7 @@ public class ParametresPaiementService {
         return dto;
     }
 
-    // Mapper le DTO vers l'entité
+    // 🔁 Mapper le DTO vers l'entité
     private ParametresPaiement mapToEntity(ParametresPaiementDTO dto) {
         ParametresPaiement entity = new ParametresPaiement();
         entity.setMontantCotisation(dto.getMontantCotisation());
@@ -51,3 +63,4 @@ public class ParametresPaiementService {
         return entity;
     }
 }
+

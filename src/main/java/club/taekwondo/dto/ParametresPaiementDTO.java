@@ -7,7 +7,7 @@ public class ParametresPaiementDTO {
     private boolean stripe;
     private String modePaiementParDefaut;
     private int echeancesAutorisees;
-    private String intervalleEcheance;
+    private String intervalleEcheance; // ✅ cohérent avec l'entité
 
     // Getters et setters
     public double getMontantCotisation() {
@@ -66,3 +66,4 @@ public class ParametresPaiementDTO {
         this.intervalleEcheance = intervalleEcheance;
     }
 }
+

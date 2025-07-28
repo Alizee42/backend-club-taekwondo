@@ -67,6 +67,7 @@ public class PaiementController {
 
         paiement.setMontantRestant(Math.max(0, paiement.getMontantRestant() - montantTotalAPayer));
         paiement.setEcheancesRestantes(Math.max(0, paiement.getEcheancesRestantes() - nombreEcheancesPayees));
+        paiement.setMontantPaye(safeAdd(paiement.getMontantPaye(), montantTotalAPayer));
 
         if (paiement.getMontantRestant() <= 0 || paiement.getEcheancesRestantes() <= 0) {
             paiement.setStatut("payé");
@@ -76,6 +77,10 @@ public class PaiementController {
 
         Paiement saved = paiementService.save(paiement);
         return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
+    }
+
+    private double safeAdd(Double a, Double b) {
+        return (a != null ? a : 0.0) + (b != null ? b : 0.0);
     }
 
     @GetMapping("/filter")
@@ -95,6 +100,7 @@ public class PaiementController {
                     p.setStatut("payé");
                     p.setEcheancesRestantes(0);
                     p.setMontantRestant(0.0);
+                    p.setMontantPaye(p.getMontantTotal() != null ? p.getMontantTotal() : 0.0);
                     Paiement saved = paiementService.save(p);
                     return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
                 })
@@ -189,7 +195,7 @@ public class PaiementController {
             return ResponseEntity.ok(paiementService.toPaiementDTO(paiement));
 
         } catch (Exception e) {
-            System.err.println("Erreur lors de l'ajout complet : " + e.getMessage());
+            e.printStackTrace(); // meilleur debug
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

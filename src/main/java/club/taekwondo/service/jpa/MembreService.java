@@ -96,6 +96,14 @@ public class MembreService {
         membreRepository.deleteById(id);
     }
 
+    // 🔹 Récupérer les membres liés à un utilisateur (compte)
+    public List<MembreDTO> getMembresByUtilisateurId(Long utilisateurId) {
+        return membreRepository.findByCompteUtilisateur_Id(utilisateurId)
+            .stream()
+            .map(this::toMembreDTO)
+            .collect(Collectors.toList());
+    }
+
     // 🔁 Membre → DTO
     public MembreDTO toMembreDTO(Membre membre) {
         MembreDTO dto = new MembreDTO();
@@ -126,3 +134,4 @@ public class MembreService {
         return membre;
     }
 }
+

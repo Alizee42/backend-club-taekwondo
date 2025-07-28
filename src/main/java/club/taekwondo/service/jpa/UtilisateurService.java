@@ -35,7 +35,7 @@ public class UtilisateurService {
         dto.setAdresse(utilisateur.getAdresse());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
-        dto.setRole(utilisateur.getRole());
+        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null); // ✅
         return dto;
     }
 
@@ -106,7 +106,7 @@ public class UtilisateurService {
         }
 
         if (dto.getRole() == null) {
-            dto.setRole(Role.MEMBRE);
+        	dto.setRole(Role.MEMBRE.name()); // ✅ Corrigé : convertit enum → String
         }
 
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));

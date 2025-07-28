@@ -47,8 +47,7 @@ public class UtilisateurController {
 
             // ✅ Utilisation propre du fallback enum
             if (utilisateurDTO.getRole() == null) {
-                utilisateurDTO.setRole(Role.MEMBRE);
-            }
+            	utilisateurDTO.setRole(Role.MEMBRE.name());            }
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(

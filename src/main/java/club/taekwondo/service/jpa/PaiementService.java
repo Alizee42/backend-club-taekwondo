@@ -115,32 +115,39 @@ public class PaiementService {
         double totalAnnules = 0.0;
 
         for (Paiement paiement : paiements) {
-            double paye = safeMontant(paiement.getMontantPaye());
-            double restant = safeMontant(paiement.getMontantRestant());
+            double montantPaye = 0.0;
+            double montantRestant = 0.0;
 
-            switch (paiement.getStatut().toLowerCase()) {
-                case "payé":
-                    totalPayes += paye;
-                    break;
-
-                case "en attente":
-                    totalPayes += paye;
-                    totalAttente += restant;
-                    break;
-
-                case "annulé":
-                    totalPayes += paye;
-
-                    if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
-                        double montantAnnule = paiement.getEcheances().stream()
-                            .filter(e -> "annulé".equalsIgnoreCase(e.getStatut()))
-                            .mapToDouble(e -> safeMontant(e.getMontant()))
-                            .sum();
-                        totalAnnules += montantAnnule;
-                    } else {
-                        totalAnnules += paiement.getMontantTotal() - paye;
+            if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+                for (Echeance e : paiement.getEcheances()) {
+                    if ("payé".equalsIgnoreCase(e.getStatut())) {
+                        montantPaye += safeMontant(e.getMontant());
+                    } else if ("en attente".equalsIgnoreCase(e.getStatut())) {
+                        montantRestant += safeMontant(e.getMontant());
+                    } else if ("annulé".equalsIgnoreCase(e.getStatut())) {
+                        totalAnnules += safeMontant(e.getMontant());
                     }
-                    break;
+                }
+            } else {
+                // Paiement sans échéances
+                if ("payé".equalsIgnoreCase(paiement.getStatut())) {
+                    montantPaye = safeMontant(paiement.getMontantTotal());
+                } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
+                    montantRestant = safeMontant(paiement.getMontantRestant());
+                    montantPaye = safeMontant(paiement.getMontantTotal()) - montantRestant;
+                } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
+                    totalAnnules += safeMontant(paiement.getMontantTotal()) - safeMontant(paiement.getMontantPaye());
+                    montantPaye = safeMontant(paiement.getMontantPaye());
+                }
+            }
+
+            if ("payé".equalsIgnoreCase(paiement.getStatut())) {
+                totalPayes += montantPaye;
+            } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
+                totalPayes += montantPaye;
+                totalAttente += montantRestant;
+            } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
+                totalPayes += montantPaye;
             }
         }
 
@@ -156,6 +163,7 @@ public class PaiementService {
 
         return new DashboardStatsDTO(totalPayes, totalAttente, totalAnnules, pctMois, courbe, top);
     }
+
 
 
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
@@ -257,16 +265,16 @@ public class PaiementService {
         dto.setModePaiement(paiement.getModePaiement());
         dto.setUtilisateurId(paiement.getUtilisateur().getId());
         dto.setMontantTotal(paiement.getMontantTotal());
-        dto.setMontantRestant(paiement.getMontantRestant());
         dto.setMotifAnnulation(paiement.getMotifAnnulation());
         dto.setDateAnnulation(paiement.getDateAnnulation());
         dto.setAdminResponsable(paiement.getAdminResponsable());
-        dto.setMontantPaye(paiement.getMontantPaye() != null ? paiement.getMontantPaye() : 0.0);
         dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
         dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
         dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
-
-        if (paiement.getEcheances() != null) {
+    
+        double montantPaye = 0.0;
+    
+        if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
             List<EcheanceDTO> liste = new ArrayList<>();
             for (Echeance e : paiement.getEcheances()) {
                 EcheanceDTO edto = new EcheanceDTO();
@@ -276,12 +284,25 @@ public class PaiementService {
                 edto.setStatut(e.getStatut());
                 edto.setNumero(e.getNumero());
                 liste.add(edto);
+    
+                if ("payé".equalsIgnoreCase(e.getStatut())) {
+                    montantPaye += e.getMontant();
+                }
             }
             dto.setEcheances(liste);
+        } else {
+            // Paiement unique : basé sur le statut
+            if ("payé".equalsIgnoreCase(paiement.getStatut())) {
+                montantPaye = paiement.getMontantTotal();
+            }
         }
-
+    
+        double montantTotal = paiement.getMontantTotal() != null ? paiement.getMontantTotal() : 0.0;
+        dto.setMontantPaye(montantPaye);
+        dto.setMontantRestant(Math.max(0.0, montantTotal - montantPaye));
+    
         return dto;
-    }
+    }    
 
     public PaiementDTO annulerPaiement(Long paiementId, AnnulationRequestDTO request) {
         Paiement paiement = paiementRepository.findById(paiementId)

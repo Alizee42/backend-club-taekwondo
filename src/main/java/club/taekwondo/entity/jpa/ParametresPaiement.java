@@ -1,23 +1,39 @@
 package club.taekwondo.entity.jpa;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "parametres_paiement")
 public class ParametresPaiement {
 
     @Id
-    private Long id; // Ajoutez un identifiant unique pour l'entité
+    private Long id; // Identifiant fixe pour les paramètres globaux (ex : 1)
 
+    @Column(nullable = false)
     private double montantCotisation;
+
+    @Column(nullable = false)
     private boolean virement;
+
+    @Column(nullable = false)
     private boolean especes;
+
+    @Column(nullable = false)
     private boolean stripe;
+
+    @Column(nullable = false)
     private String modePaiementParDefaut;
+
+    @Column(nullable = false)
     private int echeancesAutorisees;
+
+    @Column(nullable = false)
     private String intervalleEcheance;
 
-    // Getters et setters
+    // === GETTERS & SETTERS ===
     public Long getId() {
         return id;
     }
