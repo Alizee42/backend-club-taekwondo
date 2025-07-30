@@ -10,5 +10,5 @@ public interface MembreRepository extends JpaRepository<Membre, Long> {
 
     Optional<Membre> findByCompteUtilisateur_Email(String email);
 
-    List<Membre> findByCompteUtilisateur_Id(Long utilisateurId); // 🔧 AJOUT ICI
+    List<Membre> findByParent_Id(Long parentId);
 }

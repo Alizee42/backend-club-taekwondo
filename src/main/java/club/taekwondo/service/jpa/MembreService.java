@@ -98,10 +98,11 @@ public class MembreService {
 
     // 🔹 Récupérer les membres liés à un utilisateur (compte)
     public List<MembreDTO> getMembresByUtilisateurId(Long utilisateurId) {
-        return membreRepository.findByCompteUtilisateur_Id(utilisateurId)
-            .stream()
-            .map(this::toMembreDTO)
-            .collect(Collectors.toList());
+        List<Membre> membres = membreRepository.findByParent_Id(utilisateurId);
+        System.out.println("[✅] Membres trouvés dans la base de données : " + membres);
+        return membres.stream()
+                .map(this::toMembreDTO)
+                .collect(Collectors.toList());
     }
 
     // 🔁 Membre → DTO

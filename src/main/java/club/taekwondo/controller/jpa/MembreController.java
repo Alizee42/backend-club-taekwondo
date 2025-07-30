@@ -131,20 +131,26 @@ public class MembreController {
         try {
             String jwt = token.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(jwt);
+            System.out.println("[DEBUG] Email extrait du token : " + email);
 
             Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
             if (utilisateurOpt.isEmpty()) {
+                System.out.println("[DEBUG] Aucun utilisateur trouvé pour l'email : " + email);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "Aucun utilisateur trouvé avec l'email : " + email));
+                        .body(Map.of("message", "Utilisateur non trouvé."));
             }
 
             Long parentId = utilisateurOpt.get().getId();
+            System.out.println("[DEBUG] ID du parent connecté : " + parentId);
+
             List<MembreDTO> enfants = membreService.getMembresByUtilisateurId(parentId);
+            System.out.println("[DEBUG] Membres enfants récupérés : " + enfants);
+
             return ResponseEntity.ok(enfants);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Erreur lors de la récupération des enfants du parent."));
         }
     }
-
 }
