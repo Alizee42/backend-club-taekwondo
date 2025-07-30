@@ -3,10 +3,12 @@ package club.taekwondo.controller;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementService;
 import club.taekwondo.service.jpa.UtilisateurService;
+import club.taekwondo.service.jpa.MembreService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import org.springframework.http.HttpStatus;
@@ -24,13 +26,15 @@ public class StripeController {
     private final UtilisateurService utilisateurService;
     private final PaiementService paiementService;
     private final JwtUtil jwtUtil;
+    private final MembreService membreService;
 
     public StripeController(StripeService stripeService, UtilisateurService utilisateurService,
-                            PaiementService paiementService, JwtUtil jwtUtil) {
+                            PaiementService paiementService, JwtUtil jwtUtil, MembreService membreService) {
         this.stripeService = stripeService;
         this.utilisateurService = utilisateurService;
         this.paiementService = paiementService;
         this.jwtUtil = jwtUtil;
+        this.membreService = membreService;
     }
 
     @GetMapping("/public-key")
@@ -68,6 +72,21 @@ public class StripeController {
             int nombreEcheances = request.containsKey("nombreEcheances")
                     ? Integer.parseInt(request.get("nombreEcheances").toString()) : 1;
 
+            // Correction : récupération du membre/enfant
+            Long membreId = null;
+            if (request.containsKey("enfantId")) {
+                try {
+                    membreId = Long.parseLong(request.get("enfantId").toString());
+                } catch (Exception ex) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "ID enfant/membre invalide."));
+                }
+            }
+            if (membreId == null || membreId <= 0) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Enfant/membre non sélectionné."));
+            }
+            Membre membre = membreService.getMembreEntityById(membreId)
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+
             System.out.println("🎯 Reçu typePaiement = " + typePaiement);
             System.out.println("🎯 Reçu modePaiement = " + modePaiement);
 
@@ -76,6 +95,7 @@ public class StripeController {
             paiement.setType(typePaiement);
             paiement.setUtilisateur(utilisateur);
             paiement.setDatePaiement(LocalDate.now());
+            paiement.setMembre(membre); // Correction ici
 
             boolean isEcheances = "echeances".equalsIgnoreCase(typePaiement);
 
@@ -144,4 +164,3 @@ public class StripeController {
         }
     }
 }
-

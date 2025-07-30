@@ -2,6 +2,7 @@ package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.*;
 import club.taekwondo.entity.jpa.Echeance;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.PaiementRepository;
@@ -18,19 +19,22 @@ public class PaiementService {
     private final PaiementRepository paiementRepository;
     private final EcheanceService echeanceService;
     private final UtilisateurService utilisateurService;
+    private final MembreService membreService;
+
     private double safeMontant(Double montant) {
         return montant != null ? montant : 0.0;
     }
 
-
     public PaiementService(
         PaiementRepository paiementRepository,
         EcheanceService echeanceService,
-        UtilisateurService utilisateurService
+        UtilisateurService utilisateurService,
+        MembreService membreService
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
         this.utilisateurService = utilisateurService;
+        this.membreService = membreService;
     }
 
     public List<PaiementDTO> getAllWithEcheances() {
@@ -75,6 +79,11 @@ public class PaiementService {
             paiement.setType("standard");
         }
 
+        // Vérification du membre
+        if (paiement.getMembre() == null || paiement.getMembre().getId() == null || paiement.getMembre().getId() <= 0) {
+            throw new IllegalArgumentException("Le paiement doit être lié à un membre valide.");
+        }
+
         return paiementRepository.save(paiement);
     }
 
@@ -104,67 +113,76 @@ public class PaiementService {
     }
 
     public DashboardStatsDTO buildDashboardStats() {
-        LocalDate today = LocalDate.now();
-        LocalDate firstDayMonth = today.withDayOfMonth(1);
-        LocalDate minus30 = today.minusDays(30);
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDate firstDayMonth = today.withDayOfMonth(1);
+            LocalDate minus30 = today.minusDays(30);
 
-        List<Paiement> paiements = paiementRepository.findAll();
+            List<Paiement> paiements = paiementRepository.findAll();
 
-        double totalPayes = 0.0;
-        double totalAttente = 0.0;
-        double totalAnnules = 0.0;
+            double totalPayes = 0.0;
+            double totalAttente = 0.0;
+            double totalAnnules = 0.0;
 
-        for (Paiement paiement : paiements) {
-            double montantPaye = 0.0;
-            double montantRestant = 0.0;
+            for (Paiement paiement : paiements) {
+                double montantPaye = 0.0;
+                double montantRestant = 0.0;
 
-            if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
-                for (Echeance e : paiement.getEcheances()) {
-                    if ("payé".equalsIgnoreCase(e.getStatut())) {
-                        montantPaye += safeMontant(e.getMontant());
-                    } else if ("en attente".equalsIgnoreCase(e.getStatut())) {
-                        montantRestant += safeMontant(e.getMontant());
-                    } else if ("annulé".equalsIgnoreCase(e.getStatut())) {
-                        totalAnnules += safeMontant(e.getMontant());
+                if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+                    for (Echeance e : paiement.getEcheances()) {
+                        if ("payé".equalsIgnoreCase(e.getStatut())) {
+                            montantPaye += safeMontant(e.getMontant());
+                        } else if ("en attente".equalsIgnoreCase(e.getStatut())) {
+                            montantRestant += safeMontant(e.getMontant());
+                        } else if ("annulé".equalsIgnoreCase(e.getStatut())) {
+                            totalAnnules += safeMontant(e.getMontant());
+                        }
+                    }
+                } else {
+                    if ("payé".equalsIgnoreCase(paiement.getStatut())) {
+                        montantPaye = safeMontant(paiement.getMontantTotal());
+                    } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
+                        montantRestant = safeMontant(paiement.getMontantRestant());
+                        montantPaye = safeMontant(paiement.getMontantTotal()) - montantRestant;
+                    } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
+                        totalAnnules += safeMontant(paiement.getMontantTotal()) - safeMontant(paiement.getMontantPaye());
+                        montantPaye = safeMontant(paiement.getMontantPaye());
                     }
                 }
-            } else {
-                // Paiement sans échéances
+
                 if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                    montantPaye = safeMontant(paiement.getMontantTotal());
+                    totalPayes += montantPaye;
                 } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
-                    montantRestant = safeMontant(paiement.getMontantRestant());
-                    montantPaye = safeMontant(paiement.getMontantTotal()) - montantRestant;
+                    totalPayes += montantPaye;
+                    totalAttente += montantRestant;
                 } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
-                    totalAnnules += safeMontant(paiement.getMontantTotal()) - safeMontant(paiement.getMontantPaye());
-                    montantPaye = safeMontant(paiement.getMontantPaye());
+                    totalPayes += montantPaye;
                 }
             }
 
-            if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                totalPayes += montantPaye;
-            } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
-                totalPayes += montantPaye;
-                totalAttente += montantRestant;
-            } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
-                totalPayes += montantPaye;
-            }
+            Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
+            Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
+            montantTotalMois = montantTotalMois != null ? montantTotalMois : 0.0;
+            montantPayesMois = montantPayesMois != null ? montantPayesMois : 0.0;
+
+            double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
+
+            List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30);
+            List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
+
+            return new DashboardStatsDTO(
+                totalPayes,
+                totalAttente,
+                totalAnnules,
+                pctMois,
+                courbe != null ? courbe : new ArrayList<>(),
+                top != null ? top : new ArrayList<>()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new DashboardStatsDTO(0, 0, 0, 0, new ArrayList<>(), new ArrayList<>());
         }
-
-        Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
-        Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
-        montantTotalMois = montantTotalMois != null ? montantTotalMois : 0.0;
-        montantPayesMois = montantPayesMois != null ? montantPayesMois : 0.0;
-
-        double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
-
-        List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30);
-        List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
-
-        return new DashboardStatsDTO(totalPayes, totalAttente, totalAnnules, pctMois, courbe, top);
     }
-
-
 
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
         Paiement paiement = new Paiement();
@@ -183,7 +201,6 @@ public class PaiementService {
                 nouveau.setNom(dto.getUtilisateurNom());
                 nouveau.setPrenom(dto.getUtilisateurPrenom());
                 nouveau.setEmail(dto.getUtilisateurEmail() != null ? dto.getUtilisateurEmail() : "noemail@carelink.local");
-               // nouveau.setRoles("membre");
                 nouveau.setPassword("defaultPassword");
                 utilisateurOpt = Optional.of(utilisateurService.save(nouveau));
             }
@@ -194,6 +211,14 @@ public class PaiementService {
         }
 
         paiement.setUtilisateur(utilisateurOpt.get());
+
+        // Vérification du membre via le service
+        if (dto.getMembreId() == null || dto.getMembreId() <= 0) {
+            throw new RuntimeException("ID du membre invalide pour le paiement !");
+        }
+        Membre membre = membreService.getMembreEntityById(dto.getMembreId())
+            .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+        paiement.setMembre(membre);
 
         if (dto.getEcheances() != null && !dto.getEcheances().isEmpty()) {
             List<Echeance> echeances = new ArrayList<>();
@@ -271,9 +296,16 @@ public class PaiementService {
         dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
         dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
         dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
-    
+
+        // Ajout des infos du membre (enfant)
+        if (paiement.getMembre() != null) {
+            dto.setMembreId(paiement.getMembre().getId());
+            dto.setMembreNom(paiement.getMembre().getNom());
+            dto.setMembrePrenom(paiement.getMembre().getPrenom());
+        }
+
         double montantPaye = 0.0;
-    
+
         if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
             List<EcheanceDTO> liste = new ArrayList<>();
             for (Echeance e : paiement.getEcheances()) {
@@ -284,7 +316,7 @@ public class PaiementService {
                 edto.setStatut(e.getStatut());
                 edto.setNumero(e.getNumero());
                 liste.add(edto);
-    
+
                 if ("payé".equalsIgnoreCase(e.getStatut())) {
                     montantPaye += e.getMontant();
                 }
@@ -296,13 +328,13 @@ public class PaiementService {
                 montantPaye = paiement.getMontantTotal();
             }
         }
-    
+
         double montantTotal = paiement.getMontantTotal() != null ? paiement.getMontantTotal() : 0.0;
         dto.setMontantPaye(montantPaye);
         dto.setMontantRestant(Math.max(0.0, montantTotal - montantPaye));
-    
+
         return dto;
-    }    
+    }
 
     public PaiementDTO annulerPaiement(Long paiementId, AnnulationRequestDTO request) {
         Paiement paiement = paiementRepository.findById(paiementId)
@@ -340,5 +372,3 @@ public class PaiementService {
         return toPaiementDTO(saved);
     }
 }
-
-

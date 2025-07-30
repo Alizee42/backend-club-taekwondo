@@ -35,7 +35,9 @@ public class MembreService {
         return membreRepository.findById(id)
                 .map(this::toMembreDTO);
     }
-
+public Optional<Membre> getMembreEntityById(Long id) {
+    return membreRepository.findById(id);
+}
     // 🔹 Récupérer un membre par email utilisateur
     public Optional<MembreDTO> getMembreByEmail(String email) {
         return membreRepository.findByCompteUtilisateur_Email(email) 

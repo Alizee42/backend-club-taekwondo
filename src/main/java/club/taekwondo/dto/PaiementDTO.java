@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 public class PaiementDTO {
 
     private Long id;
@@ -42,6 +43,9 @@ public class PaiementDTO {
     private String motifAnnulation;
     private LocalDateTime dateAnnulation;
     private String adminResponsable;
+    private Long membreId;
+    private String membreNom;
+    private String membrePrenom;
 
     // === Getters et Setters ===
 
@@ -156,4 +160,24 @@ public class PaiementDTO {
     public void setAdminResponsable(String adminResponsable) {
         this.adminResponsable = adminResponsable;
     }
+	public Long getMembreId() {
+		return membreId;
+	}
+	public void setMembreId(Long membreId) {
+		this.membreId = membreId;
+	}
+	public String getMembreNom() {
+		return membreNom;
+	}
+	public void setMembreNom(String membreNom) {
+		this.membreNom = membreNom;
+	}
+	public String getMembrePrenom() {
+		return membrePrenom;
+	}
+	public void setMembrePrenom(String membrePrenom) {
+		this.membrePrenom = membrePrenom;
+	}
+	
+
 }

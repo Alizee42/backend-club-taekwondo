@@ -56,7 +56,9 @@ public class Paiement {
     @Column(name = "admin_responsable")
     private String adminResponsable;
 
-
+    @ManyToOne
+    @JoinColumn(name = "membre_id", nullable = false)
+    private Membre membre;
     
     // Constructeur par défaut
     public Paiement() {}
@@ -180,6 +182,15 @@ public class Paiement {
 	public void setAdminResponsable(String adminResponsable) {
 		this.adminResponsable = adminResponsable;
 	}
+
+	public Membre getMembre() {
+		return membre;
+	}
+
+	public void setMembre(Membre membre) {
+		this.membre = membre;
+	}
+	
 
 }
 
