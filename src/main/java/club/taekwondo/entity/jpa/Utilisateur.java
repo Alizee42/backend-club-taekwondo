@@ -60,7 +60,6 @@ public class Utilisateur {
         this.telephone = telephone;
         this.role = role;
     }
-
     // --- Getters & Setters ---
 
     public Long getId() {
