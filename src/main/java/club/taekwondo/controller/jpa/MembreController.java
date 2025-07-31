@@ -2,6 +2,7 @@ package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.dto.UtilisateurDTO;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.MembreService;
 import club.taekwondo.service.jpa.UtilisateurService;
@@ -151,6 +152,15 @@ public class MembreController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Erreur lors de la récupération des enfants du parent."));
+        }
+    }
+    @GetMapping("/by-user/{utilisateurId}")
+    public ResponseEntity<?> getMembreByUtilisateurId(@PathVariable Long utilisateurId) {
+        Optional<Membre> membre = membreService.getMembreEntityByIdUtilisateur(utilisateurId);
+        if (membre.isPresent()) {
+            return ResponseEntity.ok(membre.get());
+        } else {
+            return ResponseEntity.status(404).body("Aucun membre trouvé pour cet utilisateur.");
         }
     }
 }

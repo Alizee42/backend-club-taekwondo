@@ -48,22 +48,34 @@ public class StripeController {
             @RequestBody Map<String, Object> request) {
 
         System.out.println("🚀 [StripeController] createPaymentIntent déclenché");
+        System.out.println("🔎 Token reçu : " + token);
+        System.out.println("🔎 Payload reçu : " + request);
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
+                System.out.println("❌ Token manquant ou invalide.");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Token manquant ou invalide."));
             }
 
             String jwt = token.substring(7);
             String email = jwtUtil.extractEmail(jwt);
+            System.out.println("🔎 Email extrait du token : " + email);
+
             Utilisateur utilisateur = utilisateurService.getUtilisateurEntityByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+                    .orElseThrow(() -> {
+                        System.out.println("❌ Utilisateur introuvable.");
+                        return new RuntimeException("Utilisateur introuvable.");
+                    });
 
             double montantTotal = Double.parseDouble(request.get("amount").toString());
             String currency = request.get("currency").toString().toLowerCase();
 
+            System.out.println("🔎 Montant : " + montantTotal);
+            System.out.println("🔎 Devise : " + currency);
+
             if (!currency.matches("eur|usd")) {
+                System.out.println("❌ Devise non autorisée : " + currency);
                 return ResponseEntity.badRequest().body(Map.of("error", "Devise non autorisée"));
             }
 
@@ -72,20 +84,38 @@ public class StripeController {
             int nombreEcheances = request.containsKey("nombreEcheances")
                     ? Integer.parseInt(request.get("nombreEcheances").toString()) : 1;
 
-            // Correction : récupération du membre/enfant
+            System.out.println("🔎 typePaiement : " + typePaiement);
+            System.out.println("🔎 modePaiement : " + modePaiement);
+            System.out.println("🔎 nombreEcheances : " + nombreEcheances);
+
             Long membreId = null;
-            if (request.containsKey("enfantId")) {
+            if (request.containsKey("membreId")) {
+                try {
+                    membreId = Long.parseLong(request.get("membreId").toString());
+                    System.out.println("🔎 membreId reçu : " + membreId);
+                } catch (Exception ex) {
+                    System.out.println("❌ ID membre invalide.");
+                    return ResponseEntity.badRequest().body(Map.of("error", "ID membre invalide."));
+                }
+            }
+            if (membreId == null && request.containsKey("enfantId")) {
                 try {
                     membreId = Long.parseLong(request.get("enfantId").toString());
+                    System.out.println("🔎 enfantId reçu : " + membreId);
                 } catch (Exception ex) {
+                    System.out.println("❌ ID enfant/membre invalide.");
                     return ResponseEntity.badRequest().body(Map.of("error", "ID enfant/membre invalide."));
                 }
             }
             if (membreId == null || membreId <= 0) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Enfant/membre non sélectionné."));
+                System.out.println("❌ Membre non sélectionné.");
+                return ResponseEntity.badRequest().body(Map.of("error", "Membre non sélectionné."));
             }
             Membre membre = membreService.getMembreEntityById(membreId)
-                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+                .orElseThrow(() -> {
+                    System.out.println("❌ Membre non trouvé.");
+                    return new RuntimeException("Membre non trouvé");
+                });
 
             System.out.println("🎯 Reçu typePaiement = " + typePaiement);
             System.out.println("🎯 Reçu modePaiement = " + modePaiement);
@@ -95,7 +125,7 @@ public class StripeController {
             paiement.setType(typePaiement);
             paiement.setUtilisateur(utilisateur);
             paiement.setDatePaiement(LocalDate.now());
-            paiement.setMembre(membre); // Correction ici
+            paiement.setMembre(membre);
 
             boolean isEcheances = "echeances".equalsIgnoreCase(typePaiement);
 
@@ -151,13 +181,18 @@ public class StripeController {
             request.put("typePaiement", typePaiement);
             request.put("nombreEcheances", nombreEcheances);
 
+            System.out.println("🟢 Envoi à StripeService.executeStripePayment avec : " + request);
+
             PaymentIntent paymentIntent = stripeService.executeStripePayment(jwt, request);
+            System.out.println("🟢 Stripe clientSecret reçu : " + paymentIntent.getClientSecret());
             return ResponseEntity.ok(Map.of("clientSecret", paymentIntent.getClientSecret()));
 
         } catch (StripeException se) {
+            System.out.println("❌ Erreur Stripe : " + se.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Erreur Stripe : " + se.getMessage()));
         } catch (Exception e) {
+            System.out.println("❌ Erreur interne : " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Erreur interne : " + e.getMessage()));

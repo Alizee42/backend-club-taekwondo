@@ -77,6 +77,9 @@ public Optional<Membre> getMembreEntityById(Long id) {
         return toMembreDTO(membreRepository.save(membre));
     }
 
+    public Optional<Membre> getMembreEntityByIdUtilisateur(Long utilisateurId) {
+        return membreRepository.findByCompteUtilisateur_Id(utilisateurId);
+    }
     // 🔹 Mettre à jour un membre
     public MembreDTO updateMembre(Long id, MembreDTO membreDTO) {
         return membreRepository.findById(id).map(membre -> {

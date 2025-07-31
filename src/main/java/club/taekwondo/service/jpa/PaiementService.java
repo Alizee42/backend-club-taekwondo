@@ -288,16 +288,26 @@ public class PaiementService {
         dto.setDatePaiement(paiement.getDatePaiement());
         dto.setStatut(paiement.getStatut());
         dto.setModePaiement(paiement.getModePaiement());
-        dto.setUtilisateurId(paiement.getUtilisateur().getId());
         dto.setMontantTotal(paiement.getMontantTotal());
         dto.setMotifAnnulation(paiement.getMotifAnnulation());
         dto.setDateAnnulation(paiement.getDateAnnulation());
         dto.setAdminResponsable(paiement.getAdminResponsable());
-        dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
-        dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
-        dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
 
-        // Ajout des infos du membre (enfant)
+        // Correction : gestion utilisateur ou membre seul
+        if (paiement.getUtilisateur() != null) {
+            dto.setUtilisateurId(paiement.getUtilisateur().getId());
+            dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
+            dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
+            dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
+        } else if (paiement.getMembre() != null) {
+            // Cas membre pratiquant seul
+            dto.setUtilisateurId(paiement.getMembre().getId());
+            dto.setUtilisateurNom(paiement.getMembre().getNom());
+            dto.setUtilisateurPrenom(paiement.getMembre().getPrenom());
+            dto.setUtilisateurEmail(""); // ou paiement.getMembre().getEmail() si tu as le champ
+        }
+
+        // Ajout des infos du membre (enfant ou membre seul)
         if (paiement.getMembre() != null) {
             dto.setMembreId(paiement.getMembre().getId());
             dto.setMembreNom(paiement.getMembre().getNom());
@@ -335,6 +345,7 @@ public class PaiementService {
 
         return dto;
     }
+
 
     public PaiementDTO annulerPaiement(Long paiementId, AnnulationRequestDTO request) {
         Paiement paiement = paiementRepository.findById(paiementId)
