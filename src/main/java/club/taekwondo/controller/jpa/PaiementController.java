@@ -2,8 +2,13 @@ package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.*;
 import club.taekwondo.entity.jpa.Echeance;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Paiement;
+import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.security.JwtUtil;
+import club.taekwondo.service.jpa.MembreService;
 import club.taekwondo.service.jpa.PaiementService;
+import club.taekwondo.service.jpa.UtilisateurService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
@@ -22,11 +27,23 @@ import java.util.*;
 public class PaiementController {
 
     private final PaiementService paiementService;
+    private final UtilisateurService utilisateurService;
+    private final MembreService membreService;
     private final ObjectMapper objectMapper;
+    private final JwtUtil jwtUtil;
 
-    public PaiementController(PaiementService paiementService, ObjectMapper objectMapper) {
+    public PaiementController(
+            PaiementService paiementService,
+            UtilisateurService utilisateurService,
+            MembreService membreService,
+            ObjectMapper objectMapper,
+            JwtUtil jwtUtil // ✅ Injection
+    ) {
         this.paiementService = paiementService;
+        this.utilisateurService = utilisateurService;
+        this.membreService = membreService;
         this.objectMapper = objectMapper;
+        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping
@@ -212,4 +229,32 @@ public class PaiementController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    /**
+     * 🔹 Récupère uniquement les paiements des enfants du parent connecté
+     */
+    @GetMapping("/parent/mes-paiements")
+    public ResponseEntity<List<PaiementDTO>> getPaiementsPourParentConnecte(
+            @RequestHeader("Authorization") String authHeader) {
+
+        // Récupérer le token brut
+        String token = authHeader.replace("Bearer ", "");
+
+        // Utiliser la bonne méthode de JwtUtil
+        String email = jwtUtil.extractEmail(token);
+
+        // Récupérer le parent connecté
+        Utilisateur parent = utilisateurService.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Parent non trouvé"));
+
+        // Récupérer les enfants du parent
+        List<Membre> enfants = membreService.getEnfantsDuParent(parent.getId());
+        List<Long> enfantsIds = enfants.stream().map(Membre::getId).toList();
+
+        // Récupérer les paiements liés aux enfants
+        List<PaiementDTO> paiements = paiementService.getPaiementsParMembres(enfantsIds);
+
+        return ResponseEntity.ok(paiements);
+    }
+
 }

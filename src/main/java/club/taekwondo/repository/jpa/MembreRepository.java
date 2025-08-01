@@ -13,4 +13,7 @@ public interface MembreRepository extends JpaRepository<Membre, Long> {
     List<Membre> findByParent_Id(Long parentId);
     
     Optional<Membre> findByCompteUtilisateur_Id(Long utilisateurId);
+    
+    List<Membre> findByParentId(Long parentId);
+
 }

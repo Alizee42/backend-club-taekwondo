@@ -77,4 +77,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
     // ✅ ✅ Ajout pour résoudre l’erreur : méthode de comptage automatique
     long countByStatut(String statut);
+    
+    List<Paiement> findByMembreIdIn(List<Long> membresIds);
+
 }

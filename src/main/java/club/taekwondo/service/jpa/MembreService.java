@@ -76,6 +76,9 @@ public Optional<Membre> getMembreEntityById(Long id) {
 
         return toMembreDTO(membreRepository.save(membre));
     }
+    public List<Membre> getEnfantsDuParent(Long parentId) {
+        return membreRepository.findByParentId(parentId);
+    }
 
     public Optional<Membre> getMembreEntityByIdUtilisateur(Long utilisateurId) {
         return membreRepository.findByCompteUtilisateur_Id(utilisateurId);

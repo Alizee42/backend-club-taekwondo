@@ -57,6 +57,13 @@ public class PaiementService {
     public Optional<Paiement> findPaiementByUtilisateurAndMontantAndStatut(Long utilisateurId, Double montantTotal, String modePaiement, String statut) {
         return paiementRepository.findPaiementByUtilisateurAndMontantAndStatut(utilisateurId, montantTotal, modePaiement, statut);
     }
+    public List<PaiementDTO> getPaiementsParMembres(List<Long> membresIds) {
+        return paiementRepository.findByMembreIdIn(membresIds)
+            .stream()
+            .map(this::toPaiementDTO) 
+            .toList();
+    }
+
 
     public Paiement save(Paiement paiement) {
         if (paiement.getMontantTotal() == null || paiement.getMontantTotal() <= 0) {

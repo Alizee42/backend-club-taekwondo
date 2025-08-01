@@ -46,6 +46,7 @@ public class PaiementDTO {
     private Long membreId;
     private String membreNom;
     private String membrePrenom;
+    private String enfantNomComplet;
 
     // === Getters et Setters ===
 
@@ -177,6 +178,12 @@ public class PaiementDTO {
 	}
 	public void setMembrePrenom(String membrePrenom) {
 		this.membrePrenom = membrePrenom;
+	}
+	public String getEnfantNomComplet() {
+		return enfantNomComplet;
+	}
+	public void setEnfantNomComplet(String enfantNomComplet) {
+		this.enfantNomComplet = enfantNomComplet;
 	}
 	
 
