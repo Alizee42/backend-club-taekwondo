@@ -12,14 +12,18 @@ import club.taekwondo.service.jpa.UtilisateurService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/paiements")
@@ -29,28 +33,28 @@ public class PaiementController {
     private final PaiementService paiementService;
     private final UtilisateurService utilisateurService;
     private final MembreService membreService;
-    private final ObjectMapper objectMapper;
     private final JwtUtil jwtUtil;
 
     public PaiementController(
             PaiementService paiementService,
             UtilisateurService utilisateurService,
             MembreService membreService,
-            ObjectMapper objectMapper,
-            JwtUtil jwtUtil // ✅ Injection
+            JwtUtil jwtUtil
     ) {
         this.paiementService = paiementService;
         this.utilisateurService = utilisateurService;
         this.membreService = membreService;
-        this.objectMapper = objectMapper;
         this.jwtUtil = jwtUtil;
     }
 
     @GetMapping
-    public List<PaiementDTO> getAll() {
-        return paiementService.getAllWithEcheances();
+    public ResponseEntity<List<PaiementDTO>> getAll() {
+        return ResponseEntity.ok(paiementService.getAllWithEcheances());
     }
 
+    /* ===========================
+     *   Echéances
+     * =========================== */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/payer-echeance")
     public ResponseEntity<PaiementDTO> payerEcheance(
@@ -61,45 +65,53 @@ public class PaiementController {
         if (optPaiement.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         Paiement paiement = optPaiement.get();
+        if (paiement.getEcheances() == null || paiement.getEcheances().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         double montantTotalAPayer = 0.0;
         int nombreEcheancesPayees = 0;
 
-        for (Map<String, Object> echeanceData : echeancesPayees) {
-            Long echeanceId = Long.parseLong(echeanceData.get("id").toString());
-            Optional<Echeance> optEcheance = paiement.getEcheances().stream()
-                    .filter(e -> e.getId().equals(echeanceId))
-                    .findFirst();
+        Map<Long, Echeance> index = paiement.getEcheances().stream()
+                .filter(e -> e.getId() != null)
+                .collect(Collectors.toMap(Echeance::getId, e -> e));
 
-            if (optEcheance.isPresent()) {
-                Echeance echeance = optEcheance.get();
-                if (!"payé".equalsIgnoreCase(echeance.getStatut())) {
-                    echeance.setStatut("payé");
-                    montantTotalAPayer += echeance.getMontant();
-                    nombreEcheancesPayees++;
-                }
-            } else {
-                return ResponseEntity.badRequest().body(null);
+        for (Map<String, Object> map : echeancesPayees) {
+            if (map.get("id") == null) continue;
+            Long echeanceId = Long.parseLong(map.get("id").toString());
+            Echeance e = index.get(echeanceId);
+            if (e == null) return ResponseEntity.badRequest().build();
+
+            if (!"payé".equalsIgnoreCase(e.getStatut())) {
+                e.setStatut("payé");
+                montantTotalAPayer += e.getMontant();
+                nombreEcheancesPayees++;
             }
         }
 
-        paiement.setMontantRestant(Math.max(0, paiement.getMontantRestant() - montantTotalAPayer));
-        paiement.setEcheancesRestantes(Math.max(0, paiement.getEcheancesRestantes() - nombreEcheancesPayees));
-        paiement.setMontantPaye(safeAdd(paiement.getMontantPaye(), montantTotalAPayer));
+        // Recalcule agrégats
+        paiement.setMontantPaye((paiement.getMontantPaye() == null ? 0.0 : paiement.getMontantPaye()) + montantTotalAPayer);
+        double restant = (paiement.getMontantRestant() == null ? 0.0 : paiement.getMontantRestant()) - montantTotalAPayer;
+        paiement.setMontantRestant(Math.max(0.0, restant));
+        paiement.setEcheancesRestantes(Math.max(0, (paiement.getEcheancesRestantes() == null ? 0 : paiement.getEcheancesRestantes()) - nombreEcheancesPayees));
 
-        if (paiement.getMontantRestant() <= 0 || paiement.getEcheancesRestantes() <= 0) {
+        // Statut global
+        boolean resteNonPaye = paiement.getEcheances().stream().anyMatch(e -> !"payé".equalsIgnoreCase(e.getStatut()));
+        if (!resteNonPaye) {
             paiement.setStatut("payé");
             paiement.setMontantRestant(0.0);
             paiement.setEcheancesRestantes(0);
+        } else {
+            paiement.setStatut("en attente");
         }
 
         Paiement saved = paiementService.save(paiement);
         return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
     }
 
-    private double safeAdd(Double a, Double b) {
-        return (a != null ? a : 0.0) + (b != null ? b : 0.0);
-    }
-
+    /* ===========================
+     *   Filtres & validations
+     * =========================== */
     @GetMapping("/filter")
     public ResponseEntity<List<PaiementDTO>> filterPaiements(
             @RequestParam(required = false) String statut,
@@ -124,96 +136,194 @@ public class PaiementController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}/annuler")
-    public ResponseEntity<PaiementDTO> annulerPaiement(
-            @PathVariable Long id,
-            @Valid @RequestBody AnnulationRequestDTO request) {
-        try {
-            PaiementDTO updated = paiementService.annulerPaiement(id, request);
-            return ResponseEntity.ok(updated);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-    }
-
+    /* ===========================
+     *   Dashboard
+     * =========================== */
     @GetMapping("/dashboard")
-    public DashboardStatsDTO getDashboardStats() {
-        return paiementService.buildDashboardStats();
+    public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
+        return ResponseEntity.ok(paiementService.buildDashboardStats());
     }
 
+    /* ===========================
+     *   Création (ADMIN)
+     * =========================== */
+
+    /**
+     * JSON (utilisateur/membre existant).
+     * Tolère 'parentId' et 'membreIds' envoyés par le front.
+     * Retourne { paiementId, reference? } pour matcher PaymentAdminService côté Angular.
+     */
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/ajouter-manuel")
-    public ResponseEntity<PaiementDTO> ajouterPaiementManuel(@Valid @RequestBody PaiementDTO dto) {
+    @PostMapping(value = "/ajouter-manuel", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> ajouterPaiementManuel(@RequestBody Map<String, Object> body) {
         try {
-            Paiement paiement = paiementService.ajouterPaiementManuel(dto);
-            return ResponseEntity.ok(paiementService.toPaiementDTO(paiement));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+            // ---- Mapping flexible du JSON reçu → PaiementRequestDTO ----
+            PaiementRequestDTO req = new PaiementRequestDTO();
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/ajouter-complet")
-    public ResponseEntity<PaiementDTO> ajouterPaiementComplet(
-            @RequestParam String utilisateurNom,
-            @RequestParam String utilisateurPrenom,
-            @RequestParam(required = false) String utilisateurEmail,
-            @RequestParam String type,
-            @RequestParam Double montantTotal,
-            @RequestParam String modePaiement,
-            @RequestParam String datePaiement,
-            @RequestParam(required = false) String echeances,
-            @RequestParam(required = false) MultipartFile justificatif
-    ) {
-        try {
-            PaiementDTO dto = new PaiementDTO();
-            dto.setUtilisateurNom(utilisateurNom);
-            dto.setUtilisateurPrenom(utilisateurPrenom);
-            dto.setUtilisateurEmail(utilisateurEmail);
-            dto.setType(type);
-            dto.setMontantTotal(montantTotal);
-            dto.setModePaiement(modePaiement);
-            dto.setDatePaiement(LocalDate.parse(datePaiement));
+            // utilisateurId ou parentId
+            Long utilisateurId = longOrNull(body.get("utilisateurId"));
+            Long parentId = longOrNull(body.get("parentId"));
+            req.setUtilisateurId(utilisateurId != null ? utilisateurId : parentId);
 
-            if (echeances != null && !echeances.isEmpty()) {
-                List<Map<String, Object>> parsed = objectMapper.readValue(
-                        echeances,
-                        new TypeReference<List<Map<String, Object>>>() {}
-                );
+            // membreId / membreIds
+            Long membreId = longOrNull(body.get("membreId"));
+            req.setMembreId(membreId);
+            List<Long> membreIds = listOfLong(body.get("membreIds"));
+            req.setMembreIds((membreIds != null && !membreIds.isEmpty()) ? membreIds : null);
 
-                List<Echeance> echeanceList = new ArrayList<>();
-                for (int i = 0; i < parsed.size(); i++) {
-                    Map<String, Object> e = parsed.get(i);
-                    Echeance echeance = new Echeance();
-                    echeance.setDateEcheance(LocalDate.parse((String) e.get("dateEcheance")));
-                    echeance.setMontant(Double.parseDouble(e.get("montant").toString()));
-                    String statutStr = (String) e.get("statut");
-                    echeance.setStatut(statutStr != null ? statutStr : "en attente");
-                    echeance.setNumero(i + 1);
-                    echeanceList.add(echeance);
+            // type / typePaiement (front: 'unique' | 'échelonné')
+            String typeHuman = strOrNull(body.get("type"));
+            String typeAlt = strOrNull(body.get("typePaiement"));
+            String typeBack = PaiementService.normalizeTypeHuman(typeHuman != null ? typeHuman : typeAlt);
+            req.setTypePaiement(typeBack);
+
+            // modePaiement (front: 'especes' | 'virement' | 'stripe')
+            String modeHuman = strOrNull(body.get("modePaiement"));
+            req.setModePaiement(PaiementService.normalizeModeHuman(modeHuman));
+
+            // datePaiement
+            String datePaiement = strOrNull(body.get("datePaiement"));
+            req.setDatePaiement(datePaiement != null ? datePaiement : LocalDate.now().toString());
+
+            // montantTotal
+            Double montantTotal = doubleOrNull(body.get("montantTotal"));
+            req.setMontantTotal(montantTotal);
+
+            // commentaire (facultatif)
+            req.setCommentaire(strOrNull(body.get("commentaire")));
+
+            // échéances (facultatif)
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> echs = (List<Map<String, Object>>) body.get("echeances");
+            if (echs != null && !echs.isEmpty()) {
+                List<PaiementRequestDTO.EcheanceInput> list = new ArrayList<>();
+                int i = 1;
+                for (Map<String, Object> e : echs) {
+                    PaiementRequestDTO.EcheanceInput ei = new PaiementRequestDTO.EcheanceInput();
+                    ei.setNumero(intOrNull(e.get("numero")) != null ? intOrNull(e.get("numero")) : i++);
+                    ei.setDateEcheance(strOrNull(e.get("dateEcheance")));
+                    ei.setMontant(doubleOrNull(e.get("montant")));
+                    String st = strOrNull(e.get("statut"));
+                    ei.setStatut(st != null ? st : "en attente");
+                    list.add(ei);
                 }
-
-                dto.setEcheances(echeanceList.stream().map(e -> {
-                    EcheanceDTO edto = new EcheanceDTO();
-                    edto.setDateEcheance(e.getDateEcheance());
-                    edto.setMontant(e.getMontant());
-                    edto.setStatut(e.getStatut());
-                    edto.setNumero(e.getNumero());
-                    return edto;
-                }).toList());
+                req.setEcheances(list);
             }
 
-            Paiement paiement = paiementService.ajouterPaiementManuel(dto);
-            return ResponseEntity.ok(paiementService.toPaiementDTO(paiement));
+            // ---- Appel service ----
+            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
 
+            if (created == null || created.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Aucun paiement créé"));
+            }
+            Long firstId = created.get(0).getId();
+            // Réponse compacte attendue par l’Angular service (PaiementResponse)
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("paiementId", firstId);
+            resp.put("reference", null);
+
+            return created("/api/paiements/" + firstId, resp);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace(); // meilleur debug
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de l’ajout du paiement"));
+        }
+    }
+
+    /**
+     * JSON complet (création à la volée possible, sans fichier).
+     * Retourne { paiementId, reference? }.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/ajouter-complet", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> ajouterPaiementCompletJson(@Valid @RequestBody PaiementRequestDTO req) {
+        try {
+            if (req.getDatePaiement() == null || req.getDatePaiement().isBlank()) {
+                req.setDatePaiement(LocalDate.now().toString());
+            }
+            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
+            Long firstId = (created != null && !created.isEmpty()) ? created.get(0).getId() : null;
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("paiementId", firstId);
+            resp.put("reference", null);
+
+            return created(firstId != null ? ("/api/paiements/" + firstId) : "/api/paiements", resp);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de l’ajout du paiement"));
+        }
+    }
+
+    /**
+     * MULTIPART (création à la volée avec justificatif) :
+     * Clés attendues :
+     * - utilisateurNom, utilisateurPrenom, utilisateurEmail? (optionnel)
+     * - type ('unique' | 'échelonné')
+     * - montantTotal
+     * - modePaiement ('especes' | 'virement' | 'stripe')
+     * - datePaiement (yyyy-MM-dd)
+     * - echeances (JSON string) ex: [{"dateEcheance":"2025-09-01","montant":100,"statut":"en attente","numero":1}]
+     * - justificatif (fichier) optionnel
+     *
+     * Retourne { paiementId, reference? }.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/ajouter-complet", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> ajouterPaiementCompletMultipart(
+            @RequestPart("utilisateurNom") String utilisateurNom,
+            @RequestPart("utilisateurPrenom") String utilisateurPrenom,
+            @RequestPart(value = "utilisateurEmail", required = false) String utilisateurEmail,
+            @RequestPart("type") String typeHuman,
+            @RequestPart("montantTotal") String montantTotalStr,
+            @RequestPart("modePaiement") String modeHuman,
+            @RequestPart("datePaiement") String datePaiement,
+            @RequestPart(value = "echeances", required = false) String echeancesJson,
+            @RequestPart(value = "justificatif", required = false) MultipartFile justificatif
+    ) {
+        try {
+            // Build DTO
+            PaiementRequestDTO req = new PaiementRequestDTO();
+            req.setUtilisateurNom(utilisateurNom);
+            req.setUtilisateurPrenom(utilisateurPrenom);
+            req.setUtilisateurEmail(utilisateurEmail);
+            req.setTypePaiement(PaiementService.normalizeTypeHuman(typeHuman));
+            req.setModePaiement(PaiementService.normalizeModeHuman(modeHuman));
+            req.setDatePaiement((datePaiement != null && !datePaiement.isBlank())
+                    ? datePaiement
+                    : LocalDate.now().toString());
+            req.setMontantTotal(Double.valueOf(montantTotalStr));
+
+            if (echeancesJson != null && !echeancesJson.isBlank()) {
+                List<PaiementRequestDTO.EcheanceInput> echs = new ObjectMapper().readValue(
+                        echeancesJson,
+                        new TypeReference<List<PaiementRequestDTO.EcheanceInput>>() {}
+                );
+                req.setEcheances(echs);
+            }
+
+            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, justificatif);
+            Long firstId = (created != null && !created.isEmpty()) ? created.get(0).getId() : null;
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("paiementId", firstId);
+            resp.put("reference", null);
+
+            return created(firstId != null ? ("/api/paiements/" + firstId) : "/api/paiements", resp);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de l’ajout du paiement"));
         }
     }
 
@@ -230,31 +340,92 @@ public class PaiementController {
         }
     }
 
-    /**
-     * 🔹 Récupère uniquement les paiements des enfants du parent connecté
-     */
+    /* ===========================
+     *   Espace Parent
+     * =========================== */
+
+    /** Récupère uniquement les paiements des enfants du parent connecté */
     @GetMapping("/parent/mes-paiements")
     public ResponseEntity<List<PaiementDTO>> getPaiementsPourParentConnecte(
             @RequestHeader("Authorization") String authHeader) {
 
-        // Récupérer le token brut
         String token = authHeader.replace("Bearer ", "");
-
-        // Utiliser la bonne méthode de JwtUtil
         String email = jwtUtil.extractEmail(token);
 
-        // Récupérer le parent connecté
         Utilisateur parent = utilisateurService.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Parent non trouvé"));
 
-        // Récupérer les enfants du parent
         List<Membre> enfants = membreService.getEnfantsDuParent(parent.getId());
         List<Long> enfantsIds = enfants.stream().map(Membre::getId).toList();
 
-        // Récupérer les paiements liés aux enfants
         List<PaiementDTO> paiements = paiementService.getPaiementsParMembres(enfantsIds);
-
         return ResponseEntity.ok(paiements);
     }
 
+    @PostMapping("/parent/ajouter")
+    public ResponseEntity<PaiementDTO> ajouterPaiementParent(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody PaiementDTO dto) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String email = jwtUtil.extractEmail(token);
+
+            Utilisateur parent = utilisateurService.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Parent non trouvé"));
+
+            if (dto.getMembreId() == null || dto.getMembreId() <= 0) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Paiement paiement = paiementService.ajouterPaiementParent(dto, parent.getId());
+            PaiementDTO out = paiementService.toPaiementDTO(paiement);
+            return created("/api/paiements/" + out.getId(), out);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /* ===========================
+     *  Helpers
+     * =========================== */
+    private ResponseEntity<Map<String, Object>> created(String location, Map<String, Object> body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(location));
+        return new ResponseEntity<>(body, headers, HttpStatus.CREATED);
+    }
+
+    // ----- helpers parse souples -----
+    private static String strOrNull(Object o) { return o == null ? null : String.valueOf(o); }
+    private static Long longOrNull(Object o) {
+        if (o == null) return null;
+        try { return Long.valueOf(String.valueOf(o)); } catch (Exception e) { return null; }
+    }
+    private static Integer intOrNull(Object o) {
+        if (o == null) return null;
+        try { return Integer.valueOf(String.valueOf(o)); } catch (Exception e) { return null; }
+    }
+    private static Double doubleOrNull(Object o) {
+        if (o == null) return null;
+        try { return Double.valueOf(String.valueOf(o)); } catch (Exception e) { return null; }
+    }
+    @SuppressWarnings("unchecked")
+    private static List<Long> listOfLong(Object o) {
+        if (o == null) return null;
+        try {
+            if (o instanceof List<?> raw) {
+                List<Long> out = new ArrayList<>();
+                for (Object el : raw) {
+                    Long v = longOrNull(el);
+                    if (v != null) out.add(v);
+                }
+                return out;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
+

@@ -5,13 +5,17 @@ import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.PaiementRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PaiementService {
@@ -21,21 +25,106 @@ public class PaiementService {
     private final UtilisateurService utilisateurService;
     private final MembreService membreService;
 
-    private double safeMontant(Double montant) {
-        return montant != null ? montant : 0.0;
-    }
-
     public PaiementService(
-        PaiementRepository paiementRepository,
-        EcheanceService echeanceService,
-        UtilisateurService utilisateurService,
-        MembreService membreService
+            PaiementRepository paiementRepository,
+            EcheanceService echeanceService,
+            UtilisateurService utilisateurService,
+            MembreService membreService
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
         this.utilisateurService = utilisateurService;
         this.membreService = membreService;
     }
+
+    /* ===========================
+     *  Utils
+     * =========================== */
+
+    private double safeMontant(Double montant) { return montant != null ? montant : 0.0; }
+
+    private String stripAccents(String input) {
+        if (input == null) return "";
+        String n = Normalizer.normalize(input, Normalizer.Form.NFD);
+        return n.replaceAll("\\p{M}", "");
+    }
+
+    private String norm(String v) {
+        return stripAccents(v).toUpperCase(Locale.ROOT).trim();
+    }
+
+    /** true si le moyen est une carte (CB/Carte/Stripe…) => paiement généralement immédiat */
+    private boolean isModeCarte(String mode) {
+        String m = norm(mode);
+        return m.equals("CB") || m.equals("CARTE") || m.equals("CARTE BANCAIRE") || m.equals("CARTEBANCAIRE") || m.equals("STRIPE");
+    }
+
+    private boolean isTypeUnique(String type) { return norm(type).equals("UNIQUE"); }
+
+    private boolean isTypeEchelonne(String type) { return norm(type).equals("ECHELONNE"); }
+
+    /** Normalisation “humaine” -> codes back (exposée pour le controller multipart) */
+    public static String normalizeTypeHuman(String typeHuman) {
+        if (typeHuman == null) return "UNIQUE";
+        String t = Normalizer.normalize(typeHuman, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT).trim();
+        return (t.startsWith("echel")) ? "ECHELONNE" : "UNIQUE";
+    }
+
+    /** Normalisation “humaine” -> codes back (exposée pour le controller multipart) */
+    public static String normalizeModeHuman(String modeHuman) {
+        if (modeHuman == null) return "ESPECES";
+        String m = Normalizer.normalize(modeHuman, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT).trim();
+        if (m.equals("stripe") || m.equals("cb") || m.equals("carte") || m.equals("carte bancaire")) return "CB";
+        if (m.equals("virement")) return "VIREMENT";
+        if (m.equals("cheque")) return "CHEQUE";
+        return "ESPECES";
+    }
+
+    /** Normalisation stricte sur codes déjà “back” */
+    private static String normalizeType(String t) {
+        if (t == null) return "UNIQUE";
+        t = t.trim().toUpperCase(Locale.ROOT);
+        if ("ECHEANCES".equals(t)) return "ECHELONNE";
+        return t;
+    }
+
+    /** Normalisation stricte sur codes déjà “back” */
+    private static String normalizeMode(String m) {
+        if (m == null) return "ESPECES";
+        m = m.trim().toUpperCase(Locale.ROOT);
+        if ("STRIPE".equals(m)) return "CB";
+        if ("CHEQUE".equals(m)) return "CHEQUE";
+        if ("VIREMENT".equals(m)) return "VIREMENT";
+        if ("CB".equals(m)) return "CB";
+        if ("ESPECE".equals(m)) return "ESPECES";
+        return "ESPECES";
+    }
+
+    private static String trimOrNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
+    }
+
+    private static double round2(double v) { return Math.round(v * 100.0) / 100.0; }
+
+    private String normalizeModeSimple(String mode) {
+        String m = norm(mode);
+        if (m.isEmpty()) return "";
+        if (isModeCarte(m)) return "CB";
+        if (m.equals("VIREMENT")) return "VIREMENT";
+        if (m.equals("ESPECES") || m.equals("ESPECE")) return "ESPECES";
+        if (m.equals("CHEQUE")) return "CHEQUE";
+        return m; // tel quel sinon (en MAJUSCULES)
+    }
+
+    /* ===========================
+     *  Queries
+     * =========================== */
 
     public List<PaiementDTO> getAllWithEcheances() {
         List<Paiement> paiements = paiementRepository.findAllWithEcheances();
@@ -46,44 +135,38 @@ public class PaiementService {
         return dtos;
     }
 
-    public Optional<Paiement> getById(Long id) {
-        return paiementRepository.findById(id);
-    }
+    public Optional<Paiement> getById(Long id) { return paiementRepository.findById(id); }
 
     public List<Paiement> getByMembreId(Long membreId) {
-        return paiementRepository.findByUtilisateurId(membreId);
+        return paiementRepository.findAll().stream()
+                .filter(p -> p.getMembre() != null && Objects.equals(p.getMembre().getId(), membreId))
+                .collect(Collectors.toList());
     }
 
     public Optional<Paiement> findPaiementByUtilisateurAndMontantAndStatut(Long utilisateurId, Double montantTotal, String modePaiement, String statut) {
         return paiementRepository.findPaiementByUtilisateurAndMontantAndStatut(utilisateurId, montantTotal, modePaiement, statut);
     }
+
     public List<PaiementDTO> getPaiementsParMembres(List<Long> membresIds) {
         return paiementRepository.findByMembreIdIn(membresIds)
-            .stream()
-            .map(this::toPaiementDTO) 
-            .toList();
+                .stream()
+                .map(this::toPaiementDTO)
+                .toList();
     }
 
+    /* ===========================
+     *  Commandes
+     * =========================== */
 
+    /**
+     * Création/MAJ d’un paiement (administration).
+     * On décide d’après le **type** (UNIQUE / ECHELONNE / COTISATION).
+     * Le **mode** n’impacte que le UNIQUE (CB => payé immédiat).
+     */
+    @Transactional
     public Paiement save(Paiement paiement) {
         if (paiement.getMontantTotal() == null || paiement.getMontantTotal() <= 0) {
             throw new IllegalArgumentException("Le montant total ne peut pas être nul ou négatif.");
-        }
-
-        if ("unique".equalsIgnoreCase(paiement.getModePaiement())) {
-            paiement.setEcheances(null);
-            paiement.setEcheancesRestantes(0);
-            paiement.setMontantRestant(0.0);
-            paiement.setMontantPaye(paiement.getMontantTotal());
-            paiement.setStatut("payé");
-        } else {
-            paiement.setMontantRestant(paiement.getMontantTotal());
-            paiement.setMontantPaye(0.0);
-            paiement.setStatut("en attente");
-        }
-
-        if (paiement.getType() == null || paiement.getType().isEmpty()) {
-            paiement.setType("standard");
         }
 
         // Vérification du membre
@@ -91,12 +174,49 @@ public class PaiementService {
             throw new IllegalArgumentException("Le paiement doit être lié à un membre valide.");
         }
 
+        final String type = paiement.getType() == null ? "" : paiement.getType();
+        final String mode = normalizeModeSimple(paiement.getModePaiement());
+        paiement.setModePaiement(mode);
+
+        if (isTypeUnique(type)) {
+            if (isModeCarte(mode)) {
+                paiement.setMontantPaye(safeMontant(paiement.getMontantTotal()));
+                paiement.setMontantRestant(0.0);
+                paiement.setStatut("payé");
+            } else {
+                paiement.setMontantPaye(0.0);
+                paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
+                paiement.setStatut("en attente");
+            }
+            paiement.setEcheances(null);
+            paiement.setEcheancesRestantes(0);
+            paiement.setEcheancesTotales(0);
+
+        } else if (isTypeEchelonne(type)) {
+            paiement.setMontantPaye(0.0);
+            paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
+            paiement.setStatut("en attente");
+            // Échéances gérées séparément
+
+        } else { // COTISATION / autre
+            if (isModeCarte(mode)) {
+                paiement.setMontantPaye(safeMontant(paiement.getMontantTotal()));
+                paiement.setMontantRestant(0.0);
+                paiement.setStatut("payé");
+            } else {
+                paiement.setMontantPaye(0.0);
+                paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
+                paiement.setStatut("en attente");
+            }
+        }
+
         return paiementRepository.save(paiement);
     }
 
+    @Transactional
     public void delete(Long id) {
         Paiement paiement = paiementRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Paiement introuvable avec l'ID : " + id));
+                .orElseThrow(() -> new RuntimeException("Paiement introuvable avec l'ID : " + id));
 
         if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
             for (Echeance echeance : paiement.getEcheances()) {
@@ -110,11 +230,17 @@ public class PaiementService {
 
     public List<Paiement> filterPaiements(String statut, String modePaiement) {
         List<Paiement> paiements = paiementRepository.findAll();
-        if (statut != null) {
-            paiements = paiements.stream().filter(p -> p.getStatut().equalsIgnoreCase(statut)).toList();
+        if (statut != null && !statut.isBlank()) {
+            String s = norm(statut);
+            paiements = paiements.stream()
+                    .filter(p -> p.getStatut() != null && norm(p.getStatut()).equals(s))
+                    .toList();
         }
-        if (modePaiement != null) {
-            paiements = paiements.stream().filter(p -> p.getModePaiement().equalsIgnoreCase(modePaiement)).toList();
+        if (modePaiement != null && !modePaiement.isBlank()) {
+            String m = normalizeModeSimple(modePaiement);
+            paiements = paiements.stream()
+                    .filter(p -> p.getModePaiement() != null && normalizeModeSimple(p.getModePaiement()).equals(m))
+                    .toList();
         }
         return paiements;
     }
@@ -152,7 +278,7 @@ public class PaiementService {
                         montantRestant = safeMontant(paiement.getMontantRestant());
                         montantPaye = safeMontant(paiement.getMontantTotal()) - montantRestant;
                     } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
-                        totalAnnules += safeMontant(paiement.getMontantTotal()) - safeMontant(paiement.getMontantPaye());
+                        totalAnnules += Math.max(0.0, safeMontant(paiement.getMontantTotal()) - safeMontant(paiement.getMontantPaye()));
                         montantPaye = safeMontant(paiement.getMontantPaye());
                     }
                 }
@@ -169,21 +295,22 @@ public class PaiementService {
 
             Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
             Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
-            montantTotalMois = montantTotalMois != null ? montantTotalMois : 0.0;
-            montantPayesMois = montantPayesMois != null ? montantPayesMois : 0.0;
+
+            montantTotalMois = (montantTotalMois != null) ? montantTotalMois : 0.0;
+            montantPayesMois = (montantPayesMois != null) ? montantPayesMois : 0.0;
 
             double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
 
-            List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30);
+            List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30, today);
             List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
 
             return new DashboardStatsDTO(
-                totalPayes,
-                totalAttente,
-                totalAnnules,
-                pctMois,
-                courbe != null ? courbe : new ArrayList<>(),
-                top != null ? top : new ArrayList<>()
+                    totalPayes,
+                    totalAttente,
+                    totalAnnules,
+                    pctMois,
+                    courbe != null ? courbe : new ArrayList<>(),
+                    top != null ? top : new ArrayList<>()
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -191,14 +318,32 @@ public class PaiementService {
         }
     }
 
+    /**
+     * Création admin d’un paiement (manuel).
+     * Si des échéances sont fournies → type = ECHELONNE (mode au niveau de chaque échéance).
+     * Sinon → UNIQUE (CB => payé immédiat, sinon en attente).
+     */
+    @Transactional
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
         Paiement paiement = new Paiement();
-        paiement.setType(dto.getType());
-        paiement.setModePaiement(dto.getModePaiement());
-        paiement.setDatePaiement(dto.getDatePaiement());
 
+        // Type et mode (normalisés)
+        String type = (dto.getType() == null || dto.getType().isBlank()) ? "COTISATION" : norm(dto.getType());
+        paiement.setType(type); // stocke tel quel (ex: "ECHELONNE")
+        paiement.setModePaiement(normalizeModeSimple(dto.getModePaiement()));
+
+        // Date
+        LocalDate date = null;
+        try {
+            if (dto.getDatePaiement() != null && !dto.getDatePaiement().isBlank()) {
+                date = LocalDate.parse(dto.getDatePaiement());
+            }
+        } catch (Exception ignored) { /* fallback below */ }
+        if (date == null) date = LocalDate.now();
+        paiement.setDatePaiement(date);
+
+        // Utilisateur (payeur)
         Optional<Utilisateur> utilisateurOpt = Optional.empty();
-
         if (dto.getUtilisateurId() != null) {
             utilisateurOpt = utilisateurService.getUtilisateurEntityById(dto.getUtilisateurId());
         } else if (dto.getUtilisateurNom() != null && dto.getUtilisateurPrenom() != null) {
@@ -209,68 +354,76 @@ public class PaiementService {
                 nouveau.setPrenom(dto.getUtilisateurPrenom());
                 nouveau.setEmail(dto.getUtilisateurEmail() != null ? dto.getUtilisateurEmail() : "noemail@carelink.local");
                 nouveau.setPassword("defaultPassword");
+                nouveau.setRole(Role.PARENT);
                 utilisateurOpt = Optional.of(utilisateurService.save(nouveau));
             }
         }
-
-        if (utilisateurOpt.isEmpty()) {
-            throw new RuntimeException("Utilisateur non trouvé ou informations insuffisantes.");
-        }
-
+        if (utilisateurOpt.isEmpty()) throw new RuntimeException("Utilisateur non trouvé ou informations insuffisantes.");
         paiement.setUtilisateur(utilisateurOpt.get());
 
-        // Vérification du membre via le service
+        // Membre (enfant / pratiquant)
         if (dto.getMembreId() == null || dto.getMembreId() <= 0) {
             throw new RuntimeException("ID du membre invalide pour le paiement !");
         }
         Membre membre = membreService.getMembreEntityById(dto.getMembreId())
-            .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
         paiement.setMembre(membre);
 
+        // Échelonné ?
         if (dto.getEcheances() != null && !dto.getEcheances().isEmpty()) {
+            paiement.setType("ECHELONNE"); // force cohérence
+
             List<Echeance> echeances = new ArrayList<>();
             double total = 0.0;
-            int numero = 1;
             int restantes = 0;
             double montantPaye = 0.0;
+            int numeroAuto = 1;
 
-            for (EcheanceDTO edto : dto.getEcheances()) {
+            for (PaiementDTO.EcheanceDTO edto : dto.getEcheances()) {
                 if (edto.getMontant() == null || edto.getMontant() <= 0) {
-                    throw new RuntimeException("Échéance invalide.");
+                    throw new RuntimeException("Échéance invalide (montant).");
+                }
+                if (edto.getDateEcheance() == null || edto.getDateEcheance().isBlank()) {
+                    throw new RuntimeException("Échéance invalide (date manquante).");
                 }
 
-                Echeance echeance = new Echeance();
-                echeance.setDateEcheance(edto.getDateEcheance());
-                echeance.setMontant(edto.getMontant());
-                echeance.setStatut(edto.getStatut() != null ? edto.getStatut() : "en attente");
-                echeance.setNumero(numero++);
-                echeance.setPaiement(paiement);
+                Echeance e = new Echeance();
+                e.setPaiement(paiement);
+                e.setNumero(edto.getNumero() != null ? edto.getNumero() : numeroAuto++);
+                e.setDateEcheance(LocalDate.parse(edto.getDateEcheance()));
+                e.setMontant(edto.getMontant());
+                e.setStatut(edto.getStatut() != null ? edto.getStatut() : "en attente");
 
-                echeances.add(echeance);
+                // TODO: Si ton entité Echeance possède ces champs, dé-commente :
+                // e.setModePaiement( normalizeModeSimple(edto.getModePaiement()) );
+                // e.setReference( edto.getReference() );
+                // if (edto.getDatePaiementReel() != null) e.setDatePaiementReel(edto.getDatePaiementReel());
+
+                echeances.add(e);
+
                 total += edto.getMontant();
-
-                if (!"payé".equalsIgnoreCase(echeance.getStatut())) {
+                if ("payé".equalsIgnoreCase(e.getStatut())) {
+                    montantPaye += edto.getMontant();
+                } else if (!"annulé".equalsIgnoreCase(e.getStatut())) {
                     restantes++;
-                } else {
-                    montantPaye += echeance.getMontant();
                 }
             }
 
             paiement.setEcheances(echeances);
             paiement.setMontantTotal(total);
             paiement.setMontantPaye(montantPaye);
-            paiement.setMontantRestant(total - montantPaye);
+            paiement.setMontantRestant(Math.max(0.0, total - montantPaye));
             paiement.setEcheancesTotales(echeances.size());
             paiement.setEcheancesRestantes(restantes);
             paiement.setStatut(restantes == 0 ? "payé" : "en attente");
 
         } else {
-            double montant = dto.getMontantTotal() != null ? dto.getMontantTotal() : 0.0;
+            // UNIQUE
+            paiement.setType("UNIQUE");
+            double montant = dto.getMontantTotal() != null && dto.getMontantTotal() > 0 ? dto.getMontantTotal() : 0.0;
             paiement.setMontantTotal(montant);
 
-            String mode = paiement.getModePaiement() != null ? paiement.getModePaiement().toLowerCase() : "";
-
-            if (mode.equals("espèces") || mode.equals("virement") || mode.equals("chèque") || mode.equals("unique")) {
+            if (isModeCarte(paiement.getModePaiement())) {
                 paiement.setMontantPaye(montant);
                 paiement.setMontantRestant(0.0);
                 paiement.setStatut("payé");
@@ -288,11 +441,219 @@ public class PaiementService {
         return paiementRepository.save(paiement);
     }
 
+    /* =========================================================
+       ============  NOUVEAU : Orchestration complète  =========
+       ============  (JSON & multipart, newMembre, etc.)  ======
+       ========================================================= */
+
+    /**
+     * Point d’entrée unique pour créer 1 paiement par membre cible
+     * (utilisé par /ajouter-complet JSON ou multipart reconstitué).
+     *
+     * Règles :
+     * - utilisateurId existant, OU (utilisateurNom/prenom[/email]) pour créer le payeur.
+     * - membreId OU membreIds OU newMembre (sinon fallback : on crée un “membre adulte” avec nom/prénom du payeur).
+     * - UNIQUE : CB = payé, sinon en attente.
+     * - ECHELONNE : si echeances[] fourni, on les prend ; sinon, si nombreEcheances>0 → auto-répartition.
+     */
+    @Transactional
+    public List<PaiementDTO> ajouterPaiementsCompletFromDto(PaiementRequestDTO req, MultipartFile justificatif) {
+
+        // 0) Normalise
+        final String type = normalizeType(req.getTypePaiement());     // UNIQUE | ECHELONNE
+        final String mode = normalizeMode(req.getModePaiement());     // CB | VIREMENT | ESPECES | CHEQUE
+        final LocalDate date = LocalDate.parse(req.getDatePaiement());
+        final double total = Optional.ofNullable(req.getMontantTotal()).orElse(0.0);
+
+        if (total <= 0.0) throw new IllegalArgumentException("Montant total invalide.");
+
+        // 1) Résoudre / créer le payeur
+        Utilisateur payeur = resolveOrCreatePayeur(req);
+
+        // 2) Résoudre les membres cibles
+        List<Membre> membresCibles = resolveMembresCibles(req, payeur);
+        if (membresCibles.isEmpty()) {
+            // Fallback : créer un “membre adulte” au nom du payeur (pratique pour une cotisation adulte)
+            Membre adulte = new Membre();
+            adulte.setPrenom(Optional.ofNullable(payeur.getPrenom()).orElse("Adulte"));
+            adulte.setNom(Optional.ofNullable(payeur.getNom()).orElse("Inconnu"));
+            adulte.setParent(payeur);
+            adulte = membreService.save(adulte);
+            membresCibles.add(adulte);
+        }
+
+        // 3) Créer un paiement pour chaque membre
+        List<PaiementDTO> out = new ArrayList<>();
+        for (Membre membre : membresCibles) {
+            Paiement p = new Paiement();
+            p.setUtilisateur(payeur);
+            p.setMembre(membre);
+            p.setDatePaiement(date);
+            p.setModePaiement(mode);
+            p.setType(type);
+
+            if ("UNIQUE".equals(type)) {
+                p.setMontantTotal(total);
+                fillUnique(p);
+            } else {
+                // ECHELONNE
+                p.setMontantTotal(total);
+                fillEchelonne(p, req, date);
+            }
+
+            // (optionnel) justificatif: stocker le fichier et set chemin
+            // if (justificatif != null && !justificatif.isEmpty()) { ... }
+
+            Paiement saved = paiementRepository.save(p);
+            out.add(toPaiementDTO(saved));
+        }
+        return out;
+    }
+
+    /** Trouve un payeur existant ou le crée (parent par défaut) */
+    private Utilisateur resolveOrCreatePayeur(PaiementRequestDTO req) {
+        if (req.getUtilisateurId() != null) {
+            return utilisateurService.getUtilisateurEntityById(req.getUtilisateurId())
+                    .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable (id=" + req.getUtilisateurId() + ")"));
+        }
+        String nom = trimOrNull(req.getUtilisateurNom());
+        String prenom = trimOrNull(req.getUtilisateurPrenom());
+        if (nom == null || prenom == null) {
+            throw new IllegalArgumentException("Nom et prénom du payeur requis (ou utilisateurId).");
+        }
+        // Essayez de retrouver par nom/prénom, sinon créer
+        Optional<Utilisateur> exist = utilisateurService.findByNomPrenom(nom, prenom);
+        if (exist.isPresent()) return exist.get();
+
+        Utilisateur nouveau = new Utilisateur();
+        nouveau.setNom(nom);
+        nouveau.setPrenom(prenom);
+        nouveau.setEmail(trimOrNull(req.getUtilisateurEmail()) != null ? req.getUtilisateurEmail() : "noemail@carelink.local");
+        nouveau.setPassword("defaultPassword");
+        nouveau.setRole(Role.PARENT);
+        return utilisateurService.save(nouveau);
+    }
+
+    /** Renvoie la liste des membres cibles en tenant compte de membreId(s) et newMembre */
+    private List<Membre> resolveMembresCibles(PaiementRequestDTO req, Utilisateur payeur) {
+        List<Membre> out = new ArrayList<>();
+
+        if (req.getMembreId() != null) {
+            out.add(membreService.getMembreEntityById(req.getMembreId())
+                    .orElseThrow(() -> new IllegalArgumentException("Membre introuvable (id=" + req.getMembreId() + ")")));
+        }
+
+        if (req.getMembreIds() != null && !req.getMembreIds().isEmpty()) {
+            for (Long mid : req.getMembreIds()) {
+                if (mid == null) continue;
+                out.add(membreService.getMembreEntityById(mid)
+                        .orElseThrow(() -> new IllegalArgumentException("Membre introuvable (id=" + mid + ")")));
+            }
+            out = out.stream().distinct().collect(Collectors.toList());
+        }
+
+        if (req.getNewMembre() != null) {
+            PaiementRequestDTO.NewMembreInput nm = req.getNewMembre();
+            String prenom = trimOrNull(nm.getPrenom());
+            String nom = trimOrNull(nm.getNom());
+            if (prenom == null || nom == null) {
+                throw new IllegalArgumentException("newMembre.prenom et newMembre.nom sont requis.");
+            }
+            Membre enfant = new Membre();
+            enfant.setPrenom(prenom);
+            enfant.setNom(nom);
+            enfant.setParent(payeur);
+            // si tu as un champ dateNaissance dans Membre, set-le ici à partir de nm.getDateNaissance()
+            enfant = membreService.save(enfant);
+            out.add(enfant);
+        }
+
+        return out;
+    }
+
+    /** Remplissage “unique” (statut payé si CB, sinon en attente) */
+    private void fillUnique(Paiement p) {
+        if ("CB".equalsIgnoreCase(p.getModePaiement())) {
+            p.setMontantPaye(p.getMontantTotal());
+            p.setMontantRestant(0.0);
+            p.setStatut("payé");
+        } else {
+            p.setMontantPaye(0.0);
+            p.setMontantRestant(p.getMontantTotal());
+            p.setStatut("en attente");
+        }
+        p.setEcheances(Collections.emptyList());
+        p.setEcheancesTotales(0);
+        p.setEcheancesRestantes(0);
+    }
+
+    /** Remplissage “échelonné” : soit avec la liste fournie, soit auto-répartition si nombreEcheances > 0 */
+    private void fillEchelonne(Paiement p, PaiementRequestDTO req, LocalDate startDate) {
+        List<PaiementRequestDTO.EcheanceInput> in = req.getEcheances();
+        List<Echeance> echs = new ArrayList<>();
+
+        if (in != null && !in.isEmpty()) {
+            int numAuto = 1;
+            for (PaiementRequestDTO.EcheanceInput e : in) {
+                Echeance ee = new Echeance();
+                ee.setPaiement(p);
+                ee.setNumero(e.getNumero() != null ? e.getNumero() : numAuto++);
+                ee.setDateEcheance(LocalDate.parse(e.getDateEcheance()));
+                ee.setMontant(Optional.ofNullable(e.getMontant()).orElse(0.0));
+                ee.setStatut(Optional.ofNullable(e.getStatut()).orElse("en attente"));
+                echs.add(ee);
+            }
+        } else if (req.getNombreEcheances() != null && req.getNombreEcheances() > 0) {
+            echs.addAll(autoSplitEcheances(startDate, p.getMontantTotal(), req.getNombreEcheances(), 30, p));
+        } else {
+            throw new IllegalArgumentException("Aucune échéance fournie pour un paiement échelonné.");
+        }
+
+        p.setEcheances(echs);
+        p.setEcheancesTotales(echs.size());
+
+        double paye = echs.stream()
+                .filter(x -> "payé".equalsIgnoreCase(x.getStatut()))
+                .map(Echeance::getMontant)
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue)
+                .sum();
+
+        p.setMontantPaye(paye);
+        p.setMontantRestant(Math.max(0.0, p.getMontantTotal() - paye));
+        p.setStatut(p.getMontantRestant() <= 0.0 ? "payé" : "en attente");
+    }
+
+    /** Génère N échéances linéaires à partir d’une date (stepDays=30 par défaut) */
+    private List<Echeance> autoSplitEcheances(LocalDate start, double total, int n, int stepDays, Paiement p) {
+        n = Math.max(1, Math.min(12, n));
+        stepDays = Math.max(7, stepDays);
+
+        double base = Math.floor((total / n) * 100.0) / 100.0;
+        double somme = 0.0;
+        List<Echeance> out = new ArrayList<>();
+
+        for (int i = 0; i < n; i++) {
+            LocalDate d = start.plusDays((long) i * stepDays);
+            double montant = (i == n - 1) ? round2(total - somme) : base;
+            somme += montant;
+
+            Echeance e = new Echeance();
+            e.setPaiement(p);
+            e.setNumero(i + 1);
+            e.setDateEcheance(d);
+            e.setMontant(montant);
+            e.setStatut("en attente");
+            out.add(e);
+        }
+        return out;
+    }
+
     public PaiementDTO toPaiementDTO(Paiement paiement) {
         PaiementDTO dto = new PaiementDTO();
         dto.setId(paiement.getId());
         dto.setType(paiement.getType());
-        dto.setDatePaiement(paiement.getDatePaiement());
+        dto.setDatePaiement(paiement.getDatePaiement() != null ? paiement.getDatePaiement().toString() : null); // String ISO
         dto.setStatut(paiement.getStatut());
         dto.setModePaiement(paiement.getModePaiement());
         dto.setMontantTotal(paiement.getMontantTotal());
@@ -300,63 +661,65 @@ public class PaiementService {
         dto.setDateAnnulation(paiement.getDateAnnulation());
         dto.setAdminResponsable(paiement.getAdminResponsable());
 
-        // Correction : gestion utilisateur ou membre seul
+        // Payeur
         if (paiement.getUtilisateur() != null) {
             dto.setUtilisateurId(paiement.getUtilisateur().getId());
             dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
             dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
             dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
-        } else if (paiement.getMembre() != null) {
-            // Cas membre pratiquant seul
-            dto.setUtilisateurId(paiement.getMembre().getId());
-            dto.setUtilisateurNom(paiement.getMembre().getNom());
-            dto.setUtilisateurPrenom(paiement.getMembre().getPrenom());
-            dto.setUtilisateurEmail(""); // ou paiement.getMembre().getEmail() si tu as le champ
         }
 
-        // Ajout des infos du membre (enfant ou membre seul)
+        // Enfant/membre
         if (paiement.getMembre() != null) {
             dto.setMembreId(paiement.getMembre().getId());
             dto.setMembreNom(paiement.getMembre().getNom());
             dto.setMembrePrenom(paiement.getMembre().getPrenom());
+            dto.setEnfantNomComplet(
+                    (Optional.ofNullable(paiement.getMembre().getPrenom()).orElse("") + " " +
+                     Optional.ofNullable(paiement.getMembre().getNom()).orElse("")).trim()
+            );
         }
 
         double montantPaye = 0.0;
 
         if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
-            List<EcheanceDTO> liste = new ArrayList<>();
+            List<PaiementDTO.EcheanceDTO> liste = new ArrayList<>();
             for (Echeance e : paiement.getEcheances()) {
-                EcheanceDTO edto = new EcheanceDTO();
+                PaiementDTO.EcheanceDTO edto = new PaiementDTO.EcheanceDTO();
                 edto.setId(e.getId());
-                edto.setDateEcheance(e.getDateEcheance());
+                edto.setNumero(e.getNumero());
+                edto.setDateEcheance(e.getDateEcheance() != null ? e.getDateEcheance().toString() : null);
                 edto.setMontant(e.getMontant());
                 edto.setStatut(e.getStatut());
-                edto.setNumero(e.getNumero());
-                liste.add(edto);
+
+                // TODO: si présent dans l’entité Echeance :
+                // edto.setModePaiement(e.getModePaiement());
+                // edto.setReference(e.getReference());
 
                 if ("payé".equalsIgnoreCase(e.getStatut())) {
-                    montantPaye += e.getMontant();
+                    montantPaye += safeMontant(e.getMontant());
                 }
+
+                liste.add(edto);
             }
             dto.setEcheances(liste);
         } else {
-            // Paiement unique : basé sur le statut
             if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                montantPaye = paiement.getMontantTotal();
+                montantPaye = safeMontant(paiement.getMontantTotal());
             }
         }
 
-        double montantTotal = paiement.getMontantTotal() != null ? paiement.getMontantTotal() : 0.0;
+        double total = safeMontant(paiement.getMontantTotal());
         dto.setMontantPaye(montantPaye);
-        dto.setMontantRestant(Math.max(0.0, montantTotal - montantPaye));
+        dto.setMontantRestant(Math.max(0.0, total - montantPaye));
 
         return dto;
     }
 
-
+    @Transactional
     public PaiementDTO annulerPaiement(Long paiementId, AnnulationRequestDTO request) {
         Paiement paiement = paiementRepository.findById(paiementId)
-            .orElseThrow(() -> new RuntimeException("Paiement introuvable"));
+                .orElseThrow(() -> new RuntimeException("Paiement introuvable"));
 
         if ("payé".equalsIgnoreCase(paiement.getStatut()) || "annulé".equalsIgnoreCase(paiement.getStatut())) {
             throw new IllegalStateException("Ce paiement ne peut pas être annulé (déjà payé ou déjà annulé).");
@@ -364,17 +727,15 @@ public class PaiementService {
 
         double montantAnnule = 0.0;
 
-        // Gérer les échéances : annuler uniquement celles non payées
-        if (paiement.getEcheances() != null) {
+        if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
             for (Echeance e : paiement.getEcheances()) {
                 if (!"payé".equalsIgnoreCase(e.getStatut())) {
                     e.setStatut("annulé");
-                    montantAnnule += e.getMontant();
+                    montantAnnule += safeMontant(e.getMontant());
                 }
             }
         } else {
-            // Paiement unique
-            montantAnnule = paiement.getMontantRestant(); // ne pas compter ce qui est déjà payé
+            montantAnnule = safeMontant(paiement.getMontantRestant());
         }
 
         paiement.setStatut("annulé");
@@ -384,9 +745,89 @@ public class PaiementService {
 
         paiement.setMontantRestant(0.0);
         paiement.setEcheancesRestantes(0);
-        paiement.setMontantPaye(paiement.getMontantTotal() - montantAnnule); // recalculé
+        paiement.setMontantPaye(Math.max(0.0, safeMontant(paiement.getMontantTotal()) - montantAnnule));
 
         Paiement saved = paiementRepository.save(paiement);
         return toPaiementDTO(saved);
     }
+
+    /**
+     * Création d’un paiement par un parent (espace parent).
+     * UNIQUE : CB => payé, sinon en attente.
+     * ECHELONNE : les échéances seront créées ensuite.
+     */
+    @Transactional
+    public Paiement ajouterPaiementParent(PaiementDTO dto, Long parentId) {
+        System.out.println("=== [PaiementService] Début ajout paiement parent ===");
+        System.out.println("[DTO reçu] " + dto);
+        System.out.println("[Parent connecté ID] " + parentId);
+
+        if (dto.getMembreId() == null || dto.getMembreId() <= 0) {
+            throw new RuntimeException("ID du membre invalide pour le paiement !");
+        }
+        Membre membre = membreService.getMembreEntityById(dto.getMembreId())
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+        if (membre.getParent() == null || !Objects.equals(membre.getParent().getId(), parentId)) {
+            throw new RuntimeException("Ce membre n'appartient pas au parent connecté !");
+        }
+
+        Paiement paiement = new Paiement();
+        String type = (dto.getType() != null && !dto.getType().isEmpty()) ? norm(dto.getType()) : "COTISATION";
+        paiement.setType(type);
+        paiement.setModePaiement(normalizeModeSimple(dto.getModePaiement()));
+        paiement.setDatePaiement(LocalDate.now());
+        paiement.setUtilisateur(membre.getParent());
+        paiement.setMembre(membre);
+
+        double montant = dto.getMontantTotal() != null && dto.getMontantTotal() > 0 ? dto.getMontantTotal() : 0.0;
+        paiement.setMontantTotal(montant);
+
+        if (isTypeUnique(type)) {
+            if (isModeCarte(paiement.getModePaiement())) {
+                paiement.setMontantPaye(montant);
+                paiement.setMontantRestant(0.0);
+                paiement.setStatut("payé");
+            } else {
+                paiement.setMontantPaye(0.0);
+                paiement.setMontantRestant(montant);
+                paiement.setStatut("en attente");
+            }
+            paiement.setEcheances(null);
+            paiement.setEcheancesTotales(0);
+            paiement.setEcheancesRestantes(0);
+
+        } else if (isTypeEchelonne(type)) {
+            paiement.setMontantPaye(0.0);
+            paiement.setMontantRestant(montant);
+            paiement.setStatut("en attente");
+            paiement.setEcheancesTotales(0);
+            paiement.setEcheancesRestantes(0);
+            paiement.setEcheances(null);
+
+        } else { // COTISATION / autre
+            if (isModeCarte(paiement.getModePaiement())) {
+                paiement.setMontantPaye(montant);
+                paiement.setMontantRestant(0.0);
+                paiement.setStatut("payé");
+            } else {
+                paiement.setMontantPaye(0.0);
+                paiement.setMontantRestant(montant);
+                paiement.setStatut("en attente");
+            }
+            paiement.setEcheancesTotales(0);
+            paiement.setEcheancesRestantes(0);
+            paiement.setEcheances(null);
+        }
+
+        Paiement saved = paiementRepository.save(paiement);
+        System.out.println("[Paiement enregistré] ID=" + saved.getId() +
+                " | MembreID=" + saved.getMembre().getId() +
+                " | UtilisateurID=" + saved.getUtilisateur().getId() +
+                " | MontantTotal=" + saved.getMontantTotal() +
+                " | Statut=" + saved.getStatut());
+        System.out.println("=== [PaiementService] Fin ajout paiement parent ===");
+        return saved;
+    }
 }
+
+

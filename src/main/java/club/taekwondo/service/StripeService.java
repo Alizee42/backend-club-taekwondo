@@ -1,11 +1,10 @@
 package club.taekwondo.service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import javax.annotation.PostConstruct;
-
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,6 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
 
 import club.taekwondo.dto.PaiementRequestDTO;
-import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.UtilisateurService;
 
@@ -28,13 +26,14 @@ public class StripeService {
     @Value("${stripe.public.key}")
     private String stripePublicKey;
 
+    // ✅ Devise par défaut si non fournie (on force EUR)
+    @Value("${stripe.default.currency:eur}")
+    private String defaultCurrency;
+
     private final UtilisateurService utilisateurService;
     private final JwtUtil jwtUtil;
 
-    public StripeService(
-        UtilisateurService utilisateurService,
-        JwtUtil jwtUtil
-    ) {
+    public StripeService(UtilisateurService utilisateurService, JwtUtil jwtUtil) {
         this.utilisateurService = utilisateurService;
         this.jwtUtil = jwtUtil;
     }
@@ -48,64 +47,87 @@ public class StripeService {
         return stripePublicKey;
     }
 
+    /* ---------- Surcharge 1 : Entrée de type Map (compat legacy) ---------- */
     public PaymentIntent executeStripePayment(String token, Map<String, Object> request) throws StripeException {
         Long utilisateurId = extractUtilisateurIdFromToken(token);
 
-        Utilisateur utilisateur = utilisateurService.getUtilisateurEntityById(utilisateurId)
-            .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé pour l'ID : " + utilisateurId));
+        // Montant total (obligatoire)
+        double montantTotal = Double.parseDouble(Objects.toString(request.get("amount"), "0"));
+        if (montantTotal <= 0) throw new IllegalArgumentException("Montant invalide.");
 
-        // 🔹 On récupère le montant total (pas une échéance)
-        Double montantTotal = Double.valueOf(request.get("amount").toString());
-        String currency = request.get("currency").toString().toLowerCase();
-
+        // Devise (si non fournie → EUR)
+        String currency = Objects.toString(request.get("currency"), defaultCurrency).toLowerCase();
         if (!List.of("eur", "usd").contains(currency)) {
             throw new IllegalArgumentException("Devise non supportée : " + currency);
         }
 
-        String typePaiement = request.get("typePaiement").toString();
-        String modePaiement = request.getOrDefault("modePaiement", "inconnu").toString();
-        String nombreEcheances = request.containsKey("nombreEcheances") ? request.get("nombreEcheances").toString() : "1";
+        String typePaiement = Objects.toString(request.get("typePaiement"), "UNIQUE");
+        String modePaiement = Objects.toString(request.get("modePaiement"), "CB");
+        String nombreEcheances = Objects.toString(request.get("nombreEcheances"), "1");
+        String membreId = Objects.toString(request.get("membreId"), ""); // facultatif
 
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-            .setAmount((long) (montantTotal * 100)) // ✅ Montant total, pas d'erreur ici
+        PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
+            .setAmount(Math.round(montantTotal * 100)) // en cents
             .setCurrency(currency)
             .setAutomaticPaymentMethods(
                 PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
             )
-            .putMetadata("utilisateurId", String.valueOf(utilisateur.getId()))
+            .putMetadata("utilisateurId", String.valueOf(utilisateurId))
             .putMetadata("typePaiement", typePaiement)
             .putMetadata("modePaiement", modePaiement)
-            .putMetadata("nombreEcheances", nombreEcheances) // utile si besoin en traitement
-            .build();
+            .putMetadata("nombreEcheances", nombreEcheances);
 
-        return PaymentIntent.create(params);
+        if (!membreId.isBlank()) {
+            builder.putMetadata("membreId", membreId);
+        }
+
+        return PaymentIntent.create(builder.build());
     }
 
-
+    /* ---------- Surcharge 2 : Entrée de type PaiementRequestDTO (NOUVEAU DTO) ---------- */
     public PaymentIntent executeStripePayment(String token, PaiementRequestDTO dto) throws StripeException {
-        if (dto.getAmount() == null || dto.getAmount() <= 0) {
+        Long utilisateurId = extractUtilisateurIdFromToken(token);
+
+        // ✅ On lit le NOUVEAU DTO
+        Double montantTotal = dto.getMontantTotal(); // remplace l'ancien amount
+        if (montantTotal == null || montantTotal <= 0) {
             throw new IllegalArgumentException("Montant invalide.");
         }
-        if (dto.getCurrency() == null || dto.getCurrency().isEmpty()) {
-            throw new IllegalArgumentException("Devise requise.");
-        }
-        if (dto.getTypePaiement() == null || dto.getTypePaiement().isEmpty()) {
-            throw new IllegalArgumentException("Type de paiement requis.");
+
+        // On force la devise à EUR (tu peux rendre ça configurable si besoin)
+        String currency = defaultCurrency.toLowerCase(); // "eur"
+
+        String typePaiement = (dto.getTypePaiement() == null || dto.getTypePaiement().isBlank())
+                ? "UNIQUE" : dto.getTypePaiement().toUpperCase();
+        String modePaiement = (dto.getModePaiement() == null || dto.getModePaiement().isBlank())
+                ? "CB" : dto.getModePaiement().toUpperCase();
+        int nbEcheances = (dto.getNombreEcheances() > 0) ? dto.getNombreEcheances() : 1;
+
+        PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
+            .setAmount(Math.round(montantTotal * 100))
+            .setCurrency(currency)
+            .setAutomaticPaymentMethods(
+                PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
+            )
+            .putMetadata("utilisateurId", String.valueOf(utilisateurId))
+            .putMetadata("typePaiement", typePaiement)
+            .putMetadata("modePaiement", modePaiement)
+            .putMetadata("nombreEcheances", String.valueOf(nbEcheances));
+
+        // Optionnel : si ton DTO contient un membre cible
+        if (dto.getMembreId() != null) {
+            builder.putMetadata("membreId", String.valueOf(dto.getMembreId()));
         }
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("amount", dto.getAmount());
-        map.put("currency", dto.getCurrency());
-        map.put("typePaiement", dto.getTypePaiement());
-        map.put("modePaiement", dto.getModePaiement());
-        map.put("nombreEcheances", dto.getNombreEcheances());
-
-        return executeStripePayment(token, map);
+        return PaymentIntent.create(builder.build());
     }
 
-    private Long extractUtilisateurIdFromToken(String token) {
+    /* ---------- Helpers ---------- */
+
+    private Long extractUtilisateurIdFromToken(String bearerToken) {
         try {
-            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            String token = bearerToken.replace("Bearer ", "");
+            String email = jwtUtil.extractEmail(token);
             return utilisateurService.getUtilisateurEntityByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé pour l'e-mail : " + email))
                 .getId();

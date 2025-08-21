@@ -3,6 +3,8 @@ package club.taekwondo.service.mongo;
 import club.taekwondo.dto.ActualiteDTO;
 import club.taekwondo.entity.mongo.Actualite;
 import club.taekwondo.repository.mongo.ActualiteRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.stream.Collectors;
 @Service
 public class ActualiteService {
 
+    private static final Logger log = LoggerFactory.getLogger(ActualiteService.class);
     private final ActualiteRepository actualiteRepository;
 
     public ActualiteService(ActualiteRepository actualiteRepository) {
@@ -19,72 +22,105 @@ public class ActualiteService {
     }
 
     public List<ActualiteDTO> getAll() {
-        return actualiteRepository.findAll().stream()
+        log.info("Récupération de toutes les actualités.");
+        return actualiteRepository.findAll()
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
     public List<ActualiteDTO> getFeatured() {
-        return actualiteRepository.findByIsFeaturedTrue().stream()
+        log.info("Récupération des actualités à la une.");
+        return actualiteRepository.findByIsFeaturedTrue()
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
     public Optional<ActualiteDTO> getById(String id) {
+        log.info("Récupération de l'actualité avec ID : {}", id);
         return actualiteRepository.findById(id).map(this::toDTO);
     }
 
     public ActualiteDTO create(ActualiteDTO actualiteDTO) {
-        Actualite entity = toEntity(actualiteDTO);
+        log.info("Création d'une nouvelle actualité : {}", actualiteDTO.getTitre());
+
         if (actualiteDTO.isFeatured()) {
-            actualiteRepository.findByIsFeaturedTrue().forEach(a -> {
-                a.setFeatured(false);
-                actualiteRepository.save(a);
-            });
+            log.info("Désactivation des autres actualités mises à la une.");
+            unsetAllFeatured();
         }
-        return toDTO(actualiteRepository.save(entity));
+
+        Actualite saved = actualiteRepository.save(toEntity(actualiteDTO));
+        return toDTO(saved);
     }
 
     public ActualiteDTO update(String id, ActualiteDTO actualiteDTO) {
-        return actualiteRepository.findById(id).map(existing -> {
-            if (actualiteDTO.isFeatured()) {
-                actualiteRepository.findByIsFeaturedTrue().forEach(a -> {
-                    if (!a.getId().equals(id)) {
-                        a.setFeatured(false);
-                        actualiteRepository.save(a);
-                    }
-                });
-            }
+        log.info("Mise à jour de l'actualité avec ID : {}", id);
 
-            existing.setTitre(actualiteDTO.getTitre());
-            existing.setContenu(actualiteDTO.getContenu());
-            existing.setDatePublication(actualiteDTO.getDatePublication());
-            existing.setTypeActu(actualiteDTO.getTypeActu());
-            existing.setFeatured(actualiteDTO.isFeatured());
-            existing.setImageUrl(actualiteDTO.getImageUrl());
+        Actualite existing = actualiteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Actualité introuvable avec l'ID : " + id));
 
-            return toDTO(actualiteRepository.save(existing));
-        }).orElse(null);
+        if (actualiteDTO.isFeatured()) {
+            log.info("Désactivation des autres actualités mises à la une.");
+            unsetAllFeaturedExcept(id);
+        }
+
+        existing.setTitre(actualiteDTO.getTitre());
+        existing.setContenu(actualiteDTO.getContenu());
+        existing.setDatePublication(actualiteDTO.getDatePublication());
+        existing.setTypeActu(actualiteDTO.getTypeActu());
+        existing.setFeatured(actualiteDTO.isFeatured());
+        existing.setImageUrl(actualiteDTO.getImageUrl());
+
+        return toDTO(actualiteRepository.save(existing));
     }
 
     public void delete(String id) {
+        log.info("Suppression de l'actualité avec ID : {}", id);
         actualiteRepository.deleteById(id);
     }
 
-    // 🔁 Conversion: Entity ➜ DTO
-    private ActualiteDTO toDTO(Actualite actualite) {
-        ActualiteDTO actualiteDTO = new ActualiteDTO();
-        actualiteDTO.setId(actualite.getId());
-        actualiteDTO.setTitre(actualite.getTitre());
-        actualiteDTO.setContenu(actualite.getContenu());
-        actualiteDTO.setDatePublication(actualite.getDatePublication());
-        actualiteDTO.setTypeActu(actualite.getTypeActu());
-        actualiteDTO.setFeatured(actualite.isFeatured());
-        actualiteDTO.setImageUrl(actualite.getImageUrl());
-        return actualiteDTO;
+    public void setFeatured(String id) {
+        log.info("Mise à la une de l'actualité avec ID : {}", id);
+        unsetAllFeatured();
+
+        Actualite actualite = actualiteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Actualité introuvable avec l'ID : " + id));
+
+        actualite.setFeatured(true);
+        actualiteRepository.save(actualite);
     }
 
-    // 🔁 Conversion: DTO ➜ Entity
+    /** Désactive toutes les actualités mises à la une */
+    private void unsetAllFeatured() {
+        actualiteRepository.findByIsFeaturedTrue().forEach(a -> {
+            a.setFeatured(false);
+            actualiteRepository.save(a);
+        });
+    }
+
+    /** Désactive toutes les actualités mises à la une sauf celle en cours */
+    private void unsetAllFeaturedExcept(String excludeId) {
+        actualiteRepository.findByIsFeaturedTrue().forEach(a -> {
+            if (!a.getId().equals(excludeId)) {
+                a.setFeatured(false);
+                actualiteRepository.save(a);
+            }
+        });
+    }
+
+    private ActualiteDTO toDTO(Actualite actualite) {
+        return new ActualiteDTO(
+                actualite.getId(),
+                actualite.getTitre(),
+                actualite.getContenu(),
+                actualite.getDatePublication(),
+                actualite.getTypeActu(),
+                actualite.isFeatured(),
+                actualite.getImageUrl()
+        );
+    }
+
     private Actualite toEntity(ActualiteDTO actualiteDTO) {
         Actualite actualite = new Actualite();
         actualite.setId(actualiteDTO.getId());

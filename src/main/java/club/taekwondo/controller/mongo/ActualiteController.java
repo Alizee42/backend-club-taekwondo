@@ -43,24 +43,22 @@ public class ActualiteController {
 
     @PostMapping
     public ResponseEntity<ActualiteDTO> create(@RequestBody ActualiteDTO actualiteDTO) {
-        ActualiteDTO created = actualiteService.create(actualiteDTO);
-        return ResponseEntity.status(201).body(created);
+        actualiteDTO.setDatePublication(LocalDateTime.now());
+        return ResponseEntity.status(201).body(actualiteService.create(actualiteDTO));
     }
 
     @PostMapping("/with-image")
     public ResponseEntity<ActualiteDTO> createWithImage(
-            @RequestParam("titre") String titre,
-            @RequestParam("contenu") String contenu,
-            @RequestParam("typeActu") String typeActu,
-            @RequestParam("isFeatured") boolean isFeatured,
+            @RequestParam String titre,
+            @RequestParam String contenu,
+            @RequestParam String typeActu,
+            @RequestParam boolean isFeatured,
             @RequestParam(value = "image", required = false) MultipartFile imageFile
     ) {
         try {
-            String imageUrl = null;
-            if (imageFile != null && !imageFile.isEmpty()) {
-        
-                imageUrl = fileUploadService.uploadFile(imageFile, "actualites");
-            }
+            String imageUrl = (imageFile != null && !imageFile.isEmpty())
+                    ? fileUploadService.uploadFile(imageFile, "actualites")
+                    : null;
 
             ActualiteDTO actualiteDTO = new ActualiteDTO();
             actualiteDTO.setTitre(titre);
@@ -70,9 +68,7 @@ public class ActualiteController {
             actualiteDTO.setImageUrl(imageUrl);
             actualiteDTO.setDatePublication(LocalDateTime.now());
 
-            ActualiteDTO created = actualiteService.create(actualiteDTO);
-            return ResponseEntity.status(201).body(created);
-
+            return ResponseEntity.status(201).body(actualiteService.create(actualiteDTO));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -81,9 +77,17 @@ public class ActualiteController {
     @PutMapping("/{id}")
     public ResponseEntity<ActualiteDTO> update(@PathVariable String id, @RequestBody ActualiteDTO actualiteDTO) {
         ActualiteDTO updated = actualiteService.update(id, actualiteDTO);
-        return updated != null
-                ? ResponseEntity.ok(updated)
-                : ResponseEntity.notFound().build();
+        return (updated != null) ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/featured")
+    public ResponseEntity<Void> setFeatured(@PathVariable String id) {
+        try {
+            actualiteService.setFeatured(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -92,3 +96,4 @@ public class ActualiteController {
         return ResponseEntity.noContent().build();
     }
 }
+

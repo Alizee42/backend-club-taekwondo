@@ -106,7 +106,7 @@ public Optional<Membre> getMembreEntityById(Long id) {
 
     // 🔹 Récupérer les membres liés à un utilisateur (compte)
     public List<MembreDTO> getMembresByUtilisateurId(Long utilisateurId) {
-        List<Membre> membres = membreRepository.findByParent_Id(utilisateurId);
+        List<Membre> membres = membreRepository.findByParentId(utilisateurId);
         System.out.println("[✅] Membres trouvés dans la base de données : " + membres);
         return membres.stream()
                 .map(this::toMembreDTO)

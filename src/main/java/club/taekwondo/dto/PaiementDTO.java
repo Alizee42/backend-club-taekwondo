@@ -1,190 +1,151 @@
 package club.taekwondo.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.NotBlank;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
+/**
+ * DTO de réponse pour l'affichage et le suivi des paiements.
+ *
+ * Conventions:
+ * - type         : "UNIQUE" | "ECHELONNE" | "COTISATION"
+ * - modePaiement : "CB" | "VIREMENT" | "ESPECES"
+ * - statut       : "payé" | "en attente" | "en retard" | "annulé"
+ *
+ * Dates renvoyées en String ISO (yyyy-MM-dd) pour simplicité côté Angular.
+ */
 public class PaiementDTO {
 
     private Long id;
 
-    @NotBlank(message = "Le type de paiement est obligatoire")
+    /** "UNIQUE" | "ECHELONNE" | "COTISATION" */
     private String type;
 
-    private LocalDate datePaiement;
+    /** Date du paiement initial (ISO yyyy-MM-dd) */
+    private String datePaiement;
 
-    @NotBlank(message = "Le statut est obligatoire")
+    /** "payé" | "en attente" | "en retard" | "annulé" */
     private String statut;
 
-    @NotBlank(message = "Le mode de paiement est obligatoire")
-    private String modePaiement;
+    /** Mode principal (si échéances, le détail peut être au niveau de l’échéance) */
+    private String modePaiement; // "CB" | "VIREMENT" | "ESPECES"
 
-    @NotNull(message = "Le montant total est obligatoire")
-    @Positive(message = "Le montant total doit être positif")
-    private Double montantTotal;
+    /** Montants */
+    private Double montantTotal;   // total
+    private Double montantPaye;    // déjà payé
+    private Double montantRestant; // >= 0
 
-    private Double montantPaye;
-    private Double montantRestant;
-
-    @NotNull(message = "L'utilisateur est obligatoire")
+    /** Utilisateur (parent/adulte) payeur */
     private Long utilisateurId;
-
     private String utilisateurNom;
     private String utilisateurPrenom;
     private String utilisateurEmail;
 
-    private List<EcheanceDTO> echeances;
-
-    private String motifAnnulation;
-    private LocalDateTime dateAnnulation;
-    private String adminResponsable;
+    /** Enfant / Membre concerné */
     private Long membreId;
     private String membreNom;
     private String membrePrenom;
-    private String enfantNomComplet;
+    private String enfantNomComplet; // confort d'affichage
 
-    // === Getters et Setters ===
+    /** Détail des échéances si type = ECHELONNE */
+    private List<EcheanceDTO> echeances;
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
+    /** Infos d'annulation (optionnel) */
+    private String motifAnnulation;
+    private LocalDateTime dateAnnulation;
+    private String adminResponsable;
 
-    public String getType() {
-        return type;
-    }
-    public void setType(String type) {
-        this.type = type;
-    }
+    // ===== Getters / Setters =====
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public LocalDate getDatePaiement() {
-        return datePaiement;
-    }
-    public void setDatePaiement(LocalDate datePaiement) {
-        this.datePaiement = datePaiement;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public String getStatut() {
-        return statut;
-    }
-    public void setStatut(String statut) {
-        this.statut = statut;
-    }
+    public String getDatePaiement() { return datePaiement; }
+    public void setDatePaiement(String datePaiement) { this.datePaiement = datePaiement; }
 
-    public String getModePaiement() {
-        return modePaiement;
-    }
-    public void setModePaiement(String modePaiement) {
-        this.modePaiement = modePaiement;
-    }
+    public String getStatut() { return statut; }
+    public void setStatut(String statut) { this.statut = statut; }
 
-    public Double getMontantTotal() {
-        return montantTotal;
-    }
-    public void setMontantTotal(Double montantTotal) {
-        this.montantTotal = montantTotal;
-    }
+    public String getModePaiement() { return modePaiement; }
+    public void setModePaiement(String modePaiement) { this.modePaiement = modePaiement; }
 
-    public Double getMontantPaye() {
-        return montantPaye;
-    }
-    public void setMontantPaye(Double montantPaye) {
-        this.montantPaye = montantPaye;
-    }
+    public Double getMontantTotal() { return montantTotal; }
+    public void setMontantTotal(Double montantTotal) { this.montantTotal = montantTotal; }
 
-    public Double getMontantRestant() {
-        return montantRestant;
-    }
-    public void setMontantRestant(Double montantRestant) {
-        this.montantRestant = montantRestant;
-    }
+    public Double getMontantPaye() { return montantPaye; }
+    public void setMontantPaye(Double montantPaye) { this.montantPaye = montantPaye; }
 
-    public Long getUtilisateurId() {
-        return utilisateurId;
-    }
-    public void setUtilisateurId(Long utilisateurId) {
-        this.utilisateurId = utilisateurId;
-    }
+    public Double getMontantRestant() { return montantRestant; }
+    public void setMontantRestant(Double montantRestant) { this.montantRestant = montantRestant; }
 
-    public String getUtilisateurNom() {
-        return utilisateurNom;
-    }
-    public void setUtilisateurNom(String utilisateurNom) {
-        this.utilisateurNom = utilisateurNom;
-    }
+    public Long getUtilisateurId() { return utilisateurId; }
+    public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
 
-    public String getUtilisateurPrenom() {
-        return utilisateurPrenom;
-    }
-    public void setUtilisateurPrenom(String utilisateurPrenom) {
-        this.utilisateurPrenom = utilisateurPrenom;
-    }
+    public String getUtilisateurNom() { return utilisateurNom; }
+    public void setUtilisateurNom(String utilisateurNom) { this.utilisateurNom = utilisateurNom; }
 
-    public String getUtilisateurEmail() {
-        return utilisateurEmail;
-    }
-    public void setUtilisateurEmail(String utilisateurEmail) {
-        this.utilisateurEmail = utilisateurEmail;
-    }
+    public String getUtilisateurPrenom() { return utilisateurPrenom; }
+    public void setUtilisateurPrenom(String utilisateurPrenom) { this.utilisateurPrenom = utilisateurPrenom; }
 
-    public List<EcheanceDTO> getEcheances() {
-        return echeances;
-    }
-    public void setEcheances(List<EcheanceDTO> echeances) {
-        this.echeances = echeances;
-    }
+    public String getUtilisateurEmail() { return utilisateurEmail; }
+    public void setUtilisateurEmail(String utilisateurEmail) { this.utilisateurEmail = utilisateurEmail; }
 
-    public String getMotifAnnulation() {
-        return motifAnnulation;
-    }
-    public void setMotifAnnulation(String motifAnnulation) {
-        this.motifAnnulation = motifAnnulation;
-    }
+    public Long getMembreId() { return membreId; }
+    public void setMembreId(Long membreId) { this.membreId = membreId; }
 
-    public LocalDateTime getDateAnnulation() {
-        return dateAnnulation;
-    }
-    public void setDateAnnulation(LocalDateTime dateAnnulation) {
-        this.dateAnnulation = dateAnnulation;
-    }
+    public String getMembreNom() { return membreNom; }
+    public void setMembreNom(String membreNom) { this.membreNom = membreNom; }
 
-    public String getAdminResponsable() {
-        return adminResponsable;
-    }
-    public void setAdminResponsable(String adminResponsable) {
-        this.adminResponsable = adminResponsable;
-    }
-	public Long getMembreId() {
-		return membreId;
-	}
-	public void setMembreId(Long membreId) {
-		this.membreId = membreId;
-	}
-	public String getMembreNom() {
-		return membreNom;
-	}
-	public void setMembreNom(String membreNom) {
-		this.membreNom = membreNom;
-	}
-	public String getMembrePrenom() {
-		return membrePrenom;
-	}
-	public void setMembrePrenom(String membrePrenom) {
-		this.membrePrenom = membrePrenom;
-	}
-	public String getEnfantNomComplet() {
-		return enfantNomComplet;
-	}
-	public void setEnfantNomComplet(String enfantNomComplet) {
-		this.enfantNomComplet = enfantNomComplet;
-	}
-	
+    public String getMembrePrenom() { return membrePrenom; }
+    public void setMembrePrenom(String membrePrenom) { this.membrePrenom = membrePrenom; }
 
+    public String getEnfantNomComplet() { return enfantNomComplet; }
+    public void setEnfantNomComplet(String enfantNomComplet) { this.enfantNomComplet = enfantNomComplet; }
+
+    public List<EcheanceDTO> getEcheances() { return echeances; }
+    public void setEcheances(List<EcheanceDTO> echeances) { this.echeances = echeances; }
+
+    public String getMotifAnnulation() { return motifAnnulation; }
+    public void setMotifAnnulation(String motifAnnulation) { this.motifAnnulation = motifAnnulation; }
+
+    public LocalDateTime getDateAnnulation() { return dateAnnulation; }
+    public void setDateAnnulation(LocalDateTime dateAnnulation) { this.dateAnnulation = dateAnnulation; }
+
+    public String getAdminResponsable() { return adminResponsable; }
+    public void setAdminResponsable(String adminResponsable) { this.adminResponsable = adminResponsable; }
+
+    // ===== Échéance (réponse) =====
+    public static class EcheanceDTO {
+        private Long id;
+        private Integer numero;        // 1..N
+        private String dateEcheance;   // ISO yyyy-MM-dd
+        private Double montant;
+        private String statut;         // "en attente" | "payé" | "en retard"
+        private String modePaiement;   // "CB" | "VIREMENT" | "ESPECES" (si géré par échéance)
+        private String reference;      // référence externe (optionnel)
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+
+        public Integer getNumero() { return numero; }
+        public void setNumero(Integer numero) { this.numero = numero; }
+
+        public String getDateEcheance() { return dateEcheance; }
+        public void setDateEcheance(String dateEcheance) { this.dateEcheance = dateEcheance; }
+
+        public Double getMontant() { return montant; }
+        public void setMontant(Double montant) { this.montant = montant; }
+
+        public String getStatut() { return statut; }
+        public void setStatut(String statut) { this.statut = statut; }
+
+        public String getModePaiement() { return modePaiement; }
+        public void setModePaiement(String modePaiement) { this.modePaiement = modePaiement; }
+
+        public String getReference() { return reference; }
+        public void setReference(String reference) { this.reference = reference; }
+    }
 }
+
+

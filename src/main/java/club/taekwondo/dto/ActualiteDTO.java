@@ -1,5 +1,6 @@
 package club.taekwondo.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 public class ActualiteDTO {
@@ -9,7 +10,9 @@ public class ActualiteDTO {
     private String contenu;
     private LocalDateTime datePublication;
     private String typeActu;
+    @JsonProperty("isFeatured")
     private boolean isFeatured;
+
     private String imageUrl;
 
     // Constructeurs
@@ -82,3 +85,4 @@ public class ActualiteDTO {
         this.imageUrl = imageUrl;
     }
 }
+

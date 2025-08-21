@@ -8,12 +8,22 @@ import java.util.Optional;
 
 public interface MembreRepository extends JpaRepository<Membre, Long> {
 
+    // 🔹 Trouver un membre par email du compte utilisateur lié
     Optional<Membre> findByCompteUtilisateur_Email(String email);
 
-    List<Membre> findByParent_Id(Long parentId);
-    
-    Optional<Membre> findByCompteUtilisateur_Id(Long utilisateurId);
-    
+    // 🔹 Trouver tous les enfants d’un parent (via ID parent)
     List<Membre> findByParentId(Long parentId);
 
+    // 🔹 Trouver un membre par ID du compte utilisateur lié
+    Optional<Membre> findByCompteUtilisateur_Id(Long utilisateurId);
+
+    // =====================
+    // 📊 Méthodes KPI
+    // =====================
+
+    // 🔹 Nombre total de membres
+    long count();
+
+    // 🔹 Nombre de membres adultes (ou actifs si c’est le sens que tu veux donner)
+    long countByEstAdulteTrue();
 }

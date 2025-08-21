@@ -12,11 +12,26 @@ public class Echeance {
     private Long id;
 
     private LocalDate dateEcheance;
+
     private double montant;
+
+    /** payé | en attente | en retard | annulé */
     private String statut;
 
     @Column(name = "numero")
     private Integer numero;
+
+    // 🔹 NOUVEAU : mode de paiement spécifique à l'échéance (cb/stripe, virement, espèces)
+    @Column(name = "mode_paiement")
+    private String modePaiement;
+
+    // 🔹 NOUVEAU : date réelle d'enregistrement du paiement de cette échéance
+    @Column(name = "date_paiement_reel")
+    private LocalDate datePaiementReel;
+
+    // 🔹 NOUVEAU : référence technique (id Stripe, n° virement, note espèces)
+    @Column(name = "reference")
+    private String reference;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paiement_id")
@@ -36,10 +51,18 @@ public class Echeance {
     public String getStatut() { return statut; }
     public void setStatut(String statut) { this.statut = statut; }
 
-    public Paiement getPaiement() { return paiement; }
-    public void setPaiement(Paiement paiement) { this.paiement = paiement; }
-
     public Integer getNumero() { return numero; }
     public void setNumero(Integer numero) { this.numero = numero; }
-}
 
+    public String getModePaiement() { return modePaiement; }
+    public void setModePaiement(String modePaiement) { this.modePaiement = modePaiement; }
+
+    public LocalDate getDatePaiementReel() { return datePaiementReel; }
+    public void setDatePaiementReel(LocalDate datePaiementReel) { this.datePaiementReel = datePaiementReel; }
+
+    public String getReference() { return reference; }
+    public void setReference(String reference) { this.reference = reference; }
+
+    public Paiement getPaiement() { return paiement; }
+    public void setPaiement(Paiement paiement) { this.paiement = paiement; }
+}
