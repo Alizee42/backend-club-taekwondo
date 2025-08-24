@@ -174,12 +174,12 @@ public class PaiementController {
             // type / typePaiement (front: 'unique' | 'échelonné')
             String typeHuman = strOrNull(body.get("type"));
             String typeAlt = strOrNull(body.get("typePaiement"));
-            String typeBack = PaiementService.normalizeTypeHuman(typeHuman != null ? typeHuman : typeAlt);
+            String typeBack = normalizeTypeHuman(typeHuman != null ? typeHuman : typeAlt);
             req.setTypePaiement(typeBack);
 
             // modePaiement (front: 'especes' | 'virement' | 'stripe')
             String modeHuman = strOrNull(body.get("modePaiement"));
-            req.setModePaiement(PaiementService.normalizeModeHuman(modeHuman));
+            req.setModePaiement(normalizeModeHuman(modeHuman));
 
             // datePaiement
             String datePaiement = strOrNull(body.get("datePaiement"));
@@ -263,16 +263,7 @@ public class PaiementController {
     }
 
     /**
-     * MULTIPART (création à la volée avec justificatif) :
-     * Clés attendues :
-     * - utilisateurNom, utilisateurPrenom, utilisateurEmail? (optionnel)
-     * - type ('unique' | 'échelonné')
-     * - montantTotal
-     * - modePaiement ('especes' | 'virement' | 'stripe')
-     * - datePaiement (yyyy-MM-dd)
-     * - echeances (JSON string) ex: [{"dateEcheance":"2025-09-01","montant":100,"statut":"en attente","numero":1}]
-     * - justificatif (fichier) optionnel
-     *
+     * MULTIPART (création à la volée avec justificatif).
      * Retourne { paiementId, reference? }.
      */
     @PreAuthorize("hasRole('ADMIN')")
@@ -289,13 +280,12 @@ public class PaiementController {
             @RequestPart(value = "justificatif", required = false) MultipartFile justificatif
     ) {
         try {
-            // Build DTO
             PaiementRequestDTO req = new PaiementRequestDTO();
             req.setUtilisateurNom(utilisateurNom);
             req.setUtilisateurPrenom(utilisateurPrenom);
             req.setUtilisateurEmail(utilisateurEmail);
-            req.setTypePaiement(PaiementService.normalizeTypeHuman(typeHuman));
-            req.setModePaiement(PaiementService.normalizeModeHuman(modeHuman));
+            req.setTypePaiement(normalizeTypeHuman(typeHuman));
+            req.setModePaiement(normalizeModeHuman(modeHuman));
             req.setDatePaiement((datePaiement != null && !datePaiement.isBlank())
                     ? datePaiement
                     : LocalDate.now().toString());
@@ -379,7 +369,7 @@ public class PaiementController {
 
             Paiement paiement = paiementService.ajouterPaiementParent(dto, parent.getId());
             PaiementDTO out = paiementService.toPaiementDTO(paiement);
-            return created("/api/paiements/" + out.getId(), out);
+            return createdDTO("/api/paiements/" + out.getId(), out);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -396,21 +386,31 @@ public class PaiementController {
         return new ResponseEntity<>(body, headers, HttpStatus.CREATED);
     }
 
-    // ----- helpers parse souples -----
+    /** Surcharge pour renvoyer un DTO complet avec Location */
+    private ResponseEntity<PaiementDTO> createdDTO(String location, PaiementDTO body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(location));
+        return new ResponseEntity<>(body, headers, HttpStatus.CREATED);
+    }
+
+    // ----- helpers parse / normalisation -----
     private static String strOrNull(Object o) { return o == null ? null : String.valueOf(o); }
+
     private static Long longOrNull(Object o) {
         if (o == null) return null;
         try { return Long.valueOf(String.valueOf(o)); } catch (Exception e) { return null; }
     }
+
     private static Integer intOrNull(Object o) {
         if (o == null) return null;
         try { return Integer.valueOf(String.valueOf(o)); } catch (Exception e) { return null; }
     }
+
     private static Double doubleOrNull(Object o) {
         if (o == null) return null;
         try { return Double.valueOf(String.valueOf(o)); } catch (Exception e) { return null; }
     }
-    @SuppressWarnings("unchecked")
+
     private static List<Long> listOfLong(Object o) {
         if (o == null) return null;
         try {
@@ -426,6 +426,34 @@ public class PaiementController {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** 'unique' | 'échelonné' | 'echeances' → 'UNIQUE' | 'ECHELONNE' */
+    private static String normalizeTypeHuman(String t) {
+        if (t == null) return "UNIQUE";
+        t = t.toLowerCase(Locale.ROOT).replace("é", "e").trim();
+        if (t.startsWith("echel")) return "ECHELONNE";
+        if (t.equals("echeances")) return "ECHELONNE";
+        return "UNIQUE";
+    }
+
+    /** 'stripe' | 'cb' | 'carte' → 'CB' ; 'virement' → 'VIREMENT' ; 'cheque' → 'CHEQUE' ; par défaut 'ESPECES' */
+    private static String normalizeModeHuman(String m) {
+        if (m == null) return "ESPECES";
+        m = m.toLowerCase(Locale.ROOT).replace("é", "e").trim();
+        if (m.equals("stripe") || m.equals("cb") || m.equals("carte") || m.equals("carte bancaire")) return "CB";
+        if (m.equals("virement")) return "VIREMENT";
+        if (m.equals("cheque")) return "CHEQUE";
+        return "ESPECES";
+    }
+    
+    @PreAuthorize("hasAuthority('ADMIN')") // ou hasRole('ADMIN') si tes rôles sont stockés "ROLE_ADMIN"
+    @PutMapping("/{id}/annuler")
+    public ResponseEntity<PaiementDTO> annulerPaiement(
+            @PathVariable Long id,
+            @RequestBody AnnulationRequestDTO dto) {
+        PaiementDTO out = paiementService.annulerPaiement(id, dto);
+        return ResponseEntity.ok(out);
     }
 }
 

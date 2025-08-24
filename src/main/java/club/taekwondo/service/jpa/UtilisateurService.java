@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -25,7 +26,34 @@ public class UtilisateurService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ========== CONVERSION ==========
+
+    private String lowerOrNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t.toLowerCase(Locale.ROOT);
+    }
+
+    /** Convertit une chaîne (éventuellement null/vide) en Role, avec fallback MEMBRE. */
+    private Role parseRoleOrDefault(String roleStr) {
+        if (roleStr == null || roleStr.trim().isEmpty()) {
+            return Role.MEMBRE;
+        }
+        try {
+            return Role.valueOf(roleStr.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return Role.MEMBRE;
+        }
+    }
+
+    /** Surcharge pour accepter un objet Role directement */
+    private Role parseRoleOrDefault(Role role) {
+        return role != null ? role : Role.MEMBRE;
+    }
+
+    /* =======================
+     *   Conversions
+     * ======================= */
+
     public UtilisateurDTO convertToDTO(Utilisateur utilisateur) {
         UtilisateurDTO dto = new UtilisateurDTO();
         dto.setId(utilisateur.getId());
@@ -35,7 +63,7 @@ public class UtilisateurService {
         dto.setAdresse(utilisateur.getAdresse());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
-        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null); // ✅
+        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null); // String coté DTO
         return dto;
     }
 
@@ -43,16 +71,19 @@ public class UtilisateurService {
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(dto.getNom());
         utilisateur.setPrenom(dto.getPrenom());
-        utilisateur.setEmail(dto.getEmail().toLowerCase());
+        utilisateur.setEmail(lowerOrNull(dto.getEmail())); // peut être null
         utilisateur.setDateNaissance(dto.getDateNaissance());
         utilisateur.setAdresse(dto.getAdresse());
         utilisateur.setTelephone(dto.getTelephone());
-        utilisateur.setRole(dto.getRole());
-        utilisateur.setPassword(dto.getPassword());
+        utilisateur.setRole(parseRoleOrDefault(dto.getRole())); // ✅ convertit String -> Role
+        utilisateur.setPassword(dto.getPassword()); // déjà encodé si createUtilisateur()
         return utilisateur;
     }
 
-    // ========== LECTURE ==========
+    /* =======================
+     *   Lecture
+     * ======================= */
+
     public List<UtilisateurDTO> getAllUtilisateurs() {
         List<UtilisateurDTO> result = new ArrayList<>();
         for (Utilisateur u : utilisateurRepository.findAll()) {
@@ -62,7 +93,9 @@ public class UtilisateurService {
     }
 
     public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
-        return utilisateurRepository.findByEmail(email.toLowerCase()).map(this::convertToDTO);
+        String e = lowerOrNull(email);
+        return e == null ? Optional.empty()
+                : utilisateurRepository.findByEmailIgnoreCase(e).map(this::convertToDTO);
     }
 
     public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
@@ -70,27 +103,47 @@ public class UtilisateurService {
     }
 
     public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
-        return utilisateurRepository.findByEmail(email.toLowerCase());
+        String e = lowerOrNull(email);
+        return e == null ? Optional.empty() : utilisateurRepository.findByEmailIgnoreCase(e);
     }
 
     public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
-        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom, prenom);
-    }
-    public Optional<Utilisateur> findByEmail(String email) {
-        return utilisateurRepository.findByEmail(email);
+        if (nom == null || prenom == null) return Optional.empty();
+        return utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom.trim(), prenom.trim());
     }
 
-    // ========== AUTHENTIFICATION ==========
+    /** Exposés pour le PaiementService (évite l’erreur “undefined method”) */
+    public Optional<Utilisateur> findByEmailIgnoreCase(String email) {
+        String e = lowerOrNull(email);
+        return e == null ? Optional.empty() : utilisateurRepository.findByEmailIgnoreCase(e);
+    }
+
+    public boolean existsByEmailIgnoreCase(String email) {
+        String e = lowerOrNull(email);
+        return e != null && utilisateurRepository.existsByEmailIgnoreCase(e);
+    }
+
+    // Historique si du code appelle encore cette version
+    public Optional<Utilisateur> findByEmail(String email) {
+        String e = lowerOrNull(email);
+        return e == null ? Optional.empty() : utilisateurRepository.findByEmailIgnoreCase(e);
+    }
+
+    /* =======================
+     *   Authentification
+     * ======================= */
+
     public Optional<UtilisateurDTO> login(String email, String password) {
-        if (email != null) {
-            email = email.toLowerCase();
-        }
-        return utilisateurRepository.findByEmail(email)
+        String e = lowerOrNull(email);
+        return utilisateurRepository.findByEmailIgnoreCase(e)
                 .filter(u -> passwordEncoder.matches(password, u.getPassword()))
                 .map(this::convertToDTO);
     }
 
-    // ========== CRÉATION ==========
+    /* =======================
+     *   Création
+     * ======================= */
+
     public Utilisateur createUtilisateur(UtilisateurDTO dto) {
         if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
             throw new IllegalArgumentException("Le nom est requis.");
@@ -102,33 +155,36 @@ public class UtilisateurService {
             throw new IllegalArgumentException("Le mot de passe est requis.");
         }
 
-        dto.setEmail(dto.getEmail().toLowerCase());
-
-        if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
+        dto.setEmail(lowerOrNull(dto.getEmail()));
+        if (existsByEmailIgnoreCase(dto.getEmail())) {
             throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
         }
 
+        // Encode le mot de passe et parse le rôle proprement
+        dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         if (dto.getRole() == null) {
-        	dto.setRole(Role.MEMBRE.name()); // ✅ Corrigé : convertit enum → String
+            dto.setRole(Role.MEMBRE.name());
         }
 
-        dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         Utilisateur utilisateur = toUtilisateurEntity(dto);
         return utilisateurRepository.save(utilisateur);
     }
 
-    // ========== MISE À JOUR ==========
+    /* =======================
+     *   Mise à jour
+     * ======================= */
+
     public void updateUtilisateurFromDTO(Long id, UtilisateurDTO dto) {
         utilisateurRepository.findById(id).ifPresent(user -> {
             user.setNom(dto.getNom());
             user.setPrenom(dto.getPrenom());
-            user.setEmail(dto.getEmail().toLowerCase());
+            user.setEmail(lowerOrNull(dto.getEmail()));
             user.setTelephone(dto.getTelephone());
             user.setAdresse(dto.getAdresse());
             user.setDateNaissance(dto.getDateNaissance());
-            user.setRole(dto.getRole());
+            user.setRole(parseRoleOrDefault(dto.getRole())); // ✅ String -> Role
 
-            if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
             }
 
@@ -136,12 +192,18 @@ public class UtilisateurService {
         });
     }
 
-    // ========== SUPPRESSION ==========
+    /* =======================
+     *   Suppression
+     * ======================= */
+
     public void deleteUtilisateur(Long id) {
         utilisateurRepository.deleteById(id);
     }
 
-    // ========== PAIEMENTS ==========
+    /* =======================
+     *   Paiements (DTO léger)
+     * ======================= */
+
     public List<UtilisateurPaiementDTO> getAllWithPaiements() {
         List<UtilisateurPaiementDTO> result = new ArrayList<>();
         for (Utilisateur u : utilisateurRepository.findAll()) {
@@ -156,10 +218,12 @@ public class UtilisateurService {
         return result;
     }
 
-    // ========== SAUVEGARDE ==========
+    /* =======================
+     *   Sauvegarde bas niveau
+     * ======================= */
+
     public Utilisateur save(Utilisateur utilisateur) {
-        utilisateur.setEmail(utilisateur.getEmail().toLowerCase());
+        utilisateur.setEmail(lowerOrNull(utilisateur.getEmail()));
         return utilisateurRepository.save(utilisateur);
     }
 }
-

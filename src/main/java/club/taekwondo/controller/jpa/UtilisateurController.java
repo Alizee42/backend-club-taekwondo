@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,14 +30,39 @@ public class UtilisateurController {
         this.utilisateurService = utilisateurService;
     }
 
-    // ✅ Lister tous les utilisateurs
     @GetMapping("")
-    public ResponseEntity<List<UtilisateurDTO>> getAllUtilisateurs() {
-        List<UtilisateurDTO> utilisateurs = utilisateurService.getAllUtilisateurs();
-        return ResponseEntity.ok(utilisateurs);
+    public ResponseEntity<List<UtilisateurDTO>> listUtilisateurs(
+            @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "q", required = false) String q) {
+
+        List<UtilisateurDTO> all = utilisateurService.getAllUtilisateurs();
+
+        if (role != null && !role.isBlank()) {
+            String wanted = role.trim().toUpperCase(Locale.ROOT);
+            all = all.stream()
+                    .filter(u -> {
+                        Object r = u.getRole();
+                        if (r == null) return false;
+                        String val = String.valueOf(r);
+                        return val.equalsIgnoreCase(wanted);
+                    })
+                    .toList();
+        }
+
+        if (q != null && !q.isBlank()) {
+            String s = q.trim().toLowerCase(Locale.ROOT);
+            all = all.stream()
+                    .filter(u ->
+                            (u.getNom() != null && u.getNom().toLowerCase(Locale.ROOT).contains(s)) ||
+                            (u.getPrenom() != null && u.getPrenom().toLowerCase(Locale.ROOT).contains(s)) ||
+                            (u.getEmail() != null && u.getEmail().toLowerCase(Locale.ROOT).contains(s))
+                    )
+                    .toList();
+        }
+
+        return ResponseEntity.ok(all);
     }
 
-    // ✅ Enregistrement d'un nouvel utilisateur
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UtilisateurDTO utilisateurDTO) {
         try {
@@ -45,16 +71,17 @@ public class UtilisateurController {
                         .body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            // ✅ Utilisation propre du fallback enum
-            if (utilisateurDTO.getRole() == null) {
-            	utilisateurDTO.setRole(Role.MEMBRE.name());            }
+            // ✅ ton DTO attend une String -> on passe Role.MEMBRE.name()
+            if (utilisateurDTO.getRole() == null || String.valueOf(utilisateurDTO.getRole()).isBlank()) {
+                utilisateurDTO.setRole(Role.MEMBRE.name());
+            }
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Utilisateur créé avec succès.",
                     "id", nouvelUtilisateur.getId(),
                     "email", nouvelUtilisateur.getEmail(),
-                    "role", nouvelUtilisateur.getRole().name()
+                    "role", nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : null
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
@@ -65,7 +92,6 @@ public class UtilisateurController {
         }
     }
 
-    // ✅ Authentification
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         try {
@@ -76,11 +102,13 @@ public class UtilisateurController {
             }
 
             UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
-            String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), utilisateurDTO.getRole().toString());
+            String roleStr = String.valueOf(utilisateurDTO.getRole());
+
+            String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), roleStr);
 
             return ResponseEntity.ok(Map.of(
                     "token", token,
-                    "role", utilisateurDTO.getRole(),
+                    "role", roleStr,
                     "email", utilisateurDTO.getEmail(),
                     "utilisateur", utilisateurDTO
             ));
@@ -91,7 +119,6 @@ public class UtilisateurController {
         }
     }
 
-    // ✅ Récupération de l'utilisateur connecté
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         try {
@@ -102,14 +129,12 @@ public class UtilisateurController {
 
             String token = authHeader.substring(7);
             String email = jwtUtil.extractEmail(token);
-
             if (email == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Token invalide."));
             }
 
             Optional<Utilisateur> utilisateurOpt = utilisateurService.getUtilisateurEntityByEmail(email);
-
             if (utilisateurOpt.isPresent()) {
                 UtilisateurDTO dto = utilisateurService.convertToDTO(utilisateurOpt.get());
                 return ResponseEntity.ok(dto);
@@ -124,3 +149,4 @@ public class UtilisateurController {
         }
     }
 }
+

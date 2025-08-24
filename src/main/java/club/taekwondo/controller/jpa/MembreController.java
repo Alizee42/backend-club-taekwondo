@@ -13,9 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/membres")
@@ -121,7 +119,8 @@ public class MembreController {
                     .body(Map.of("message", "Erreur lors de la récupération des informations utilisateur."));
         }
     }
- // --- Récupérer les membres rattachés au parent connecté ---
+
+    // --- Récupérer les membres rattachés au parent connecté ---
     @GetMapping("/mes-enfants")
     public ResponseEntity<?> getMembresDuParentConnecte(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String token) {
         if (token == null || !token.startsWith("Bearer ")) {
@@ -154,6 +153,8 @@ public class MembreController {
                     .body(Map.of("message", "Erreur lors de la récupération des enfants du parent."));
         }
     }
+
+    // --- Récupérer le membre associé à un utilisateur (si 1-1) ---
     @GetMapping("/by-user/{utilisateurId}")
     public ResponseEntity<?> getMembreByUtilisateurId(@PathVariable Long utilisateurId) {
         Optional<Membre> membre = membreService.getMembreEntityByIdUtilisateur(utilisateurId);
@@ -163,4 +164,22 @@ public class MembreController {
             return ResponseEntity.status(404).body("Aucun membre trouvé pour cet utilisateur.");
         }
     }
+
+    // ✅ AJOUT : utilisé par le front admin (PaymentAdminService.getMembresByParent)
+    // GET /api/membres/by-parent/{parentId} → [{ id, prenom, nom }]
+    @GetMapping("/by-parent/{parentId}")
+    public ResponseEntity<List<Map<String, Object>>> getByParent(@PathVariable Long parentId) {
+        List<MembreDTO> enfants = membreService.getMembresByUtilisateurId(parentId); // réutilise ton service existant
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (MembreDTO m : enfants) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", m.getId());
+            item.put("prenom", m.getPrenom());
+            item.put("nom", m.getNom());
+            out.add(item);
+        }
+        return ResponseEntity.ok(out);
+    }
 }
+

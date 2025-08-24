@@ -22,7 +22,7 @@ public class MembreService {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    // 🔹 Récupérer tous les membres
+    // 🔹 Récupérer tous les membres (DTO)
     public List<MembreDTO> getAllMembres() {
         return membreRepository.findAll()
                 .stream()
@@ -30,17 +30,25 @@ public class MembreService {
                 .collect(Collectors.toList());
     }
 
-    // 🔹 Récupérer un membre par ID
+    // 🔹 Récupérer un membre par ID (DTO)
     public Optional<MembreDTO> getMembreById(Long id) {
         return membreRepository.findById(id)
                 .map(this::toMembreDTO);
     }
-public Optional<Membre> getMembreEntityById(Long id) {
-    return membreRepository.findById(id);
-}
-    // 🔹 Récupérer un membre par email utilisateur
+
+    // 🔹 Récupérer un membre par ID (Entity)
+    public Optional<Membre> getMembreEntityById(Long id) {
+        return membreRepository.findById(id);
+    }
+
+    // ✅ Ajouté : alias simple attendu par d'autres services/contrôleurs
+    public Optional<Membre> findById(Long id) {
+        return membreRepository.findById(id);
+    }
+
+    // 🔹 Récupérer un membre (DTO) par email utilisateur
     public Optional<MembreDTO> getMembreByEmail(String email) {
-        return membreRepository.findByCompteUtilisateur_Email(email) 
+        return membreRepository.findByCompteUtilisateur_Email(email)
                 .map(this::toMembreDTO);
     }
 
@@ -49,12 +57,12 @@ public Optional<Membre> getMembreEntityById(Long id) {
         return createMembre(membreDTO, membreDTO.getUtilisateurId());
     }
 
-    // 🔹 Créer un membre avec rattachement explicite
+    // 🔹 Créer un membre avec rattachement explicite (adulte ↔ compteUtilisateur / enfant ↔ parent)
     public MembreDTO createMembre(MembreDTO membreDTO, Long utilisateurId) {
         Membre membre = fromMembreDTO(membreDTO);
 
-        // Si membre adulte → utilisateur = compteUtilisateur
         if (membreDTO.isEstAdulte()) {
+            // Membre adulte → rattachement au compte utilisateur
             if (utilisateurId != null) {
                 Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
                         .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + utilisateurId));
@@ -62,9 +70,8 @@ public Optional<Membre> getMembreEntityById(Long id) {
             } else {
                 throw new RuntimeException("Impossible de créer un membre adulte sans utilisateur associé.");
             }
-        }
-        // Si membre enfant → utilisateur = parent
-        else {
+        } else {
+            // Membre enfant → rattachement au parent
             if (utilisateurId != null) {
                 Utilisateur parent = utilisateurRepository.findById(utilisateurId)
                         .orElseThrow(() -> new RuntimeException("Parent non trouvé avec l'ID : " + utilisateurId));
@@ -76,13 +83,22 @@ public Optional<Membre> getMembreEntityById(Long id) {
 
         return toMembreDTO(membreRepository.save(membre));
     }
+
+    // 🔹 Enfants d’un parent (Entity)
     public List<Membre> getEnfantsDuParent(Long parentId) {
         return membreRepository.findByParentId(parentId);
     }
 
+    // 🔹 Membre rattaché à un utilisateur (adulte) — Entity
     public Optional<Membre> getMembreEntityByIdUtilisateur(Long utilisateurId) {
         return membreRepository.findByCompteUtilisateur_Id(utilisateurId);
     }
+
+    // ✅ Ajouté : alias attendu ailleurs (ex. StripeController)
+    public Optional<Membre> findByCompteUtilisateurId(Long utilisateurId) {
+        return membreRepository.findByCompteUtilisateur_Id(utilisateurId);
+    }
+
     // 🔹 Mettre à jour un membre
     public MembreDTO updateMembre(Long id, MembreDTO membreDTO) {
         return membreRepository.findById(id).map(membre -> {
@@ -104,13 +120,18 @@ public Optional<Membre> getMembreEntityById(Long id) {
         membreRepository.deleteById(id);
     }
 
-    // 🔹 Récupérer les membres liés à un utilisateur (compte)
+    // 🔹 Récupérer les membres liés à un utilisateur (parent) — DTO
     public List<MembreDTO> getMembresByUtilisateurId(Long utilisateurId) {
         List<Membre> membres = membreRepository.findByParentId(utilisateurId);
         System.out.println("[✅] Membres trouvés dans la base de données : " + membres);
         return membres.stream()
                 .map(this::toMembreDTO)
                 .collect(Collectors.toList());
+    }
+
+    // ✅ Utilitaire simple : utilisé par d'autres services
+    public Membre save(Membre membre) {
+        return membreRepository.save(membre);
     }
 
     // 🔁 Membre → DTO
@@ -123,6 +144,7 @@ public Optional<Membre> getMembreEntityById(Long id) {
         dto.setNumeroLicence(membre.getNumeroLicence());
         dto.setCeinture(membre.getCeinture());
         dto.setEstAdulte(membre.isEstAdulte());
+
         if (membre.getCompteUtilisateur() != null) {
             dto.setUtilisateurId(membre.getCompteUtilisateur().getId());
         } else if (membre.getParent() != null) {
@@ -143,4 +165,5 @@ public Optional<Membre> getMembreEntityById(Long id) {
         return membre;
     }
 }
+
 
