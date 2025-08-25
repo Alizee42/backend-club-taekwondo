@@ -50,8 +50,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     List<DaySumDTO> sumByDay(@Param("from") LocalDate from,
                               @Param("to") LocalDate to);
 
-    // 🔹 Top retards de paiement (par utilisateur) – projection simple
-    //     -> List<Object[]> où [0]=String nom, [1]=Double totalRestant
+    // 🔹 Top retards de paiement (par utilisateur)
     @Query("""
         SELECT p.utilisateur.nom, COALESCE(SUM(p.montantRestant), 0)
         FROM Paiement p
@@ -102,7 +101,8 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     // 🔹 Comptage insensible à la casse
     long countByStatutIgnoreCase(String statut);
 
-    // 🔹 Paiements liés à plusieurs membres
+    // 🔹 Paiements liés à plusieurs membres — ⚠️ maintenant avec fetch des échéances
+    @EntityGraph(attributePaths = "echeances")
     List<Paiement> findByMembreIdIn(List<Long> membresIds);
 
     // 🔹 Somme totale filtrée par statut (insensible à la casse)
@@ -113,3 +113,4 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     """)
     Double sumMontantByStatut(@Param("statut") String statut);
 }
+

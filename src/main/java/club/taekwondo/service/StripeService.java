@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCreateParams;
 
 import club.taekwondo.dto.PaiementRequestDTO;
@@ -47,61 +48,117 @@ public class StripeService {
         return stripePublicKey;
     }
 
-    /* ---------- Surcharge 1 : Entrée de type Map (compat legacy) ---------- */
+    // =====================================================================
+    // 🚀 NOUVELLE MÉTHODE — À utiliser avec l'Option A
+    // - Reçoit un Map contenant: amount (centimes), currency, paiementId (OBLIGATOIRE),
+    //   typePaiement, nombreEcheances, utilisateurId, enfantId, modePaiement (optionnel)
+    // - Crée le PaymentIntent avec metadata.paiementId
+    // - Utilise une idempotency key basée sur paiementId pour éviter les doublons
+    // =====================================================================
+    public PaymentIntent createPaymentIntentWithMetadata(Map<String, Object> req) throws StripeException {
+        // amount attendu en CENTIMES ici (le controller a déjà converti)
+        long amount = parseLongStrict(req.get("amount"), "amount (centimes)");
+        if (amount <= 0) throw new IllegalArgumentException("Montant invalide (centimes).");
+
+        String currency = Objects.toString(req.getOrDefault("currency", defaultCurrency), defaultCurrency).toLowerCase();
+        if (!List.of("eur", "usd").contains(currency)) {
+            throw new IllegalArgumentException("Devise non supportée : " + currency);
+        }
+
+        String paiementId = Objects.toString(req.get("paiementId"), "").trim();
+        if (paiementId.isEmpty()) {
+            throw new IllegalArgumentException("paiementId manquant (Option A: créer en BDD avant).");
+        }
+
+        String typePaiement   = toStringOrEmpty(req.get("typePaiement"));
+        String nombreEcheances= toStringOrEmpty(req.get("nombreEcheances"));
+        String utilisateurId  = toStringOrEmpty(req.get("utilisateurId"));
+        String enfantId       = toStringOrEmpty(req.get("enfantId"));
+        String modePaiement   = toStringOrEmpty(req.get("modePaiement"));
+
+        PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
+            .setAmount(amount)
+            .setCurrency(currency)
+            .setAutomaticPaymentMethods(
+                PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
+            )
+            // ✅ Metadata indispensables
+            .putMetadata("paiementId", paiementId);
+
+        // Metadata additionnelles (facultatives mais utiles pour le webhook/logs)
+        if (!isBlank(typePaiement))    builder.putMetadata("type", typePaiement);
+        if (!isBlank(nombreEcheances)) builder.putMetadata("nombreEcheances", nombreEcheances);
+        if (!isBlank(utilisateurId))   builder.putMetadata("utilisateurId", utilisateurId);
+        if (!isBlank(enfantId))        builder.putMetadata("enfantId", enfantId);
+        if (!isBlank(modePaiement))    builder.putMetadata("modePaiement", modePaiement);
+
+        // ✅ Idempotency key liée au paiement en BDD (empêche PI en double sur double-clic)
+        RequestOptions opts = RequestOptions.builder()
+            .setIdempotencyKey("paiement-" + paiementId)
+            .build();
+
+        return PaymentIntent.create(builder.build(), opts);
+    }
+
+    // =====================================================================
+    // 🔁 Méthodes "legacy" conservées pour compat si utilisées ailleurs
+    // ⚠️ Elles ne mettent pas paiementId en metadata → éviter de les utiliser
+    //    dans le flux Option A. Préférer createPaymentIntentWithMetadata(...)
+    // =====================================================================
+
+    /** Legacy Map overload */
+    @Deprecated
     public PaymentIntent executeStripePayment(String token, Map<String, Object> request) throws StripeException {
         Long utilisateurId = extractUtilisateurIdFromToken(token);
 
-        // Montant total (obligatoire)
         double montantTotal = Double.parseDouble(Objects.toString(request.get("amount"), "0"));
         if (montantTotal <= 0) throw new IllegalArgumentException("Montant invalide.");
 
-        // Devise (si non fournie → EUR)
         String currency = Objects.toString(request.get("currency"), defaultCurrency).toLowerCase();
         if (!List.of("eur", "usd").contains(currency)) {
             throw new IllegalArgumentException("Devise non supportée : " + currency);
         }
 
-        String typePaiement = Objects.toString(request.get("typePaiement"), "UNIQUE");
-        String modePaiement = Objects.toString(request.get("modePaiement"), "CB");
+        String typePaiement    = Objects.toString(request.get("typePaiement"), "UNIQUE").toUpperCase();
+        String modePaiement    = Objects.toString(request.get("modePaiement"), Objects.toString(request.get("mode"), "CB")).toUpperCase();
         String nombreEcheances = Objects.toString(request.get("nombreEcheances"), "1");
-        String membreId = Objects.toString(request.get("membreId"), ""); // facultatif
+        String membreId        = Objects.toString(request.get("membreId"), Objects.toString(request.get("enfantId"), "")); // compat
 
         PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
-            .setAmount(Math.round(montantTotal * 100)) // en cents
+            .setAmount(Math.round(montantTotal * 100)) // en centimes
             .setCurrency(currency)
             .setAutomaticPaymentMethods(
                 PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
             )
             .putMetadata("utilisateurId", String.valueOf(utilisateurId))
-            .putMetadata("typePaiement", typePaiement)
+            .putMetadata("type", typePaiement)
             .putMetadata("modePaiement", modePaiement)
             .putMetadata("nombreEcheances", nombreEcheances);
 
         if (!membreId.isBlank()) {
-            builder.putMetadata("membreId", membreId);
+            builder.putMetadata("enfantId", membreId);
         }
 
+        // ⚠️ Pas d'idempotency key ici, et pas de paiementId → éviter pour Option A
         return PaymentIntent.create(builder.build());
     }
 
-    /* ---------- Surcharge 2 : Entrée de type PaiementRequestDTO (NOUVEAU DTO) ---------- */
+    /** Legacy DTO overload */
+    @Deprecated
     public PaymentIntent executeStripePayment(String token, PaiementRequestDTO dto) throws StripeException {
         Long utilisateurId = extractUtilisateurIdFromToken(token);
 
-        // ✅ On lit le NOUVEAU DTO
-        Double montantTotal = dto.getMontantTotal(); // remplace l'ancien amount
+        Double montantTotal = dto.getMontantTotal(); // euros
         if (montantTotal == null || montantTotal <= 0) {
             throw new IllegalArgumentException("Montant invalide.");
         }
 
-        // On force la devise à EUR (tu peux rendre ça configurable si besoin)
-        String currency = defaultCurrency.toLowerCase(); // "eur"
-
-        String typePaiement = (dto.getTypePaiement() == null || dto.getTypePaiement().isBlank())
+        String currency    = defaultCurrency.toLowerCase(); // "eur"
+        String typePaiement= (dto.getTypePaiement() == null || dto.getTypePaiement().isBlank())
                 ? "UNIQUE" : dto.getTypePaiement().toUpperCase();
-        String modePaiement = (dto.getModePaiement() == null || dto.getModePaiement().isBlank())
+        String modePaiement= (dto.getModePaiement() == null || dto.getModePaiement().isBlank())
                 ? "CB" : dto.getModePaiement().toUpperCase();
-        int nbEcheances = (dto.getNombreEcheances() > 0) ? dto.getNombreEcheances() : 1;
+        int nbEcheances    = (dto.getNombreEcheances() > 0) ? dto.getNombreEcheances() : 1;
 
         PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
             .setAmount(Math.round(montantTotal * 100))
@@ -110,19 +167,21 @@ public class StripeService {
                 PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
             )
             .putMetadata("utilisateurId", String.valueOf(utilisateurId))
-            .putMetadata("typePaiement", typePaiement)
+            .putMetadata("type", typePaiement)
             .putMetadata("modePaiement", modePaiement)
             .putMetadata("nombreEcheances", String.valueOf(nbEcheances));
 
-        // Optionnel : si ton DTO contient un membre cible
         if (dto.getMembreId() != null) {
-            builder.putMetadata("membreId", String.valueOf(dto.getMembreId()));
+            builder.putMetadata("enfantId", String.valueOf(dto.getMembreId()));
         }
 
+        // ⚠️ Pas d'idempotency key ni paiementId → éviter pour Option A
         return PaymentIntent.create(builder.build());
     }
 
-    /* ---------- Helpers ---------- */
+    // =====================================================================
+    // Helpers
+    // =====================================================================
 
     private Long extractUtilisateurIdFromToken(String bearerToken) {
         try {
@@ -135,5 +194,21 @@ public class StripeService {
             throw new RuntimeException("Erreur lors de l'extraction de l'ID utilisateur depuis le token.", e);
         }
     }
-}
 
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
+    private static String toStringOrEmpty(Object o) {
+        return o == null ? "" : String.valueOf(o);
+    }
+
+    private static long parseLongStrict(Object o, String fieldName) {
+        try {
+            if (o instanceof Number n) return n.longValue();
+            return Long.parseLong(String.valueOf(o));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Champ invalide '" + fieldName + "': " + o);
+        }
+    }
+}

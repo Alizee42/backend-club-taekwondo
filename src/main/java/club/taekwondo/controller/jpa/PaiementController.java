@@ -352,22 +352,58 @@ public class PaiementController {
         return ResponseEntity.ok(paiements);
     }
 
+    /**
+     * ⚠️ Corrigé : on reçoit le JSON du front (qui contient nombreEcheances, etc.),
+     * on le map vers un PaiementRequestDTO, puis on appelle le service dédié.
+     */
     @PostMapping("/parent/ajouter")
     public ResponseEntity<PaiementDTO> ajouterPaiementParent(
             @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody PaiementDTO dto) {
+            @RequestBody Map<String, Object> body) {
         try {
+            // 1) Auth parent
             String token = authHeader.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(token);
 
             Utilisateur parent = utilisateurService.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Parent non trouvé"));
 
-            if (dto.getMembreId() == null || dto.getMembreId() <= 0) {
+            // 2) Map JSON → PaiementRequestDTO
+            PaiementRequestDTO req = new PaiementRequestDTO();
+
+            Long membreId = longOrNull(body.get("membreId"));
+            if (membreId == null || membreId <= 0) {
                 return ResponseEntity.badRequest().build();
             }
+            req.setMembreId(membreId);
 
-            Paiement paiement = paiementService.ajouterPaiementParent(dto, parent.getId());
+            // type : 'UNIQUE' | 'ECHELONNE' (le front envoie 'type')
+            String typeHuman = strOrNull(body.get("type"));
+            String typeAlt   = strOrNull(body.get("typePaiement"));
+            req.setTypePaiement(normalizeTypeHuman(typeHuman != null ? typeHuman : typeAlt));
+
+            // mode : 'CB' | 'VIREMENT' | 'ESPECES'
+            String modeHuman = strOrNull(body.get("modePaiement"));
+            req.setModePaiement(normalizeModeHuman(modeHuman));
+
+            // montant total
+            Double montantTotal = doubleOrNull(body.get("montantTotal"));
+            if (montantTotal == null || montantTotal <= 0) {
+                return ResponseEntity.badRequest().build();
+            }
+            req.setMontantTotal(montantTotal);
+
+            // nombre d'échéances (optionnel si type = ECHELONNE)
+            Integer nbEch = intOrNull(body.get("nombreEcheances"));
+            req.setNombreEcheances(nbEch);
+
+            // datePaiement par défaut aujourd’hui
+            req.setDatePaiement(LocalDate.now().toString());
+
+            // 3) Appel service (version qui prend PaiementRequestDTO)
+            Paiement paiement = paiementService.ajouterPaiementParent(req, parent.getId());
+
+            // 4) Retour DTO
             PaiementDTO out = paiementService.toPaiementDTO(paiement);
             return createdDTO("/api/paiements/" + out.getId(), out);
 
@@ -446,8 +482,8 @@ public class PaiementController {
         if (m.equals("cheque")) return "CHEQUE";
         return "ESPECES";
     }
-    
-    @PreAuthorize("hasAuthority('ADMIN')") // ou hasRole('ADMIN') si tes rôles sont stockés "ROLE_ADMIN"
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/{id}/annuler")
     public ResponseEntity<PaiementDTO> annulerPaiement(
             @PathVariable Long id,

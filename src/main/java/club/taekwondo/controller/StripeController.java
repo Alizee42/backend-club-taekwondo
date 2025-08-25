@@ -1,9 +1,6 @@
 package club.taekwondo.controller;
 
-import club.taekwondo.entity.jpa.Echeance;
-import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
-import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementService;
@@ -15,8 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stripe")
@@ -24,17 +21,16 @@ public class StripeController {
 
     private final StripeService stripeService;
     private final UtilisateurService utilisateurService;
-    private final PaiementService paiementService;
     private final JwtUtil jwtUtil;
-    private final MembreService membreService;
 
-    public StripeController(StripeService stripeService, UtilisateurService utilisateurService,
-                            PaiementService paiementService, JwtUtil jwtUtil, MembreService membreService) {
+    public StripeController(StripeService stripeService,
+                            UtilisateurService utilisateurService,
+                            PaiementService paiementService,
+                            JwtUtil jwtUtil,
+                            MembreService membreService) {
         this.stripeService = stripeService;
         this.utilisateurService = utilisateurService;
-        this.paiementService = paiementService;
         this.jwtUtil = jwtUtil;
-        this.membreService = membreService;
     }
 
     @GetMapping("/public-key")
@@ -42,6 +38,11 @@ public class StripeController {
         return ResponseEntity.ok(Map.of("publicKey", stripeService.getPublicKey()));
     }
 
+    /**
+     * OPTION A : ICI on ne crée PAS de Paiement.
+     * On présume que le front a déjà créé le Paiement en BDD (statut "en attente") et nous envoie paiementId.
+     * Notre rôle : créer un PaymentIntent Stripe avec metadata.paiementId et renvoyer clientSecret.
+     */
     @PostMapping("/create-payment-intent")
     public ResponseEntity<Map<String, String>> createPaymentIntent(
             @RequestHeader("Authorization") String token,
@@ -53,138 +54,82 @@ public class StripeController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                System.out.println("❌ Token manquant ou invalide.");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Token manquant ou invalide."));
             }
 
-            String jwt = token.substring(7);
-            String email = jwtUtil.extractEmail(jwt);
-            System.out.println("🔎 Email extrait du token : " + email);
-
+            final String jwt = token.substring(7);
+            final String email = jwtUtil.extractEmail(jwt);
             Utilisateur utilisateur = utilisateurService.getUtilisateurEntityByEmail(email)
-                    .orElseThrow(() -> {
-                        System.out.println("❌ Utilisateur introuvable.");
-                        return new RuntimeException("Utilisateur introuvable.");
-                    });
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
 
-            double montantTotal = Double.parseDouble(request.get("amount").toString());
-            String currency = request.get("currency").toString().toLowerCase();
+            // ====== Lecture & normalisation des champs ======
+            // paiementId est OBLIGATOIRE en Option A
+            if (!request.containsKey("paiementId")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "paiementId manquant (Option A: créer le Paiement en BDD avant)."));
+            }
+            final Long paiementId = Long.valueOf(String.valueOf(request.get("paiementId")));
 
-            System.out.println("🔎 Montant : " + montantTotal);
-            System.out.println("🔎 Devise : " + currency);
+            // amount en EUROS côté front -> conversion en CENTIMES ici
+            if (!request.containsKey("amount")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "amount manquant."));
+            }
+            final long amountInCents;
+            try {
+                double montantEuros = Double.parseDouble(String.valueOf(request.get("amount")));
+                amountInCents = Math.round(montantEuros * 100);
+            } catch (NumberFormatException ex) {
+                return ResponseEntity.badRequest().body(Map.of("error", "amount invalide."));
+            }
 
+            final String currency = String.valueOf(request.getOrDefault("currency", "eur")).toLowerCase();
             if (!currency.matches("eur|usd")) {
-                System.out.println("❌ Devise non autorisée : " + currency);
                 return ResponseEntity.badRequest().body(Map.of("error", "Devise non autorisée"));
             }
 
-            String typePaiement = request.get("typePaiement").toString();
-            String modePaiement = request.getOrDefault("modePaiement", "inconnu").toString();
-            int nombreEcheances = request.containsKey("nombreEcheances")
-                    ? Integer.parseInt(request.get("nombreEcheances").toString()) : 1;
+            final String typePaiement = String.valueOf(request.getOrDefault("typePaiement", "")); // 'UNIQUE' | 'ECHELONNE'
 
-            System.out.println("🔎 typePaiement : " + typePaiement);
-            System.out.println("🔎 modePaiement : " + modePaiement);
-            System.out.println("🔎 nombreEcheances : " + nombreEcheances);
+            // compat: on accepte "modePaiement" ou "mode"
+            final String modePaiement = request.containsKey("modePaiement")
+                    ? String.valueOf(request.get("modePaiement"))
+                    : String.valueOf(request.getOrDefault("mode", "CB"));
 
-            Long membreId = null;
+            final Integer nombreEcheances = request.containsKey("nombreEcheances")
+                    ? Integer.valueOf(String.valueOf(request.get("nombreEcheances")))
+                    : 1;
+
+            Long enfantId = null;
             if (request.containsKey("membreId")) {
-                try {
-                    membreId = Long.parseLong(request.get("membreId").toString());
-                    System.out.println("🔎 membreId reçu : " + membreId);
-                } catch (Exception ex) {
-                    System.out.println("❌ ID membre invalide.");
-                    return ResponseEntity.badRequest().body(Map.of("error", "ID membre invalide."));
-                }
-            }
-            if (membreId == null && request.containsKey("enfantId")) {
-                try {
-                    membreId = Long.parseLong(request.get("enfantId").toString());
-                    System.out.println("🔎 enfantId reçu : " + membreId);
-                } catch (Exception ex) {
-                    System.out.println("❌ ID enfant/membre invalide.");
-                    return ResponseEntity.badRequest().body(Map.of("error", "ID enfant/membre invalide."));
-                }
-            }
-            if (membreId == null || membreId <= 0) {
-                System.out.println("❌ Membre non sélectionné.");
-                return ResponseEntity.badRequest().body(Map.of("error", "Membre non sélectionné."));
-            }
-            Membre membre = membreService.getMembreEntityById(membreId)
-                .orElseThrow(() -> {
-                    System.out.println("❌ Membre non trouvé.");
-                    return new RuntimeException("Membre non trouvé");
-                });
-
-            System.out.println("🎯 Reçu typePaiement = " + typePaiement);
-            System.out.println("🎯 Reçu modePaiement = " + modePaiement);
-
-            Paiement paiement = new Paiement();
-            paiement.setModePaiement(modePaiement);
-            paiement.setType(typePaiement);
-            paiement.setUtilisateur(utilisateur);
-            paiement.setDatePaiement(LocalDate.now());
-            paiement.setMembre(membre);
-
-            boolean isEcheances = "echeances".equalsIgnoreCase(typePaiement);
-
-            if (isEcheances) {
-                System.out.println("🟡 Paiement échelonné détecté");
-
-                double montantParEcheance = montantTotal / nombreEcheances;
-                double montantRestant = 0.0;
-                int echeancesRestantes = 0;
-
-                List<Echeance> echeances = new ArrayList<>();
-
-                for (int i = 0; i < nombreEcheances; i++) {
-                    Echeance echeance = new Echeance();
-                    echeance.setMontant(montantParEcheance);
-                    echeance.setDateEcheance(LocalDate.now().plusMonths(i));
-                    echeance.setNumero(i + 1);
-                    echeance.setPaiement(paiement);
-
-                    if (i == 0) {
-                        echeance.setStatut("payé");
-                    } else {
-                        echeance.setStatut("en attente");
-                        montantRestant += montantParEcheance;
-                        echeancesRestantes++;
-                    }
-
-                    echeances.add(echeance);
-                }
-
-                paiement.setMontantTotal(montantTotal);
-                paiement.setMontantRestant(montantRestant);
-                paiement.setEcheancesTotales(nombreEcheances);
-                paiement.setEcheancesRestantes(echeancesRestantes);
-                paiement.setStatut("en attente");
-                paiement.setEcheances(echeances);
-
-            } else {
-                System.out.println("✅ Paiement unique détecté");
-
-                paiement.setMontantTotal(montantTotal);
-                paiement.setMontantRestant(0.0);
-                paiement.setStatut("payé");
-                paiement.setEcheancesTotales(1);
-                paiement.setEcheancesRestantes(0);
+                enfantId = Long.valueOf(String.valueOf(request.get("membreId")));
+            } else if (request.containsKey("enfantId")) {
+                enfantId = Long.valueOf(String.valueOf(request.get("enfantId")));
             }
 
-            paiementService.save(paiement);
-            System.out.println("📌 Paiement enregistré avec statut = " + paiement.getStatut());
+            // (Optionnel) reçu par email
+            final String receiptEmail = request.containsKey("receiptEmail")
+                    ? String.valueOf(request.get("receiptEmail"))
+                    : null;
 
-            request.put("amount", montantTotal);
-            request.put("modePaiement", modePaiement);
-            request.put("typePaiement", typePaiement);
-            request.put("nombreEcheances", nombreEcheances);
+            // ====== Construire la requête pour StripeService (no Map.of avec null !) ======
+            final Map<String, Object> piReq = new HashMap<>();
+            piReq.put("amount", amountInCents);         // en CENTIMES
+            piReq.put("currency", currency);
+            piReq.put("paiementId", paiementId);        // ✅ clé pour le webhook
+            piReq.put("typePaiement", typePaiement);
+            piReq.put("nombreEcheances", nombreEcheances);
+            piReq.put("utilisateurId", utilisateur.getId());
+            piReq.put("modePaiement", modePaiement);    // utile pour logs / debug
+            if (enfantId != null)      piReq.put("enfantId", enfantId);
+            if (receiptEmail != null && !receiptEmail.isBlank()) {
+                piReq.put("receiptEmail", receiptEmail);
+            }
 
-            System.out.println("🟢 Envoi à StripeService.executeStripePayment avec : " + request);
+            System.out.println("🟢 Appel StripeService#createPaymentIntentWithMetadata : " + piReq);
 
-            PaymentIntent paymentIntent = stripeService.executeStripePayment(jwt, request);
+            PaymentIntent paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq);
             System.out.println("🟢 Stripe clientSecret reçu : " + paymentIntent.getClientSecret());
+
             return ResponseEntity.ok(Map.of("clientSecret", paymentIntent.getClientSecret()));
 
         } catch (StripeException se) {
@@ -199,3 +144,4 @@ public class StripeController {
         }
     }
 }
+

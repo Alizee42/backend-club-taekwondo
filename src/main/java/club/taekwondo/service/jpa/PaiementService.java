@@ -53,10 +53,12 @@ public class PaiementService {
         return stripAccents(v).toUpperCase(Locale.ROOT).trim();
     }
 
-    /** true si le moyen est une carte (CB/Carte/Stripe…) => paiement généralement immédiat */
+    /** true si le moyen est une carte (CB/Carte/Stripe…) */
+    @SuppressWarnings("unused")
     private boolean isModeCarte(String mode) {
         String m = norm(mode);
-        return m.equals("CB") || m.equals("CARTE") || m.equals("CARTE BANCAIRE") || m.equals("CARTEBANCAIRE") || m.equals("STRIPE");
+        return m.equals("CB") || m.equals("CARTE") || m.equals("CARTE BANCAIRE")
+                || m.equals("CARTEBANCAIRE") || m.equals("STRIPE");
     }
 
     private boolean isTypeUnique(String type) { return norm(type).equals("UNIQUE"); }
@@ -88,7 +90,6 @@ public class PaiementService {
     private static String normalizeType(String t) {
         if (t == null) return "UNIQUE";
         t = t.trim().toUpperCase(Locale.ROOT);
-        // accepter variantes venant du front
         if ("ECHEANCES".equals(t) || "ECHEANCE".equals(t)) return "ECHELONNE";
         return t;
     }
@@ -165,15 +166,11 @@ public class PaiementService {
         paiement.setModePaiement(mode);
 
         if (isTypeUnique(type)) {
-            if (isModeCarte(mode)) {
-                paiement.setMontantPaye(safeMontant(paiement.getMontantTotal()));
-                paiement.setMontantRestant(0.0);
-                paiement.setStatut("payé");
-            } else {
-                paiement.setMontantPaye(0.0);
-                paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
-                paiement.setStatut("en attente");
-            }
+            // ✅ Toujours "en attente" à la création (CB inclus). Le webhook confirmera.
+            paiement.setMontantPaye(0.0);
+            paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
+            paiement.setStatut("en attente");
+
             paiement.setEcheances(null);
             paiement.setEcheancesRestantes(0);
             paiement.setEcheancesTotales(0);
@@ -183,16 +180,10 @@ public class PaiementService {
             paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
             paiement.setStatut("en attente");
 
-        } else { // COTISATION / autre
-            if (isModeCarte(mode)) {
-                paiement.setMontantPaye(safeMontant(paiement.getMontantTotal()));
-                paiement.setMontantRestant(0.0);
-                paiement.setStatut("payé");
-            } else {
-                paiement.setMontantPaye(0.0);
-                paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
-                paiement.setStatut("en attente");
-            }
+        } else { // COTISATION / autre -> comme UNIQUE
+            paiement.setMontantPaye(0.0);
+            paiement.setMontantRestant(safeMontant(paiement.getMontantTotal()));
+            paiement.setStatut("en attente");
         }
 
         return paiementRepository.save(paiement);
@@ -322,7 +313,7 @@ public class PaiementService {
         if (date == null) date = LocalDate.now();
         paiement.setDatePaiement(date);
 
-        // Utilisateur (payeur) — réutilisation par email si fourni, sinon par nom/prénom, sinon création
+        // Utilisateur (payeur)
         Optional<Utilisateur> utilisateurOpt = Optional.empty();
         String nom = dto.getUtilisateurNom();
         String prenom = dto.getUtilisateurPrenom();
@@ -407,15 +398,10 @@ public class PaiementService {
             double montant = dto.getMontantTotal() != null && dto.getMontantTotal() > 0 ? dto.getMontantTotal() : 0.0;
             paiement.setMontantTotal(montant);
 
-            if (isModeCarte(paiement.getModePaiement())) {
-                paiement.setMontantPaye(montant);
-                paiement.setMontantRestant(0.0);
-                paiement.setStatut("payé");
-            } else {
-                paiement.setMontantPaye(0.0);
-                paiement.setMontantRestant(montant);
-                paiement.setStatut("en attente");
-            }
+            // ✅ Création: "en attente" (CB inclus). Le webhook confirmera la CB.
+            paiement.setMontantPaye(0.0);
+            paiement.setMontantRestant(montant);
+            paiement.setStatut("en attente");
 
             paiement.setEcheancesTotales(0);
             paiement.setEcheancesRestantes(0);
@@ -471,7 +457,7 @@ public class PaiementService {
             } else {
                 // ECHELONNE
                 p.setMontantTotal(total);
-                fillEchelonne(p, req, date);
+                fillEchelonne(p, req, date); // ⚠️ gère maintenant le “1er payé si CB”
             }
 
             Paiement saved = paiementRepository.save(p);
@@ -566,23 +552,25 @@ public class PaiementService {
     }
 
     private void fillUnique(Paiement p) {
-        if ("CB".equalsIgnoreCase(p.getModePaiement())) {
-            p.setMontantPaye(p.getMontantTotal());
-            p.setMontantRestant(0.0);
-            p.setStatut("payé");
-        } else {
-            p.setMontantPaye(0.0);
-            p.setMontantRestant(p.getMontantTotal());
-            p.setStatut("en attente");
-        }
+        // ✅ Création: toujours "en attente" (CB incluse). Le webhook passera à "payé".
+        p.setMontantPaye(0.0);
+        p.setMontantRestant(p.getMontantTotal());
+        p.setStatut("en attente");
         p.setEcheances(Collections.emptyList());
         p.setEcheancesTotales(0);
         p.setEcheancesRestantes(0);
     }
 
+    /**
+     * Génération d’échéances pour un paiement échelonné.
+     * Si le mode est CB, la 1ʳᵉ échéance est immédiatement marquée "payé"
+     * (car la création se fait après un paiement initial).
+     */
     private void fillEchelonne(Paiement p, PaiementRequestDTO req, LocalDate startDate) {
         List<PaiementRequestDTO.EcheanceInput> in = req.getEcheances();
         List<Echeance> echs = new ArrayList<>();
+
+        final boolean isCB = "CB".equalsIgnoreCase(normalizeMode(p.getModePaiement()));
 
         if (in != null && !in.isEmpty()) {
             int numAuto = 1;
@@ -592,11 +580,25 @@ public class PaiementService {
                 ee.setNumero(e.getNumero() != null ? e.getNumero() : numAuto++);
                 ee.setDateEcheance(LocalDate.parse(e.getDateEcheance()));
                 ee.setMontant(Optional.ofNullable(e.getMontant()).orElse(0.0));
-                ee.setStatut(Optional.ofNullable(e.getStatut()).orElse("en attente"));
+
+                if (ee.getNumero() == 1 && isCB) {
+                    ee.setStatut("payé");
+                    ee.setDatePaiementReel(LocalDate.now());
+                } else {
+                    ee.setStatut(Optional.ofNullable(e.getStatut()).orElse("en attente"));
+                }
+
                 echs.add(ee);
             }
         } else if (req.getNombreEcheances() != null && req.getNombreEcheances() > 0) {
+            // auto-split (par 30 jours ici)
             echs.addAll(autoSplitEcheances(startDate, p.getMontantTotal(), req.getNombreEcheances(), 30, p));
+            // marquer la 1ère comme payée si CB
+            if (!echs.isEmpty() && isCB) {
+                Echeance first = echs.get(0);
+                first.setStatut("payé");
+                first.setDatePaiementReel(LocalDate.now());
+            }
         } else {
             throw new IllegalArgumentException("Aucune échéance fournie pour un paiement échelonné.");
         }
@@ -611,8 +613,13 @@ public class PaiementService {
                 .mapToDouble(Double::doubleValue)
                 .sum();
 
+        int restantes = (int) echs.stream()
+                .filter(x -> !"payé".equalsIgnoreCase(x.getStatut()))
+                .count();
+
         p.setMontantPaye(paye);
         p.setMontantRestant(Math.max(0.0, p.getMontantTotal() - paye));
+        p.setEcheancesRestantes(restantes);
         p.setStatut(p.getMontantRestant() <= 0.0 ? "payé" : "en attente");
     }
 
@@ -665,7 +672,7 @@ public class PaiementService {
             dto.setMembrePrenom(paiement.getMembre().getPrenom());
             dto.setEnfantNomComplet(
                     (Optional.ofNullable(paiement.getMembre().getPrenom()).orElse("") + " " +
-                     Optional.ofNullable(paiement.getMembre().getNom()).orElse("")).trim()
+                            Optional.ofNullable(paiement.getMembre().getNom()).orElse("")).trim()
             );
         }
 
@@ -736,67 +743,125 @@ public class PaiementService {
         return toPaiementDTO(saved);
     }
 
+    /**
+     * ⚠️ Parent-side: même logique que fillEchelonne → si mode = CB,
+     * on marque la 1ʳᵉ échéance comme “payé”.
+     */
     @Transactional
-    public Paiement ajouterPaiementParent(PaiementDTO dto, Long parentId) {
+    public Paiement ajouterPaiementParent(PaiementRequestDTO req, Long parentId) {
         System.out.println("=== [PaiementService] Début ajout paiement parent ===");
-        System.out.println("[DTO reçu] " + dto);
+        System.out.println("[Request reçu] " + req);
         System.out.println("[Parent connecté ID] " + parentId);
 
-        if (dto.getMembreId() == null || dto.getMembreId() <= 0) {
+        // --- Contrôles de base ---
+        if (req.getMembreId() == null || req.getMembreId() <= 0) {
             throw new RuntimeException("ID du membre invalide pour le paiement !");
         }
-        Membre membre = membreService.getMembreEntityById(dto.getMembreId())
+        Membre membre = membreService.getMembreEntityById(req.getMembreId())
                 .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
         if (membre.getParent() == null || !Objects.equals(membre.getParent().getId(), parentId)) {
             throw new RuntimeException("Ce membre n'appartient pas au parent connecté !");
         }
 
+        double montant = req.getMontantTotal() != null ? req.getMontantTotal() : 0.0;
+        if (montant <= 0.0) {
+            throw new IllegalArgumentException("Montant total invalide.");
+        }
+
+        // --- Normalisations ---
+        final String type = normalizeType(Optional.ofNullable(req.getTypePaiement()).orElse("COTISATION"));
+        final String mode = normalizeMode(req.getModePaiement()); // "CB"|"VIREMENT"|"ESPECES"...
+
+        // --- Construction de l'entité ---
         Paiement paiement = new Paiement();
-        String type = (dto.getType() != null && !dto.getType().isEmpty()) ? norm(dto.getType()) : "COTISATION";
         paiement.setType(type);
-        paiement.setModePaiement(normalizeMode(dto.getModePaiement()));
+        paiement.setModePaiement(mode);
         paiement.setDatePaiement(LocalDate.now());
         paiement.setUtilisateur(membre.getParent());
         paiement.setMembre(membre);
-
-        double montant = dto.getMontantTotal() != null && dto.getMontantTotal() > 0 ? dto.getMontantTotal() : 0.0;
         paiement.setMontantTotal(montant);
 
-        if (isTypeUnique(type)) {
-            if (isModeCarte(paiement.getModePaiement())) {
-                paiement.setMontantPaye(montant);
-                paiement.setMontantRestant(0.0);
-                paiement.setStatut("payé");
-            } else {
-                paiement.setMontantPaye(0.0);
-                paiement.setMontantRestant(montant);
-                paiement.setStatut("en attente");
-            }
-            paiement.setEcheances(null);
-            paiement.setEcheancesTotales(0);
-            paiement.setEcheancesRestantes(0);
+        // 🔒 Création : toujours "en attente" (même pour CB). Le webhook Stripe passera à "payé".
+        paiement.setMontantPaye(0.0);
+        paiement.setMontantRestant(montant);
+        paiement.setStatut("en attente");
 
-        } else if (isTypeEchelonne(type)) {
-            paiement.setMontantPaye(0.0);
-            paiement.setMontantRestant(montant);
-            paiement.setStatut("en attente");
-            paiement.setEcheancesTotales(0);
-            paiement.setEcheancesRestantes(0);
-            paiement.setEcheances(null);
+        if (isTypeEchelonne(type)) {
+            List<Echeance> echs = new ArrayList<>();
+            final boolean isCB = "CB".equalsIgnoreCase(mode);
 
-        } else { // COTISATION / autre
-            if (isModeCarte(paiement.getModePaiement())) {
-                paiement.setMontantPaye(montant);
-                paiement.setMontantRestant(0.0);
-                paiement.setStatut("payé");
+            if (req.getEcheances() != null && !req.getEcheances().isEmpty()) {
+                int autoNum = 1;
+                for (PaiementRequestDTO.EcheanceInput ein : req.getEcheances()) {
+                    if (ein.getMontant() == null || ein.getMontant() <= 0) {
+                        throw new RuntimeException("Échéance invalide (montant).");
+                    }
+                    if (ein.getDateEcheance() == null || ein.getDateEcheance().isBlank()) {
+                        throw new RuntimeException("Échéance invalide (date manquante).");
+                    }
+                    Echeance e = new Echeance();
+                    e.setPaiement(paiement);
+                    e.setNumero(ein.getNumero() != null ? ein.getNumero() : autoNum++);
+                    e.setDateEcheance(LocalDate.parse(ein.getDateEcheance()));
+                    e.setMontant(ein.getMontant());
+
+                    if (e.getNumero() == 1 && isCB) {
+                        e.setStatut("payé");
+                        e.setDatePaiementReel(LocalDate.now());
+                    } else {
+                        e.setStatut(Optional.ofNullable(ein.getStatut()).orElse("en attente"));
+                    }
+                    echs.add(e);
+                }
             } else {
-                paiement.setMontantPaye(0.0);
-                paiement.setMontantRestant(montant);
-                paiement.setStatut("en attente");
+                int n = (req.getNombreEcheances() != null && req.getNombreEcheances() > 0)
+                        ? Math.min(12, Math.max(1, req.getNombreEcheances()))
+                        : 2;
+
+                LocalDate start = LocalDate.now();
+                double base = Math.floor((montant / n) * 100.0) / 100.0;
+                double somme = 0.0;
+
+                for (int i = 0; i < n; i++) {
+                    double part = (i == n - 1) ? round2(montant - somme) : base;
+                    somme += part;
+
+                    Echeance e = new Echeance();
+                    e.setPaiement(paiement);
+                    e.setNumero(i + 1);
+                    e.setDateEcheance(start.plusMonths(i));
+                    e.setMontant(part);
+                    e.setStatut("en attente");
+                    echs.add(e);
+                }
+
+                // première réglée par CB → payé
+                if (!echs.isEmpty() && isCB) {
+                    Echeance first = echs.get(0);
+                    first.setStatut("payé");
+                    first.setDatePaiementReel(LocalDate.now());
+                }
             }
+
+            // Récap & stats
+            paiement.setEcheances(echs);
+            paiement.setEcheancesTotales(echs.size());
+
+            long nbRest = echs.stream().filter(e -> !"payé".equalsIgnoreCase(e.getStatut())).count();
+            double montantPaye = echs.stream().filter(e -> "payé".equalsIgnoreCase(e.getStatut()))
+                    .map(Echeance::getMontant).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+            double restant = echs.stream().filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
+                    .map(Echeance::getMontant).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+
+            paiement.setEcheancesRestantes((int) nbRest);
+            paiement.setMontantPaye(montantPaye);
+            paiement.setMontantRestant(restant);
+            // statut reste "en attente" pour gestion future (webhooks / validations)
+        } else {
+            // PAIEMENT UNIQUE
+            paiement.setEcheances(Collections.emptyList());
             paiement.setEcheancesTotales(0);
             paiement.setEcheancesRestantes(0);
-            paiement.setEcheances(null);
         }
 
         Paiement saved = paiementRepository.save(paiement);
@@ -808,6 +873,5 @@ public class PaiementService {
         System.out.println("=== [PaiementService] Fin ajout paiement parent ===");
         return saved;
     }
+
 }
-
-
