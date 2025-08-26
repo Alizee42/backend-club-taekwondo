@@ -4,17 +4,14 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
-
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.service.jpa.PaiementService;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.annotation.PostConstruct;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -32,19 +29,17 @@ public class StripeWebhookController {
         this.paiementService = paiementService;
     }
 
-    @PostConstruct
-    public void checkWebhookSecret() {
-        if (endpointSecret == null || endpointSecret.isEmpty()) {
-            System.err.println("⚠️ stripe.webhook.secret non configuré !");
-        }
-    }
-
     @PostMapping("/webhook")
-    public ResponseEntity<String> handleStripeWebhook(
+    public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
-            @RequestHeader("Stripe-Signature") String sigHeader
-    ) {
-        Event event;
+            @RequestHeader("Stripe-Signature") String sigHeader) {
+
+        if (endpointSecret == null || endpointSecret.isBlank()) {
+            System.err.println("⚠️ stripe.webhook.secret non configuré !");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Webhook secret manquant");
+        }
+
+        final Event event;
         try {
             event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
         } catch (SignatureVerificationException e) {
@@ -56,90 +51,107 @@ public class StripeWebhookController {
         System.out.println("ℹ️ Événement Stripe : " + event.getType());
 
         var dataObj = event.getDataObjectDeserializer().getObject();
-        if (dataObj.isEmpty()) {
-            System.err.println("⚠️ Impossible de désérialiser l'objet Stripe.");
+        if (dataObj.isEmpty() || !(dataObj.get() instanceof PaymentIntent pi)) {
+            System.err.println("❌ Impossible de désérialiser PaymentIntent.");
             return ResponseEntity.ok("ignored");
         }
 
         if ("payment_intent.succeeded".equals(event.getType())) {
-            PaymentIntent pi = (PaymentIntent) dataObj.get();
             Map<String, String> md = pi.getMetadata();
-            System.out.println("📌 Metadata PI: " + md);
-
-            String paiementIdStr = md.get("paiementId");
+            String paiementIdStr = md != null ? md.get("paiementId") : null;
             if (paiementIdStr == null || paiementIdStr.isBlank()) {
-                System.err.println("⚠️ paiementId manquant dans metadata Stripe (aucune mise à jour BDD).");
+                System.out.println("⚠️ succeeded: paiementId manquant dans metadata.");
                 return ResponseEntity.ok("no-paiementId");
             }
 
             Long paiementId;
-            try {
-                paiementId = Long.parseLong(paiementIdStr);
-            } catch (NumberFormatException nfe) {
-                System.err.println("❌ paiementId invalide: " + paiementIdStr);
-                return ResponseEntity.ok("invalid-paiementId");
-            }
+            try { paiementId = Long.parseLong(paiementIdStr); }
+            catch (NumberFormatException nfe) { return ResponseEntity.ok("invalid-paiementId"); }
 
-            Optional<Paiement> optional = paiementService.getById(paiementId);
-            if (optional.isEmpty()) {
-                System.err.println("❌ Paiement non trouvé pour ID: " + paiementId);
+            Optional<Paiement> opt = paiementService.getById(paiementId);
+            if (opt.isEmpty()) {
+                System.out.println("❌ Paiement introuvable id=" + paiementId);
                 return ResponseEntity.ok("paiement-not-found");
             }
+            Paiement paiement = opt.get();
 
-            Paiement paiement = optional.get();
-
-            // Idempotence : si déjà payé, on ne refait rien
-            if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                System.out.println("ℹ️ Paiement déjà marqué comme payé, on ignore.");
+            // Idempotence simple : si déjà soldé & plus rien à payer → on ignore
+            if ("payé".equalsIgnoreCase(paiement.getStatut())
+                    && (paiement.getMontantRestant() == null || paiement.getMontantRestant() <= 0.0)) {
+                System.out.println("↩️ Déjà payé, on ignore.");
                 return ResponseEntity.ok("already-paid");
             }
 
-            // (Optionnel) IDs Stripe si colonnes dispo
-         // (Optionnel) IDs Stripe pour debug / traçabilité (pas stockés en BDD ici)
-            String intentId = pi.getId();
-            String chargeId = (pi.getLatestChargeObject() != null) ? pi.getLatestChargeObject().getId() : null;
-            System.out.println("[Stripe] intentId=" + intentId + " | chargeId=" + chargeId);
+            // ---- Vérification devise & montant attendus ----
+            String currency = pi.getCurrency(); // "eur"
+            Long received = pi.getAmountReceived() != null ? pi.getAmountReceived() : pi.getAmount(); // centimes
+            if (currency == null || !currency.equalsIgnoreCase("eur") || received == null) {
+                System.err.println("❌ Devise/amount invalides: currency=" + currency + ", received=" + received);
+                return ResponseEntity.ok("amount-currency-mismatch");
+            }
 
+            long expected;
+            if ("ECHELONNE".equalsIgnoreCase(paiement.getType()) && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+                var firstUnpaid = paiement.getEcheances().stream()
+                        .filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
+                        .sorted(Comparator.comparingInt(Echeance::getNumero))
+                        .findFirst();
+                if (firstUnpaid.isEmpty()) {
+                    return ResponseEntity.ok("no-unpaid-installment");
+                }
+                expected = Math.round(firstUnpaid.get().getMontant() * 100.0);
+            } else {
+                if (paiement.getMontantTotal() == null || paiement.getMontantTotal() <= 0) {
+                    return ResponseEntity.ok("invalid-total");
+                }
+                expected = Math.round(paiement.getMontantTotal() * 100.0);
+            }
 
-            // ✅ MAJ mode + statut
-            paiement.setModePaiement("CB");
-            paiement.setStatut("payé");
+            if (received.longValue() != expected) {
+                System.err.println("❌ Amount mismatch: expected=" + expected + ", received=" + received);
+                return ResponseEntity.ok("amount-mismatch");
+            }
 
-            // ✅ Cas ÉCHÉLONNÉ : solder la 1ʳᵉ échéance non payée + recalculer
-            if ("ECHELONNE".equalsIgnoreCase(paiement.getType())
-                    && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+            // ---- Mise à jour BDD ----
+            paiement.setModePaiement("CB"); // confirmé: c'est un paiement par carte Stripe
 
+            if ("ECHELONNE".equalsIgnoreCase(paiement.getType()) && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+                // solder la 1ʳᵉ échéance non payée
                 paiement.getEcheances().stream()
                         .filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
                         .sorted(Comparator.comparingInt(Echeance::getNumero))
                         .findFirst()
-                        .ifPresent(e -> e.setStatut("payé"));
+                        .ifPresent(e -> {
+                            e.setStatut("payé");
+                            e.setDatePaiementReel(java.time.LocalDate.now());
+                            e.setModePaiement("CB");
+                        });
 
+                // Recalcul montant restant + nb échéances restantes
+                long nbRestantes = paiement.getEcheances().stream()
+                        .filter(e -> !"payé".equalsIgnoreCase(e.getStatut())).count();
                 double restant = paiement.getEcheances().stream()
                         .filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
-                        .mapToDouble(Echeance::getMontant) // ← plus de comparaison à null
-                        .sum();
-
-                long nbRestantes = paiement.getEcheances().stream()
-                        .filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
-                        .count();
+                        .mapToDouble(Echeance::getMontant).sum();
 
                 paiement.setMontantRestant(restant);
                 paiement.setEcheancesRestantes((int) nbRestantes);
+                paiement.setStatut(nbRestantes == 0 ? "payé" : "en attente");
             } else {
-                // Paiement unique : rien de plus à faire
+                // paiement unique
+                paiement.setStatut("payé");
                 paiement.setMontantRestant(0.0);
-                paiement.setEcheancesRestantes(0);
+                paiement.setDatePaiement(java.time.LocalDate.now());
             }
 
             paiementService.save(paiement);
-            System.out.printf("✅ Paiement confirmé: ID=%d, Montant=%.2f, Mode=%s%n",
-                    paiement.getId(), paiement.getMontantTotal(), paiement.getModePaiement());
+            System.out.printf("✅ Paiement confirmé: ID=%d, Mode=%s, Statut=%s%n",
+                    paiement.getId(), paiement.getModePaiement(), paiement.getStatut());
+        }
 
-        } else if ("payment_intent.payment_failed".equals(event.getType())) {
-            PaymentIntent pi = (PaymentIntent) dataObj.get();
+        if ("payment_intent.payment_failed".equals(event.getType())) {
             Map<String, String> md = pi.getMetadata();
-            String paiementIdStr = md.get("paiementId");
+            String paiementIdStr = md != null ? md.get("paiementId") : null;
             String reason = (pi.getLastPaymentError() != null) ? pi.getLastPaymentError().getMessage() : "unknown";
 
             if (paiementIdStr != null && !paiementIdStr.isBlank()) {
@@ -148,7 +160,7 @@ public class StripeWebhookController {
                     Optional<Paiement> optional = paiementService.getById(paiementId);
                     if (optional.isPresent()) {
                         System.out.println("❌ Paiement échoué (paiementId=" + paiementId + ") : " + reason);
-                        // on laisse "en attente" pour permettre un nouvel essai
+                        // On laisse "en attente" pour permettre un nouvel essai
                     } else {
                         System.out.println("❌ Paiement échoué mais paiementId inexistant en BDD : " + paiementId);
                     }

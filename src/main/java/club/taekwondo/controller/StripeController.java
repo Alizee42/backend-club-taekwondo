@@ -1,19 +1,20 @@
 package club.taekwondo.controller;
 
+import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementService;
 import club.taekwondo.service.jpa.UtilisateurService;
-import club.taekwondo.service.jpa.MembreService;
-import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/stripe")
@@ -21,15 +22,16 @@ public class StripeController {
 
     private final StripeService stripeService;
     private final UtilisateurService utilisateurService;
+    private final PaiementService paiementService;
     private final JwtUtil jwtUtil;
 
     public StripeController(StripeService stripeService,
                             UtilisateurService utilisateurService,
                             PaiementService paiementService,
-                            JwtUtil jwtUtil,
-                            MembreService membreService) {
+                            JwtUtil jwtUtil) {
         this.stripeService = stripeService;
         this.utilisateurService = utilisateurService;
+        this.paiementService = paiementService;
         this.jwtUtil = jwtUtil;
     }
 
@@ -39,108 +41,98 @@ public class StripeController {
     }
 
     /**
-     * OPTION A : ICI on ne crée PAS de Paiement.
-     * On présume que le front a déjà créé le Paiement en BDD (statut "en attente") et nous envoie paiementId.
-     * Notre rôle : créer un PaymentIntent Stripe avec metadata.paiementId et renvoyer clientSecret.
+     * Crée (ou réutilise) un PaymentIntent Stripe en calculant le montant côté serveur.
+     * Reçoit uniquement { paiementId } depuis le front.
      */
     @PostMapping("/create-payment-intent")
     public ResponseEntity<Map<String, String>> createPaymentIntent(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Object> request) {
-
         System.out.println("🚀 [StripeController] createPaymentIntent déclenché");
-        System.out.println("🔎 Token reçu : " + token);
-        System.out.println("🔎 Payload reçu : " + request);
-
         try {
-            if (token == null || !token.startsWith("Bearer ")) {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Token manquant ou invalide."));
             }
 
-            final String jwt = token.substring(7);
+            final String jwt = authHeader.substring(7);
             final String email = jwtUtil.extractEmail(jwt);
-            Utilisateur utilisateur = utilisateurService.getUtilisateurEntityByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+            Optional<Utilisateur> optUser = utilisateurService.getUtilisateurEntityByEmail(email);
+            if (optUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Utilisateur introuvable."));
+            }
+            Utilisateur utilisateur = optUser.get();
 
-            // ====== Lecture & normalisation des champs ======
-            // paiementId est OBLIGATOIRE en Option A
             if (!request.containsKey("paiementId")) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "paiementId manquant (Option A: créer le Paiement en BDD avant)."));
+                        .body(Map.of("error", "paiementId manquant (créez d’abord le Paiement en BDD)."));
             }
             final Long paiementId = Long.valueOf(String.valueOf(request.get("paiementId")));
 
-            // amount en EUROS côté front -> conversion en CENTIMES ici
-            if (!request.containsKey("amount")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "amount manquant."));
+            Optional<Paiement> optPaiement = paiementService.getById(paiementId);
+            if (optPaiement.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Paiement introuvable."));
             }
-            final long amountInCents;
+            Paiement p = optPaiement.get();
+
+            // Contrôle d’appartenance (le parent ne peut payer que ses enfants / ou son propre paiement)
+            boolean autorise = false;
             try {
-                double montantEuros = Double.parseDouble(String.valueOf(request.get("amount")));
-                amountInCents = Math.round(montantEuros * 100);
-            } catch (NumberFormatException ex) {
-                return ResponseEntity.badRequest().body(Map.of("error", "amount invalide."));
+                autorise = (p.getUtilisateur() != null && p.getUtilisateur().getId().equals(utilisateur.getId()))
+                        || (p.getMembre() != null && p.getMembre().getParent() != null
+                        && p.getMembre().getParent().getId().equals(utilisateur.getId()));
+            } catch (Exception ignored) {}
+            if (!autorise) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Non autorisé pour ce paiement."));
             }
 
-            final String currency = String.valueOf(request.getOrDefault("currency", "eur")).toLowerCase();
-            if (!currency.matches("eur|usd")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Devise non autorisée"));
+            // Idempotence simple : si un PaymentIntent est déjà associé, renvoyer le même client_secret
+            if (p.getPaymentIntentId() != null && !p.getPaymentIntentId().isBlank()) {
+                String clientSecret = stripeService.retrieveClientSecret(p.getPaymentIntentId());
+                if (clientSecret != null && !clientSecret.isBlank()) {
+                    System.out.println("↩️ Réutilisation PaymentIntent existant: " + p.getPaymentIntentId());
+                    return ResponseEntity.ok(Map.of("clientSecret", clientSecret));
+                }
             }
 
-            final String typePaiement = String.valueOf(request.getOrDefault("typePaiement", "")); // 'UNIQUE' | 'ECHELONNE'
-
-            // compat: on accepte "modePaiement" ou "mode"
-            final String modePaiement = request.containsKey("modePaiement")
-                    ? String.valueOf(request.get("modePaiement"))
-                    : String.valueOf(request.getOrDefault("mode", "CB"));
-
-            final Integer nombreEcheances = request.containsKey("nombreEcheances")
-                    ? Integer.valueOf(String.valueOf(request.get("nombreEcheances")))
-                    : 1;
-
-            Long enfantId = null;
-            if (request.containsKey("membreId")) {
-                enfantId = Long.valueOf(String.valueOf(request.get("membreId")));
-            } else if (request.containsKey("enfantId")) {
-                enfantId = Long.valueOf(String.valueOf(request.get("enfantId")));
+            // Calcul montant côté serveur (EUR)
+            long amountInCents;
+            if ("ECHELONNE".equalsIgnoreCase(p.getType()) && p.getEcheances() != null && !p.getEcheances().isEmpty()) {
+                var firstUnpaid = p.getEcheances().stream()
+                        .filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
+                        .sorted(Comparator.comparingInt(e -> e.getNumero()))
+                        .findFirst();
+                if (firstUnpaid.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Aucune échéance à payer."));
+                }
+                amountInCents = Math.round(firstUnpaid.get().getMontant() * 100.0);
+            } else {
+                if (p.getMontantTotal() == null || p.getMontantTotal() <= 0) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Montant du paiement invalide."));
+                }
+                amountInCents = Math.round(p.getMontantTotal() * 100.0);
             }
 
-            // (Optionnel) reçu par email
-            final String receiptEmail = request.containsKey("receiptEmail")
-                    ? String.valueOf(request.get("receiptEmail"))
-                    : null;
+            // Création PaymentIntent côté Stripe (toujours EUR) + metadata paiementId
+            Map<String, Object> piReq = new HashMap<>();
+            piReq.put("amount", amountInCents);
+            piReq.put("currency", "eur");
+            piReq.put("paiementId", paiementId);
 
-            // ====== Construire la requête pour StripeService (no Map.of avec null !) ======
-            final Map<String, Object> piReq = new HashMap<>();
-            piReq.put("amount", amountInCents);         // en CENTIMES
-            piReq.put("currency", currency);
-            piReq.put("paiementId", paiementId);        // ✅ clé pour le webhook
-            piReq.put("typePaiement", typePaiement);
-            piReq.put("nombreEcheances", nombreEcheances);
-            piReq.put("utilisateurId", utilisateur.getId());
-            piReq.put("modePaiement", modePaiement);    // utile pour logs / debug
-            if (enfantId != null)      piReq.put("enfantId", enfantId);
-            if (receiptEmail != null && !receiptEmail.isBlank()) {
-                piReq.put("receiptEmail", receiptEmail);
-            }
-
-            System.out.println("🟢 Appel StripeService#createPaymentIntentWithMetadata : " + piReq);
-
+            System.out.println("🟢 Création PaymentIntent Stripe: " + piReq);
             PaymentIntent paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq);
-            System.out.println("🟢 Stripe clientSecret reçu : " + paymentIntent.getClientSecret());
+
+            // (Optionnel mais recommandé) persister l’ID pour idempotence future
+            try {
+                p.setPaymentIntentId(paymentIntent.getId());
+                paiementService.save(p);
+            } catch (Exception ignored) {}
 
             return ResponseEntity.ok(Map.of("clientSecret", paymentIntent.getClientSecret()));
-
-        } catch (StripeException se) {
-            System.out.println("❌ Erreur Stripe : " + se.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Erreur Stripe : " + se.getMessage()));
         } catch (Exception e) {
-            System.out.println("❌ Erreur interne : " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erreur interne : " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 }

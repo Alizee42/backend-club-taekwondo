@@ -49,11 +49,8 @@ public class StripeService {
     }
 
     // =====================================================================
-    // 🚀 NOUVELLE MÉTHODE — À utiliser avec l'Option A
-    // - Reçoit un Map contenant: amount (centimes), currency, paiementId (OBLIGATOIRE),
-    //   typePaiement, nombreEcheances, utilisateurId, enfantId, modePaiement (optionnel)
-    // - Crée le PaymentIntent avec metadata.paiementId
-    // - Utilise une idempotency key basée sur paiementId pour éviter les doublons
+    // 🚀 NOUVELLE MÉTHODE — Option A (recommandée)
+    // Crée le PaymentIntent avec metadata.paiementId + idempotency key
     // =====================================================================
     public PaymentIntent createPaymentIntentWithMetadata(Map<String, Object> req) throws StripeException {
         // amount attendu en CENTIMES ici (le controller a déjà converti)
@@ -70,11 +67,11 @@ public class StripeService {
             throw new IllegalArgumentException("paiementId manquant (Option A: créer en BDD avant).");
         }
 
-        String typePaiement   = toStringOrEmpty(req.get("typePaiement"));
-        String nombreEcheances= toStringOrEmpty(req.get("nombreEcheances"));
-        String utilisateurId  = toStringOrEmpty(req.get("utilisateurId"));
-        String enfantId       = toStringOrEmpty(req.get("enfantId"));
-        String modePaiement   = toStringOrEmpty(req.get("modePaiement"));
+        String typePaiement    = toStringOrEmpty(req.get("typePaiement"));
+        String nombreEcheances = toStringOrEmpty(req.get("nombreEcheances"));
+        String utilisateurId   = toStringOrEmpty(req.get("utilisateurId"));
+        String enfantId        = toStringOrEmpty(req.get("enfantId"));
+        String modePaiement    = toStringOrEmpty(req.get("modePaiement"));
 
         PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
             .setAmount(amount)
@@ -85,7 +82,7 @@ public class StripeService {
             // ✅ Metadata indispensables
             .putMetadata("paiementId", paiementId);
 
-        // Metadata additionnelles (facultatives mais utiles pour le webhook/logs)
+        // Metadata additionnelles (facultatives)
         if (!isBlank(typePaiement))    builder.putMetadata("type", typePaiement);
         if (!isBlank(nombreEcheances)) builder.putMetadata("nombreEcheances", nombreEcheances);
         if (!isBlank(utilisateurId))   builder.putMetadata("utilisateurId", utilisateurId);
@@ -102,8 +99,7 @@ public class StripeService {
 
     // =====================================================================
     // 🔁 Méthodes "legacy" conservées pour compat si utilisées ailleurs
-    // ⚠️ Elles ne mettent pas paiementId en metadata → éviter de les utiliser
-    //    dans le flux Option A. Préférer createPaymentIntentWithMetadata(...)
+    // (éviter pour le flux principal)
     // =====================================================================
 
     /** Legacy Map overload */
@@ -153,12 +149,12 @@ public class StripeService {
             throw new IllegalArgumentException("Montant invalide.");
         }
 
-        String currency    = defaultCurrency.toLowerCase(); // "eur"
-        String typePaiement= (dto.getTypePaiement() == null || dto.getTypePaiement().isBlank())
+        String currency     = defaultCurrency.toLowerCase(); // "eur"
+        String typePaiement = (dto.getTypePaiement() == null || dto.getTypePaiement().isBlank())
                 ? "UNIQUE" : dto.getTypePaiement().toUpperCase();
-        String modePaiement= (dto.getModePaiement() == null || dto.getModePaiement().isBlank())
+        String modePaiement = (dto.getModePaiement() == null || dto.getModePaiement().isBlank())
                 ? "CB" : dto.getModePaiement().toUpperCase();
-        int nbEcheances    = (dto.getNombreEcheances() > 0) ? dto.getNombreEcheances() : 1;
+        int nbEcheances     = (dto.getNombreEcheances() > 0) ? dto.getNombreEcheances() : 1;
 
         PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
             .setAmount(Math.round(montantTotal * 100))
@@ -177,6 +173,24 @@ public class StripeService {
 
         // ⚠️ Pas d'idempotency key ni paiementId → éviter pour Option A
         return PaymentIntent.create(builder.build());
+    }
+
+    // =====================================================================
+    // ✅ NOUVELLE MÉTHODE — Récupérer le client_secret d’un PaymentIntent existant
+    // =====================================================================
+    /**
+     * Récupère le clientSecret d'un PaymentIntent existant (par ID).
+     * Utile pour idempotence si le front redemande un paiement déjà initié.
+     */
+    public String retrieveClientSecret(String paymentIntentId) {
+        try {
+            if (isBlank(paymentIntentId)) return null;
+            PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
+            return intent != null ? intent.getClientSecret() : null;
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de la récupération du PaymentIntent " + paymentIntentId + " : " + e.getMessage());
+            return null;
+        }
     }
 
     // =====================================================================

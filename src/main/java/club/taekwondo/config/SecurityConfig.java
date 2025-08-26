@@ -1,49 +1,64 @@
 package club.taekwondo.config;
 
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration; 
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    @SuppressWarnings("removal")
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
+    // ⚠️ INJECTION PAR PARAMÈTRE: évite les champs @Autowired et la plupart des cycles
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   JwtAuthFilter jwtAuthFilter) throws Exception {
         http
-            .cors() // Active la gestion CORS
-            .and()
-            .csrf().disable() // Désactiver CSRF pour simplifier les tests
-            .authorizeHttpRequests()
-            .anyRequest().permitAll(); // Autoriser toutes les requêtes
+            .cors(cors -> {})
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/stripe/webhook", "/api/stripe/public-key", "/api/utilisateurs/login", "/api/utilisateurs/register").permitAll()
+                .requestMatchers("/api/debug/**").permitAll()  // utilitaire
+                .anyRequest().permitAll() // la vraie barrière est via @PreAuthorize dans les contrôleurs
+            )
+            // ➜ Branche TON filtre JWT AVANT UsernamePasswordAuthenticationFilter
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .accessDeniedHandler((req, res, e) -> {
+                    log.warn("[SEC] 403 {} {}", req.getMethod(), req.getRequestURI());
+                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"message\":\"Access Denied\"}");
+                })
+            );
+
         return http.build();
     }
 
-    // Configuration CORS
+    // CORS: Angular local
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Autorise Angular
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // Ajout de PATCH
-        configuration.setAllowedHeaders(List.of("*")); // Autorise tous les en-têtes
-        configuration.setAllowCredentials(true); // Autorise les cookies si nécessaire
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Applique CORS à toutes les routes
-        return source;
-    }
-
-    // ✅ Bean nécessaire pour encoder et vérifier les mots de passe
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        CorsConfiguration c = new CorsConfiguration();
+        c.setAllowedOrigins(List.of("http://localhost:4200"));
+        c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
+        c.setAllowedHeaders(List.of("*"));
+        c.setAllowCredentials(true);
+        c.setExposedHeaders(List.of("Location","Authorization"));
+        UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
+        s.registerCorsConfiguration("/**", c);
+        return s;
     }
 }

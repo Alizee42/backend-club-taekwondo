@@ -24,6 +24,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/paiements")
@@ -53,7 +54,7 @@ public class PaiementController {
     }
 
     /* ===========================
-     *   Echéances
+     *   Echéances (ADMIN)
      * =========================== */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/payer-echeance")
@@ -84,12 +85,13 @@ public class PaiementController {
 
             if (!"payé".equalsIgnoreCase(e.getStatut())) {
                 e.setStatut("payé");
+                // e.setDatePaiementReel(LocalDate.now()); // si tu veux tracer la date réelle
                 montantTotalAPayer += e.getMontant();
                 nombreEcheancesPayees++;
             }
         }
 
-        // Recalcule agrégats
+        // Recalcule agrégats (sans remplacer la collection)
         paiement.setMontantPaye((paiement.getMontantPaye() == null ? 0.0 : paiement.getMontantPaye()) + montantTotalAPayer);
         double restant = (paiement.getMontantRestant() == null ? 0.0 : paiement.getMontantRestant()) - montantTotalAPayer;
         paiement.setMontantRestant(Math.max(0.0, restant));
@@ -105,7 +107,8 @@ public class PaiementController {
             paiement.setStatut("en attente");
         }
 
-        Paiement saved = paiementService.save(paiement);
+        // ✅ Ne PAS utiliser save(...) qui réinitialise des champs → persisterEtat()
+        Paiement saved = paiementService.persisterEtat(paiement);
         return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
     }
 
@@ -124,16 +127,16 @@ public class PaiementController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/valider")
     public ResponseEntity<PaiementDTO> validerPaiement(@PathVariable Long id) {
-        return paiementService.getById(id)
-                .map(p -> {
-                    p.setStatut("payé");
-                    p.setEcheancesRestantes(0);
-                    p.setMontantRestant(0.0);
-                    p.setMontantPaye(p.getMontantTotal() != null ? p.getMontantTotal() : 0.0);
-                    Paiement saved = paiementService.save(p);
-                    return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
-                })
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        try {
+            // ✅ Utilise la méthode dédiée qui ne touche pas à la collection
+            Paiement saved = paiementService.validerPaiementAdmin(id);
+            return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /* ===========================
@@ -148,51 +151,37 @@ public class PaiementController {
      *   Création (ADMIN)
      * =========================== */
 
-    /**
-     * JSON (utilisateur/membre existant).
-     * Tolère 'parentId' et 'membreIds' envoyés par le front.
-     * Retourne { paiementId, reference? } pour matcher PaymentAdminService côté Angular.
-     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/ajouter-manuel", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> ajouterPaiementManuel(@RequestBody Map<String, Object> body) {
         try {
-            // ---- Mapping flexible du JSON reçu → PaiementRequestDTO ----
             PaiementRequestDTO req = new PaiementRequestDTO();
 
-            // utilisateurId ou parentId
             Long utilisateurId = longOrNull(body.get("utilisateurId"));
             Long parentId = longOrNull(body.get("parentId"));
             req.setUtilisateurId(utilisateurId != null ? utilisateurId : parentId);
 
-            // membreId / membreIds
             Long membreId = longOrNull(body.get("membreId"));
             req.setMembreId(membreId);
             List<Long> membreIds = listOfLong(body.get("membreIds"));
             req.setMembreIds((membreIds != null && !membreIds.isEmpty()) ? membreIds : null);
 
-            // type / typePaiement (front: 'unique' | 'échelonné')
             String typeHuman = strOrNull(body.get("type"));
             String typeAlt = strOrNull(body.get("typePaiement"));
             String typeBack = normalizeTypeHuman(typeHuman != null ? typeHuman : typeAlt);
             req.setTypePaiement(typeBack);
 
-            // modePaiement (front: 'especes' | 'virement' | 'stripe')
             String modeHuman = strOrNull(body.get("modePaiement"));
             req.setModePaiement(normalizeModeHuman(modeHuman));
 
-            // datePaiement
             String datePaiement = strOrNull(body.get("datePaiement"));
             req.setDatePaiement(datePaiement != null ? datePaiement : LocalDate.now().toString());
 
-            // montantTotal
             Double montantTotal = doubleOrNull(body.get("montantTotal"));
             req.setMontantTotal(montantTotal);
 
-            // commentaire (facultatif)
             req.setCommentaire(strOrNull(body.get("commentaire")));
 
-            // échéances (facultatif)
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> echs = (List<Map<String, Object>>) body.get("echeances");
             if (echs != null && !echs.isEmpty()) {
@@ -210,7 +199,6 @@ public class PaiementController {
                 req.setEcheances(list);
             }
 
-            // ---- Appel service ----
             List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
 
             if (created == null || created.isEmpty()) {
@@ -218,7 +206,6 @@ public class PaiementController {
                         .body(Map.of("message", "Aucun paiement créé"));
             }
             Long firstId = created.get(0).getId();
-            // Réponse compacte attendue par l’Angular service (PaiementResponse)
             Map<String, Object> resp = new HashMap<>();
             resp.put("paiementId", firstId);
             resp.put("reference", null);
@@ -234,10 +221,6 @@ public class PaiementController {
         }
     }
 
-    /**
-     * JSON complet (création à la volée possible, sans fichier).
-     * Retourne { paiementId, reference? }.
-     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/ajouter-complet", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> ajouterPaiementCompletJson(@Valid @RequestBody PaiementRequestDTO req) {
@@ -262,10 +245,6 @@ public class PaiementController {
         }
     }
 
-    /**
-     * MULTIPART (création à la volée avec justificatif).
-     * Retourne { paiementId, reference? }.
-     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/ajouter-complet", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> ajouterPaiementCompletMultipart(
@@ -334,7 +313,7 @@ public class PaiementController {
      *   Espace Parent
      * =========================== */
 
-    /** Récupère uniquement les paiements des enfants du parent connecté */
+    @PreAuthorize("hasAnyAuthority('PARENT','ADMIN')")
     @GetMapping("/parent/mes-paiements")
     public ResponseEntity<List<PaiementDTO>> getPaiementsPourParentConnecte(
             @RequestHeader("Authorization") String authHeader) {
@@ -352,23 +331,18 @@ public class PaiementController {
         return ResponseEntity.ok(paiements);
     }
 
-    /**
-     * ⚠️ Corrigé : on reçoit le JSON du front (qui contient nombreEcheances, etc.),
-     * on le map vers un PaiementRequestDTO, puis on appelle le service dédié.
-     */
+    @PreAuthorize("hasAnyAuthority('PARENT','ADMIN')")
     @PostMapping("/parent/ajouter")
     public ResponseEntity<PaiementDTO> ajouterPaiementParent(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Object> body) {
         try {
-            // 1) Auth parent
             String token = authHeader.replace("Bearer ", "");
             String email = jwtUtil.extractEmail(token);
 
             Utilisateur parent = utilisateurService.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Parent non trouvé"));
 
-            // 2) Map JSON → PaiementRequestDTO
             PaiementRequestDTO req = new PaiementRequestDTO();
 
             Long membreId = longOrNull(body.get("membreId"));
@@ -377,33 +351,23 @@ public class PaiementController {
             }
             req.setMembreId(membreId);
 
-            // type : 'UNIQUE' | 'ECHELONNE' (le front envoie 'type')
             String typeHuman = strOrNull(body.get("type"));
             String typeAlt   = strOrNull(body.get("typePaiement"));
             req.setTypePaiement(normalizeTypeHuman(typeHuman != null ? typeHuman : typeAlt));
 
-            // mode : 'CB' | 'VIREMENT' | 'ESPECES'
             String modeHuman = strOrNull(body.get("modePaiement"));
             req.setModePaiement(normalizeModeHuman(modeHuman));
 
-            // montant total
             Double montantTotal = doubleOrNull(body.get("montantTotal"));
-            if (montantTotal == null || montantTotal <= 0) {
-                return ResponseEntity.badRequest().build();
-            }
             req.setMontantTotal(montantTotal);
 
-            // nombre d'échéances (optionnel si type = ECHELONNE)
             Integer nbEch = intOrNull(body.get("nombreEcheances"));
             req.setNombreEcheances(nbEch);
 
-            // datePaiement par défaut aujourd’hui
             req.setDatePaiement(LocalDate.now().toString());
 
-            // 3) Appel service (version qui prend PaiementRequestDTO)
             Paiement paiement = paiementService.ajouterPaiementParent(req, parent.getId());
 
-            // 4) Retour DTO
             PaiementDTO out = paiementService.toPaiementDTO(paiement);
             return createdDTO("/api/paiements/" + out.getId(), out);
 
@@ -422,7 +386,6 @@ public class PaiementController {
         return new ResponseEntity<>(body, headers, HttpStatus.CREATED);
     }
 
-    /** Surcharge pour renvoyer un DTO complet avec Location */
     private ResponseEntity<PaiementDTO> createdDTO(String location, PaiementDTO body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(location));
@@ -473,7 +436,7 @@ public class PaiementController {
         return "UNIQUE";
     }
 
-    /** 'stripe' | 'cb' | 'carte' → 'CB' ; 'virement' → 'VIREMENT' ; 'cheque' → 'CHEQUE' ; par défaut 'ESPECES' */
+    /** 'stripe' | 'cb' | 'carte' → 'CB' ; 'virement' → 'VIREMENT' ; 'cheque' → 'CHEQUE' ; sinon 'ESPECES' */
     private static String normalizeModeHuman(String m) {
         if (m == null) return "ESPECES";
         m = m.toLowerCase(Locale.ROOT).replace("é", "e").trim();
@@ -492,4 +455,3 @@ public class PaiementController {
         return ResponseEntity.ok(out);
     }
 }
-

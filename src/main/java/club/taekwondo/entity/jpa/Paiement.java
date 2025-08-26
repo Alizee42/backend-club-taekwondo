@@ -12,7 +12,8 @@ import java.util.List;
     name = "paiement",
     indexes = {
         @Index(name = "idx_paiement_utilisateur", columnList = "utilisateur_id"),
-        @Index(name = "idx_paiement_membre", columnList = "membre_id")
+        @Index(name = "idx_paiement_membre", columnList = "membre_id"),
+        @Index(name = "idx_paiement_intent", columnList = "payment_intent_id") // utile pour retrouver vite un intent
     }
 )
 public class Paiement {
@@ -39,6 +40,13 @@ public class Paiement {
      */
     @Column(name = "mode_paiement")
     private String modePaiement;
+
+    /**
+     * Identifiant Stripe PaymentIntent (permet l'idempotence et le suivi).
+     * Exemple: pi_3Pxxxxx...
+     */
+    @Column(name = "payment_intent_id", unique = true, length = 100)
+    private String paymentIntentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
@@ -120,6 +128,9 @@ public class Paiement {
 
     public String getModePaiement() { return modePaiement; }
     public void setModePaiement(String modePaiement) { this.modePaiement = normalizeMode(modePaiement); }
+
+    public String getPaymentIntentId() { return paymentIntentId; }
+    public void setPaymentIntentId(String paymentIntentId) { this.paymentIntentId = paymentIntentId; }
 
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
