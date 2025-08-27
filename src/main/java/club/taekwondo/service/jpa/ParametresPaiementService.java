@@ -5,6 +5,7 @@ import club.taekwondo.entity.jpa.ParametresPaiement;
 import club.taekwondo.repository.jpa.ParametresPaiementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ParametresPaiementService {
@@ -12,32 +13,44 @@ public class ParametresPaiementService {
     @Autowired
     private ParametresPaiementRepository parametresPaiementRepository;
 
-    // ✅ Récupérer les paramètres avec fallback par défaut
+    /** ✅ Lecture avec fallback (utilisé par ADMIN et par le GET public) */
     public ParametresPaiementDTO getParametresPaiement() {
         return parametresPaiementRepository.findById(1L)
                 .map(this::mapToDTO)
                 .orElseGet(() -> {
-                    // 👇 Valeurs par défaut si aucun enregistrement trouvé
+                    // Valeurs par défaut si aucun enregistrement n'existe encore
                     ParametresPaiementDTO defaut = new ParametresPaiementDTO();
-                    defaut.setMontantCotisation(100); // valeur par défaut
+                    defaut.setMontantCotisation(100);       // ta valeur par défaut côté serveur
                     defaut.setVirement(true);
                     defaut.setEspeces(true);
                     defaut.setStripe(true);
                     defaut.setModePaiementParDefaut("stripe");
                     defaut.setEcheancesAutorisees(1);
-                    defaut.setIntervalleEcheance("30 jours"); // ✅ corrigé : string au lieu d’un entier
+                    defaut.setIntervalleEcheance("30 jours");
                     return defaut;
                 });
     }
 
-    // ✅ Mettre à jour les paramètres
-    public void updateParametresPaiement(ParametresPaiementDTO parametres) {
-        ParametresPaiement entity = mapToEntity(parametres);
-        entity.setId(1L); // ID fixe si un seul jeu de paramètres
+    /** ✅ Écriture ADMIN : met à jour (ou crée) la ligne ID=1 de façon sûre */
+    @Transactional
+    public void updateParametresPaiement(ParametresPaiementDTO dto) {
+        ParametresPaiement entity = parametresPaiementRepository
+                .findById(1L)
+                .orElseGet(ParametresPaiement::new);
+
+        entity.setId(1L); // on force l’unicité du jeu de paramètres
+        entity.setMontantCotisation(dto.getMontantCotisation());
+        entity.setVirement(dto.isVirement());
+        entity.setEspeces(dto.isEspeces());
+        entity.setStripe(dto.isStripe());
+        entity.setModePaiementParDefaut(dto.getModePaiementParDefaut());
+        entity.setEcheancesAutorisees(dto.getEcheancesAutorisees());
+        entity.setIntervalleEcheance(dto.getIntervalleEcheance());
+
         parametresPaiementRepository.save(entity);
     }
 
-    // 🔁 Mapper l'entité vers le DTO
+    // ---------- Mappers ----------
     private ParametresPaiementDTO mapToDTO(ParametresPaiement entity) {
         ParametresPaiementDTO dto = new ParametresPaiementDTO();
         dto.setMontantCotisation(entity.getMontantCotisation());
@@ -48,19 +61,6 @@ public class ParametresPaiementService {
         dto.setEcheancesAutorisees(entity.getEcheancesAutorisees());
         dto.setIntervalleEcheance(entity.getIntervalleEcheance());
         return dto;
-    }
-
-    // 🔁 Mapper le DTO vers l'entité
-    private ParametresPaiement mapToEntity(ParametresPaiementDTO dto) {
-        ParametresPaiement entity = new ParametresPaiement();
-        entity.setMontantCotisation(dto.getMontantCotisation());
-        entity.setVirement(dto.isVirement());
-        entity.setEspeces(dto.isEspeces());
-        entity.setStripe(dto.isStripe());
-        entity.setModePaiementParDefaut(dto.getModePaiementParDefaut());
-        entity.setEcheancesAutorisees(dto.getEcheancesAutorisees());
-        entity.setIntervalleEcheance(dto.getIntervalleEcheance());
-        return entity;
     }
 }
 

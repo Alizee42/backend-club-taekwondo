@@ -24,7 +24,16 @@ public class ParametresPaiementController {
         this.parametresPaiementService = parametresPaiementService;
     }
 
-    /** Lecture réservée ADMIN */
+    /** 🔓 Lecture publique pour la page membre (pas d'auth requise) */
+    @PreAuthorize("permitAll()")
+    @GetMapping("/public")
+    public ResponseEntity<ParametresPaiementDTO> getParametresPaiementPublic() {
+        log.debug("[CTRL] GET /api/parametres-paiement/public");
+        ParametresPaiementDTO dto = parametresPaiementService.getParametresPaiement();
+        return ResponseEntity.ok(dto);
+    }
+
+    /** 🔒 Lecture réservée ADMIN (inchangé) */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ParametresPaiementDTO> getParametresPaiement(Authentication auth) {
@@ -36,7 +45,7 @@ public class ParametresPaiementController {
         return ResponseEntity.ok(dto);
     }
 
-    /** Mise à jour réservée ADMIN */
+    /** 🔒 Mise à jour réservée ADMIN (inchangé) */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ParametresPaiementDTO> updateParametresPaiement(
