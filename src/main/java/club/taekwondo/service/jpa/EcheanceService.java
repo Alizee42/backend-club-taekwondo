@@ -23,12 +23,31 @@ public class EcheanceService {
     @Autowired
     private PaiementRepository paiementRepository;
 
+    /* =========================================
+     * ==============  QUERIES  ================
+     * ========================================= */
+
+    // ✅ Ajout: exposer l'entité par ID (utilisé par le webhook/service)
+    public Optional<Echeance> getEcheanceEntityById(Long id) {
+        return echeanceRepository.findById(id);
+    }
+
+    // ✅ Ajout: persister une échéance (create/update) – utilisé par le webhook/service
+    @Transactional
+    public Echeance save(Echeance e) {
+        return echeanceRepository.save(e);
+    }
+
     // 🔹 Récupérer toutes les échéances sous forme de DTO
     public List<EcheanceDTO> getAllEcheanceDTOs() {
         return echeanceRepository.findAll().stream()
                 .map(this::toDTO)
                 .toList();
     }
+
+    /* =========================================
+     * ==============  COMMANDES  ==============
+     * ========================================= */
 
     // 🔹 Créer une échéance (DTO → Entity) avec lien à un paiement
     @Transactional
@@ -55,7 +74,7 @@ public class EcheanceService {
         echeance.setStatut(echeanceDTO.getStatut());
         echeance.setNumero(echeanceDTO.getNumero());
 
-        // NOUVEAU : champs de paiement au niveau de l’échéance
+        // Champs de paiement au niveau de l’échéance
         if (echeanceDTO.getModePaiement() != null) {
             echeance.setModePaiement(normalizeMode(echeanceDTO.getModePaiement()));
         }
@@ -109,6 +128,10 @@ public class EcheanceService {
         return toDTO(echeance);
     }
 
+    /* =========================================
+     * ==============  REPORTING  ==============
+     * ========================================= */
+
     public List<MembreRetardDTO> getMembresEnRetard() {
         // Récupère toutes les échéances en retard (statut = "en attente" et date antérieure à aujourd'hui)
         List<Echeance> echeancesEnRetard = echeanceRepository.findByStatutAndDateEcheanceBefore("en attente", LocalDate.now());
@@ -148,6 +171,11 @@ public class EcheanceService {
         return retards;
     }
 
+    /* =========================================
+     * ==============  DELETE  =================
+     * ========================================= */
+
+    @Transactional
     public void delete(Long id) {
         Optional<Echeance> echeanceOpt = echeanceRepository.findById(id);
         if (echeanceOpt.isEmpty()) {
@@ -156,9 +184,9 @@ public class EcheanceService {
         echeanceRepository.deleteById(id);
     }
 
-    /* ===========================
-     *  MAPPINGS
-     * =========================== */
+    /* =========================================
+     * ==============  MAPPINGS  ===============
+     * ========================================= */
 
     // 🔁 Entity → DTO
     private EcheanceDTO toDTO(Echeance echeance) {
@@ -169,7 +197,7 @@ public class EcheanceService {
         dto.setStatut(echeance.getStatut());
         dto.setNumero(echeance.getNumero());
 
-        // NOUVEAU
+        // Champs paiement au niveau de l’échéance
         dto.setModePaiement(echeance.getModePaiement());
         dto.setDatePaiementReel(echeance.getDatePaiementReel());
         dto.setReference(echeance.getReference());
@@ -198,7 +226,7 @@ public class EcheanceService {
         e.setStatut(dto.getStatut());
         e.setNumero(dto.getNumero());
 
-        // NOUVEAU
+        // Champs paiement au niveau de l’échéance
         e.setModePaiement(dto.getModePaiement() != null ? normalizeMode(dto.getModePaiement()) : null);
         e.setDatePaiementReel(dto.getDatePaiementReel());
         e.setReference(dto.getReference());
@@ -207,9 +235,9 @@ public class EcheanceService {
         return e;
     }
 
-    /* ===========================
-     *  HELPERS
-     * =========================== */
+    /* =========================================
+     * ==============  HELPERS  ================
+     * ========================================= */
 
     /** Normalise le mode pour rester simple côté front : cb / Virement / Espèces */
     private String normalizeMode(String raw) {

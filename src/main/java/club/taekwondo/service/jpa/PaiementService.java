@@ -123,6 +123,9 @@ public class PaiementService {
         return dtos;
     }
 
+    /** Ajouté pour le contrôleur Stripe */
+    public Optional<Paiement> findById(Long id) { return paiementRepository.findById(id); }
+
     public Optional<Paiement> getById(Long id) { return paiementRepository.findById(id); }
 
     public List<Paiement> getByMembreId(Long membreId) {
@@ -530,10 +533,10 @@ public class PaiementService {
         p.setEcheancesRestantes(0);
     }
 
+    /** ❗ Corrigé : plus de pré-paiement CB de la 1ʳᵉ échéance */
     private void fillEchelonne(Paiement p, PaiementRequestDTO req, LocalDate startDate) {
         List<PaiementRequestDTO.EcheanceInput> in = req.getEcheances();
         List<Echeance> echs = new ArrayList<>();
-        final boolean isCB = "CB".equalsIgnoreCase(normalizeMode(p.getModePaiement()));
 
         if (in != null && !in.isEmpty()) {
             int numAuto = 1;
@@ -543,21 +546,16 @@ public class PaiementService {
                 ee.setNumero(e.getNumero() != null ? e.getNumero() : numAuto++);
                 ee.setDateEcheance(LocalDate.parse(e.getDateEcheance()));
                 ee.setMontant(Optional.ofNullable(e.getMontant()).orElse(0.0));
-                if (ee.getNumero() == 1 && isCB) {
-                    ee.setStatut("payé");
-                    ee.setDatePaiementReel(LocalDate.now());
-                } else {
-                    ee.setStatut(Optional.ofNullable(e.getStatut()).orElse("en attente"));
-                }
+                // Toutes en attente (sauf si la requête impose explicitement "payé")
+                ee.setStatut(Optional.ofNullable(e.getStatut()).orElse("en attente"));
+                ee.setModePaiement(null);
+                ee.setReference(null);
+                ee.setDatePaiementReel(null);
                 echs.add(ee);
             }
         } else if (req.getNombreEcheances() != null && req.getNombreEcheances() > 0) {
+            // Auto-split : toutes "en attente"
             echs.addAll(autoSplitEcheances(startDate, p.getMontantTotal(), req.getNombreEcheances(), 30, p));
-            if (!echs.isEmpty() && isCB) {
-                Echeance first = echs.get(0);
-                first.setStatut("payé");
-                first.setDatePaiementReel(LocalDate.now());
-            }
         } else {
             throw new IllegalArgumentException("Aucune échéance fournie pour un paiement échelonné.");
         }
@@ -577,6 +575,14 @@ public class PaiementService {
         p.setMontantRestant(Math.max(0.0, p.getMontantTotal() - paye));
         p.setEcheancesRestantes(restantes);
         p.setStatut(p.getMontantRestant() <= 0.0 ? "payé" : "en attente");
+
+        // Logs diagnostic
+        log.info("[CREATE:ECH] total={} paye={} restant={} restantes={}",
+                p.getMontantTotal(), p.getMontantPaye(), p.getMontantRestant(), p.getEcheancesRestantes());
+        echs.stream().sorted(Comparator.comparingInt(Echeance::getNumero)).forEach(ee ->
+                log.info("   • ech#{} montant={} statut={} date={} ref={}",
+                        ee.getNumero(), ee.getMontant(), ee.getStatut(),
+                        ee.getDateEcheance(), ee.getReference()));
     }
 
     private List<Echeance> autoSplitEcheances(LocalDate start, double total, int n, int stepDays, Paiement p) {
@@ -696,11 +702,12 @@ public class PaiementService {
         return toPaiementDTO(saved);
     }
 
+    /** ❗ Corrigé : plus de pré-paiement CB de la 1ʳᵉ échéance */
     @Transactional
     public Paiement ajouterPaiementParent(PaiementRequestDTO req, Long parentId) {
-        System.out.println("=== [PaiementService] Début ajout paiement parent ===");
-        System.out.println("[Request reçu] " + req);
-        System.out.println("[Parent connecté ID] " + parentId);
+        log.info("=== [PaiementService] Début ajout paiement parent ===");
+        log.info("[Request reçu] {}", req);
+        log.info("[Parent connecté ID] {}", parentId);
 
         if (req.getMembreId() == null || req.getMembreId() <= 0) {
             throw new RuntimeException("ID du membre invalide pour le paiement !");
@@ -722,18 +729,18 @@ public class PaiementService {
         Paiement paiement = new Paiement();
         paiement.setType(type);
         paiement.setModePaiement(mode);
-        paiement.setDatePaiement(LocalDate.now());
+        paiement.setDatePaiement(LocalDate.now()); // date de création (pas une preuve de paiement)
         paiement.setUtilisateur(membre.getParent());
         paiement.setMembre(membre);
         paiement.setMontantTotal(montant);
 
+        // À la création : rien n'est payé
         paiement.setMontantPaye(0.0);
         paiement.setMontantRestant(montant);
         paiement.setStatut("en attente");
 
         if (isTypeEchelonne(type)) {
             List<Echeance> echs = new ArrayList<>();
-            final boolean isCB = "CB".equalsIgnoreCase(mode);
 
             if (req.getEcheances() != null && !req.getEcheances().isEmpty()) {
                 int autoNum = 1;
@@ -750,12 +757,12 @@ public class PaiementService {
                     e.setDateEcheance(LocalDate.parse(ein.getDateEcheance()));
                     e.setMontant(ein.getMontant());
 
-                    if (e.getNumero() == 1 && isCB) {
-                        e.setStatut("payé");
-                        e.setDatePaiementReel(LocalDate.now());
-                    } else {
-                        e.setStatut(Optional.ofNullable(ein.getStatut()).orElse("en attente"));
-                    }
+                    // Toutes en attente à la création
+                    e.setStatut(Optional.ofNullable(ein.getStatut()).orElse("en attente"));
+                    e.setModePaiement(null);
+                    e.setReference(null);
+                    e.setDatePaiementReel(null);
+
                     echs.add(e);
                 }
             } else {
@@ -776,14 +783,12 @@ public class PaiementService {
                     e.setNumero(i + 1);
                     e.setDateEcheance(start.plusMonths(i));
                     e.setMontant(part);
-                    e.setStatut("en attente");
-                    echs.add(e);
-                }
+                    e.setStatut("en attente");   // ✅ TOUTES en attente à la création
+                    e.setModePaiement(null);
+                    e.setReference(null);
+                    e.setDatePaiementReel(null);
 
-                if (!echs.isEmpty() && isCB) {
-                    Echeance first = echs.get(0);
-                    first.setStatut("payé");
-                    first.setDatePaiementReel(LocalDate.now());
+                    echs.add(e);
                 }
             }
 
@@ -806,12 +811,21 @@ public class PaiementService {
         }
 
         Paiement saved = paiementRepository.save(paiement);
-        System.out.println("[Paiement enregistré] ID=" + saved.getId() +
-                " | MembreID=" + saved.getMembre().getId() +
-                " | UtilisateurID=" + saved.getUtilisateur().getId() +
-                " | MontantTotal=" + saved.getMontantTotal() +
-                " | Statut=" + saved.getStatut());
-        System.out.println("=== [PaiementService] Fin ajout paiement parent ===");
+        log.info("[Paiement enregistré] ID={} | MembreID={} | UtilisateurID={} | Total={} | Payé={} | Restant={} | Statut={}",
+                saved.getId(),
+                saved.getMembre() != null ? saved.getMembre().getId() : null,
+                saved.getUtilisateur() != null ? saved.getUtilisateur().getId() : null,
+                saved.getMontantTotal(),
+                saved.getMontantPaye(),
+                saved.getMontantRestant(),
+                saved.getStatut());
+        if (saved.getEcheances() != null) {
+            saved.getEcheances().stream()
+                    .sorted(Comparator.comparingInt(Echeance::getNumero))
+                    .forEach(e -> log.info("   • ech#{} id={} montant={} statut={} dateEch={} ref={}",
+                            e.getNumero(), e.getId(), e.getMontant(), e.getStatut(), e.getDateEcheance(), e.getReference()));
+        }
+        log.info("=== [PaiementService] Fin ajout paiement parent ===");
         return saved;
     }
 
@@ -911,8 +925,83 @@ public class PaiementService {
             }
         }
     }
+
     @Transactional
     public Paiement persisterEtat(Paiement paiement) {
         return paiementRepository.save(paiement);
     }
+
+    /* =========================================================
+       =========  🆕 Méthodes Stripe / Échéances (BDD)  =========
+       ========================================================= */
+
+    /**
+     * Enregistre l'identifiant Stripe PaymentIntent sur l'échéance donnée (champ reference),
+     * afin d'éviter toute collision entre échéances.
+     */
+    @Transactional
+    public void saveEcheanceReference(Long echeanceId, String paymentIntentId) {
+        if (echeanceId == null || paymentIntentId == null || paymentIntentId.isBlank()) {
+            throw new IllegalArgumentException("Paramètres invalides pour saveEcheanceReference");
+        }
+        Echeance e = echeanceService.getEcheanceEntityById(echeanceId)
+                .orElseThrow(() -> new NoSuchElementException("Échéance introuvable id=" + echeanceId));
+        e.setReference(paymentIntentId);
+        echeanceService.save(e);
+        log.info("💾 Référence PaymentIntent {} enregistrée sur échéance {}", paymentIntentId, echeanceId);
+    }
+
+    /**
+     * Appelée par le webhook Stripe (payment_intent.succeeded).
+     * Marque l’échéance comme payée, met à jour les montants agrégés et conserve la référence PI.
+     */
+    @Transactional
+    public void marquerEcheancePayeeParStripe(Long paiementId, Long echeanceId, String paymentIntentId, Long amountCents) {
+        if (echeanceId == null) {
+            // Paiement unique (sans échéances)
+            if (paiementId == null) return;
+            Paiement p = paiementRepository.findById(paiementId)
+                    .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + paiementId));
+            p.setModePaiement("CB");
+            p.setStatut("payé");
+            p.setMontantPaye(safeMontant(p.getMontantTotal()));
+            p.setMontantRestant(0.0);
+            p.setDatePaiement(LocalDate.now());
+            // optionnel : si le champ existe
+            p.setPaymentIntentId(paymentIntentId);
+            paiementRepository.save(p);
+            log.info("✅ Paiement unique {} marqué payé via Stripe (PI={})", p.getId(), paymentIntentId);
+            return;
+        }
+
+        // Cas échéance identifiée
+        Echeance e = echeanceService.getEcheanceEntityById(echeanceId)
+                .orElseThrow(() -> new NoSuchElementException("Échéance introuvable id=" + echeanceId));
+        Paiement p = e.getPaiement();
+        if (paiementId != null && (p == null || !Objects.equals(p.getId(), paiementId))) {
+            log.warn("⚠️ Incohérence webhook: paiementId={} ne matche pas la paiements de l'échéance ({}).",
+                    paiementId, (p != null ? p.getId() : null));
+        }
+
+        if (amountCents != null && e.getMontant() != null) {
+            long expected = Math.round(e.getMontant() * 100.0);
+            if (!Objects.equals(expected, amountCents)) {
+                log.warn("⚠️ Montant Stripe ({}) différent du montant échéance attendu ({}).", amountCents, expected);
+            }
+        }
+
+        e.setStatut("payé");
+        e.setDatePaiementReel(LocalDate.now());
+        e.setReference(paymentIntentId);
+        e.setModePaiement("CB");
+        echeanceService.save(e);
+
+        if (p != null) {
+            p.setModePaiement("CB");
+            recomputeAggregates(p);
+            paiementRepository.save(p);
+            log.info("✅ Échéance {} du paiement {} marquée payée (PI={})", echeanceId, p.getId(), paymentIntentId);
+        }
+    }
 }
+

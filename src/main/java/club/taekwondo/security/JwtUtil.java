@@ -27,8 +27,14 @@ public class JwtUtil {
     }
 
     // ====== extraction ======
+    /** Retourne l'email/username stocké en "sub" (subject). */
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    /** Compatibilité avec le code appelant : alias de extractEmail. */
+    public String extractUsername(String token) {
+        return extractEmail(token);
     }
 
     public String extractRole(String token) {
