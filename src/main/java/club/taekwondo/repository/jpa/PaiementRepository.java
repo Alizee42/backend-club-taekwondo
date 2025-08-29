@@ -101,7 +101,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     // 🔹 Comptage insensible à la casse
     long countByStatutIgnoreCase(String statut);
 
-    // 🔹 Paiements liés à plusieurs membres — ⚠️ maintenant avec fetch des échéances
+    // 🔹 Paiements liés à plusieurs membres — ⚠️ avec fetch des échéances
     @EntityGraph(attributePaths = "echeances")
     List<Paiement> findByMembreIdIn(List<Long> membresIds);
 
@@ -112,5 +112,18 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
         WHERE LOWER(p.statut) = LOWER(:statut)
     """)
     Double sumMontantByStatut(@Param("statut") String statut);
-}
 
+    /* =========================================================
+       ✅ AJOUTS pour reçu Stripe / sync PaymentIntent & Charge
+       ========================================================= */
+
+    // ➕ retrouver un paiement via l'ID du PaymentIntent Stripe (ex: "pi_3P...")
+    Optional<Paiement> findByPaymentIntentId(String paymentIntentId);
+
+    // ➕ retrouver un paiement via l'ID de la charge (ex: "ch_3P...")
+    Optional<Paiement> findByChargeId(String chargeId);
+
+    // ➕ récupérer la receipt_url en direct (utile pour exposer rapidement l’URL)
+    @Query("SELECT p.receiptUrl FROM Paiement p WHERE p.id = :id")
+    Optional<String> getReceiptUrl(@Param("id") Long paiementId);
+}

@@ -8,6 +8,7 @@ import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import com.stripe.exception.IdempotencyException;
+import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -38,6 +40,10 @@ public class StripeController {
         this.stripeService = stripeService;
     }
 
+    /**
+     * Création (ou réutilisation) d'un PaymentIntent Stripe.
+     * Mappings conservés pour compat : /payment-intent et /create-payment-intent
+     */
     @PostMapping({"/payment-intent", "/create-payment-intent"})
     public ResponseEntity<?> createPaymentIntent(@RequestBody Map<String, Object> body,
                                                  @RequestHeader HttpHeaders headers,
@@ -151,20 +157,46 @@ public class StripeController {
                 }
             }
 
+            // ------------ Email pour reçu Stripe natif ------------
+            if (customerEmail == null || customerEmail.isBlank()) {
+                // 1) email du propriétaire du paiement si dispo
+                if (p.getUtilisateur() != null && p.getUtilisateur().getEmail() != null) {
+                    String e = p.getUtilisateur().getEmail().trim();
+                    if (!e.isEmpty()) customerEmail = e;
+                }
+                // 2) sinon email de l'utilisateur authentifié
+                if ((customerEmail == null || customerEmail.isBlank()) && utilisateur != null && utilisateur.getEmail() != null) {
+                    String e = utilisateur.getEmail().trim();
+                    if (!e.isEmpty()) customerEmail = e;
+                }
+            }
+
             // ------------ Construction de la requête Stripe ------------
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("paiementId", String.valueOf(paiementId));
             metadata.put("type", typeCourant);
             if (finalEcheanceId != null) metadata.put("echeanceId", String.valueOf(finalEcheanceId));
-            if (echeanceNumero != null) metadata.put("echeanceNumero", String.valueOf(echeanceNumero));
+            metadata.put("membreId", p.getMembre() != null ? String.valueOf(p.getMembre().getId()) : "");
+            metadata.put("utilisateurId", p.getUtilisateur() != null ? String.valueOf(p.getUtilisateur().getId()) : "");
 
             Map<String, Object> piReq = new HashMap<>();
             piReq.put("amount", amountInCents);
             piReq.put("currency", "eur");
             piReq.put("metadata", metadata);
+            piReq.put("description", "Cotisation / Paiement #" + paiementId);
+
+            // ✅ 3DS automatique
+            piReq.put("automatic_payment_methods", Map.of("enabled", true));
+
+            // 💌 Reçu email Stripe (si dispo)
             if (customerEmail != null && !customerEmail.isBlank()) {
                 piReq.put("receipt_email", customerEmail);
             }
+
+            // 👉 Pour FORCER 3DS en test, décommente ce bloc :
+            // Map<String, Object> cardOpts = Map.of("request_three_d_secure", "any");
+            // Map<String, Object> pmo = Map.of("card", cardOpts);
+            // piReq.put("payment_method_options", pmo);
 
             System.out.printf("🟢 Envoi création PaymentIntent à Stripe avec: %s%n", piReq);
             System.out.printf("🔁 Idempotency-Key utilisée: %s%n", idempotencyKey);
@@ -209,8 +241,7 @@ public class StripeController {
 
     /**
      * 🆕 Endpoint de synchronisation (utile en DEV local quand le webhook ne peut pas appeler ton localhost).
-     * Body attendu:
-     * { "paymentIntentId": "pi_xxx" }
+     * Body attendu: { "paymentIntentId": "pi_xxx" }
      */
     @PostMapping("/sync-payment")
     public ResponseEntity<?> syncPayment(@RequestBody Map<String, Object> body,
@@ -287,6 +318,65 @@ public class StripeController {
 
             paiementService.save(paiement);
             return ResponseEntity.ok(Map.of("status","synced"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 🧾 Redirection vers le reçu Stripe hébergé pour un paiement donné.
+     * On tente d'abord la dernière échéance PAYÉE (référence = PI), sinon le PI stocké sur le paiement.
+     */
+    @GetMapping("/receipt/{paiementId}")
+    public ResponseEntity<?> redirectToStripeReceipt(@PathVariable Long paiementId) {
+        try {
+            Paiement p = paiementService.getById(paiementId)
+                    .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable"));
+
+            // 1) Trouver le PaymentIntent ID (échéance payée en priorité, sinon paiement unique)
+            String piId = null;
+            if (p.getEcheances() != null && !p.getEcheances().isEmpty()) {
+                for (int i = p.getEcheances().size() - 1; i >= 0; i--) {
+                    var e = p.getEcheances().get(i);
+                    if ("payé".equalsIgnoreCase(e.getStatut())
+                            && e.getReference() != null && !e.getReference().isBlank()) {
+                        piId = e.getReference();
+                        break;
+                    }
+                }
+            }
+            if (piId == null) piId = p.getPaymentIntentId();
+            if (piId == null || piId.isBlank()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Aucun PaymentIntent associé"));
+            }
+
+            // 2) Récupérer le PI (sans getCharges())
+            PaymentIntent pi = PaymentIntent.retrieve(piId);
+
+            String receiptUrl = null;
+
+            // a) Chemin principal : latest_charge → Charge → receipt_url
+            String latestChargeId = pi.getLatestCharge();
+            if (latestChargeId != null && !latestChargeId.isBlank()) {
+                Charge charge = Charge.retrieve(latestChargeId);
+                if (charge != null) receiptUrl = charge.getReceiptUrl();
+            }
+
+            // b) Optionnel : si latest_charge a été étendu ailleurs
+            if ((receiptUrl == null || receiptUrl.isBlank())) {
+                Object latestObj = pi.getLatestChargeObject();
+                if (latestObj instanceof Charge) {
+                    receiptUrl = ((Charge) latestObj).getReceiptUrl();
+                }
+            }
+
+            if (receiptUrl == null || receiptUrl.isBlank()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Aucun reçu disponible"));
+            }
+            return ResponseEntity.status(302).location(URI.create(receiptUrl)).build();
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));

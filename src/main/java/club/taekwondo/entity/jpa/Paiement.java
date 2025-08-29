@@ -84,6 +84,15 @@ public class Paiement {
 
     @Column(name = "admin_responsable")
     private String adminResponsable;
+    
+    @Column(name = "charge_id", length = 100)
+    private String chargeId;
+
+    @Column(name = "receipt_url", columnDefinition = "TEXT")
+    private String receiptUrl;
+
+    @Column(name = "stripe_status", length = 50)
+    private String stripeStatus;
 
     public Paiement() {}
 
@@ -165,9 +174,34 @@ public class Paiement {
     public String getAdminResponsable() { return adminResponsable; }
     public void setAdminResponsable(String adminResponsable) { this.adminResponsable = adminResponsable; }
 
+    
     /* ---------------- Helpers (facultatif) ---------------- */
 
-    public void addEcheance(Echeance e) {
+    public String getChargeId() {
+		return chargeId;
+	}
+
+	public void setChargeId(String chargeId) {
+		this.chargeId = chargeId;
+	}
+
+	public String getReceiptUrl() {
+		return receiptUrl;
+	}
+
+	public void setReceiptUrl(String receiptUrl) {
+		this.receiptUrl = receiptUrl;
+	}
+
+	public String getStripeStatus() {
+		return stripeStatus;
+	}
+
+	public void setStripeStatus(String stripeStatus) {
+		this.stripeStatus = stripeStatus;
+	}
+
+	public void addEcheance(Echeance e) {
         this.echeances.add(e);
         e.setPaiement(this);
     }
@@ -176,4 +210,6 @@ public class Paiement {
         this.echeances.remove(e);
         e.setPaiement(null);
     }
+    
+    
 }
