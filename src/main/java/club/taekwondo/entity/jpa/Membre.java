@@ -18,9 +18,11 @@ public class Membre {
     @Column(nullable = false)
     private String prenom;
 
+    @Column(name = "ceinture")
     private String ceinture;
 
-    @Column(unique = true)
+    // ✅ nullable=true pour autoriser plusieurs NULL malgré l'unicité
+    @Column(name = "numero_licence", unique = true, nullable = true, length = 255)
     private String numeroLicence;
 
     private LocalDate dateNaissance;
@@ -40,87 +42,65 @@ public class Membre {
 
     public Membre(String nom, String prenom, LocalDate dateNaissance, String ceinture, String numeroLicence,
                   boolean estAdulte, Utilisateur parent, Utilisateur compteUtilisateur) {
-        this.nom = nom;
-        this.prenom = prenom;
-        this.dateNaissance = dateNaissance;
-        this.ceinture = ceinture;
-        this.numeroLicence = numeroLicence;
+        this.setNom(nom);
+        this.setPrenom(prenom);
+        this.setDateNaissance(dateNaissance);
+        this.setCeinture(ceinture);
+        this.setNumeroLicence(numeroLicence);
         this.estAdulte = estAdulte;
         this.parent = parent;
         this.compteUtilisateur = compteUtilisateur;
+    }
+
+    // --- Normalisation automatiques avant INSERT/UPDATE ---
+    @PrePersist
+    @PreUpdate
+    private void normalize() {
+        if (nom != null) nom = nom.trim();
+        if (prenom != null) prenom = prenom.trim();
+        if (ceinture != null) ceinture = ceinture.trim();
+
+        if (numeroLicence != null) {
+            numeroLicence = numeroLicence.trim();
+            if (numeroLicence.isEmpty()) {
+                // ⚠️ point clé : on convertit '' en NULL pour ne pas violer l'unicité
+                numeroLicence = null;
+            }
+        }
     }
 
     // --- Getters & Setters ---
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom != null ? nom.trim() : null; }
 
-    public String getNom() {
-        return nom;
-    }
+    public String getPrenom() { return prenom; }
+    public void setPrenom(String prenom) { this.prenom = prenom != null ? prenom.trim() : null; }
 
-    public void setNom(String nom) {
-        this.nom = nom;
-    }
+    public String getCeinture() { return ceinture; }
+    public void setCeinture(String ceinture) { this.ceinture = ceinture != null ? ceinture.trim() : null; }
 
-    public String getPrenom() {
-        return prenom;
-    }
-
-    public void setPrenom(String prenom) {
-        this.prenom = prenom;
-    }
-
-    public String getCeinture() {
-        return ceinture;
-    }
-
-    public void setCeinture(String ceinture) {
-        this.ceinture = ceinture;
-    }
-
-    public String getNumeroLicence() {
-        return numeroLicence;
-    }
-
+    public String getNumeroLicence() { return numeroLicence; }
     public void setNumeroLicence(String numeroLicence) {
-        this.numeroLicence = numeroLicence;
+        if (numeroLicence == null) {
+            this.numeroLicence = null;
+        } else {
+            String v = numeroLicence.trim();
+            this.numeroLicence = v.isEmpty() ? null : v;
+        }
     }
 
-    public LocalDate getDateNaissance() {
-        return dateNaissance;
-    }
+    public LocalDate getDateNaissance() { return dateNaissance; }
+    public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
 
-    public void setDateNaissance(LocalDate dateNaissance) {
-        this.dateNaissance = dateNaissance;
-    }
+    public boolean isEstAdulte() { return estAdulte; }
+    public void setEstAdulte(boolean estAdulte) { this.estAdulte = estAdulte; }
 
-    public boolean isEstAdulte() {
-        return estAdulte;
-    }
+    public Utilisateur getParent() { return parent; }
+    public void setParent(Utilisateur parent) { this.parent = parent; }
 
-    public void setEstAdulte(boolean estAdulte) {
-        this.estAdulte = estAdulte;
-    }
-
-    public Utilisateur getParent() {
-        return parent;
-    }
-
-    public void setParent(Utilisateur parent) {
-        this.parent = parent;
-    }
-
-    public Utilisateur getCompteUtilisateur() {
-        return compteUtilisateur;
-    }
-
-    public void setCompteUtilisateur(Utilisateur compteUtilisateur) {
-        this.compteUtilisateur = compteUtilisateur;
-    }
+    public Utilisateur getCompteUtilisateur() { return compteUtilisateur; }
+    public void setCompteUtilisateur(Utilisateur compteUtilisateur) { this.compteUtilisateur = compteUtilisateur; }
 }
-
