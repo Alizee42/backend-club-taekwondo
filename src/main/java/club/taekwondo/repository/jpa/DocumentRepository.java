@@ -9,13 +9,47 @@ import java.util.List;
 
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
-    // Récupérer les documents par statut
+
+    // ---- Filtres simples -----------------------------------------------------
+
+    // Par statut (ex: "validé" / "en attente" / "refusé")
     List<Document> findByStatus(String status);
 
-    // Récupérer tous les documents avec leurs utilisateurs
-    @Query("SELECT d FROM Document d LEFT JOIN FETCH d.utilisateur u WHERE u IS NOT NULL")
-    List<Document> findAllWithUtilisateur();
-    
-    // Récupérer les documents par utilisateur
+    // Par utilisateur (Document.utilisateur.id)
     List<Document> findByUtilisateurId(Long utilisateurId);
+
+    // ✅ Nouveau : par membre (Document.membre.id)
+    List<Document> findByMembreId(Long membreId);
+
+
+    // ---- Versions avec FETCH JOIN (évite N+1 et LazyInitialization) ----------
+
+    // Tous les documents, avec utilisateur ET membre préchargés
+    @Query("""
+           SELECT d
+           FROM Document d
+           LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH d.membre m
+           """)
+    List<Document> findAllWithUtilisateurAndMembre();
+
+    // Par utilisateur, avec utilisateur ET membre préchargés
+    @Query("""
+           SELECT d
+           FROM Document d
+           LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH d.membre m
+           WHERE u.id = :utilisateurId
+           """)
+    List<Document> findByUtilisateurIdWithFetch(Long utilisateurId);
+
+    // ✅ Nouveau : par membre, avec utilisateur ET membre préchargés
+    @Query("""
+           SELECT d
+           FROM Document d
+           LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH d.membre m
+           WHERE m.id = :membreId
+           """)
+    List<Document> findByMembreIdWithFetch(Long membreId);
 }

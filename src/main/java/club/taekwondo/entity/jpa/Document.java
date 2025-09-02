@@ -1,6 +1,7 @@
 package club.taekwondo.entity.jpa;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -31,78 +32,50 @@ public class Document {
     @Column(name = "status", length = 20, nullable = false)
     private String status;
 
-    @ManyToOne
+    // Relation existante: Document -> Utilisateur (obligatoire)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     @JsonBackReference // Empêche la sérialisation récursive
     private Utilisateur utilisateur;
 
+    // ✅ NOUVEAU: Document -> Membre (optionnel)
+    // On met @JsonIgnore côté Document pour éviter toute boucle JSON
+    // (tu peux remplacer par @JsonBackReference/@JsonManagedReference si tu exposes la liste dans Membre)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "membre_id") // nullable par défaut
+    @JsonIgnore
+    private Membre membre;
+
     public Document() {
         this.dateDepot = LocalDateTime.now();
-        this.status = "en attente";
+        this.status = "en attente"; // on conserve ta convention actuelle
     }
 
- // Getters et Setters
-    public Long getId() {
-        return id;
-    }
+    // Getters / Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTypeDocument() { return typeDocument; }
+    public void setTypeDocument(String typeDocument) { this.typeDocument = typeDocument; }
 
-    public String getTypeDocument() {
-        return typeDocument;
-    }
+    public String getNomDocument() { return nomDocument; }
+    public void setNomDocument(String nomDocument) { this.nomDocument = nomDocument; }
 
-    public void setTypeDocument(String typeDocument) {
-        this.typeDocument = typeDocument;
-    }
+    public String getCheminFichier() { return cheminFichier; }
+    public void setCheminFichier(String cheminFichier) { this.cheminFichier = cheminFichier; }
 
-    public String getNomDocument() {
-        return nomDocument;
-    }
+    public LocalDateTime getDateDepot() { return dateDepot; }
+    public void setDateDepot(LocalDateTime dateDepot) { this.dateDepot = dateDepot; }
 
-    public void setNomDocument(String nomDocument) {
-        this.nomDocument = nomDocument;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getCheminFichier() {
-        return cheminFichier;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setCheminFichier(String cheminFichier) {
-        this.cheminFichier = cheminFichier;
-    }
+    public Utilisateur getUtilisateur() { return utilisateur; }
+    public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
 
-    public LocalDateTime getDateDepot() {
-        return dateDepot;
-    }
-
-    public void setDateDepot(LocalDateTime dateDepot) {
-        this.dateDepot = dateDepot;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Utilisateur getUtilisateur() {
-        return utilisateur;
-    }
-
-    public void setUtilisateur(Utilisateur utilisateur) {
-        this.utilisateur = utilisateur;
-    }
+    public Membre getMembre() { return membre; }
+    public void setMembre(Membre membre) { this.membre = membre; }
 }

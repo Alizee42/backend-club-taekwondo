@@ -106,9 +106,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             Utilisateur user = opt.get();
+            log.debug("[SEC] Utilisateur trouvé: {}", user.getNom());
 
             // Construire les authorities depuis le rôle (enum)
             String role = (user.getRole() != null) ? user.getRole().name().toUpperCase() : "PARENT";
+            log.debug("[SEC] Role utilisateur: {}", role);
             List<SimpleGrantedAuthority> authorities = new ArrayList<>();
             authorities.add(new SimpleGrantedAuthority(role));            // ex: "ADMIN"
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role));  // ex: "ROLE_ADMIN"
@@ -129,4 +131,3 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

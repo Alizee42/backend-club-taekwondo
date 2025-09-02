@@ -9,62 +9,45 @@ public class DocumentDTO {
     private String cheminFichier;
     private LocalDateTime dateDepot;
     private String status;
+
+    /** Nouveau : commentaire côté front (vient de Document.description) */
+    private String commentaire;
+
+    /** Nouveaux : identifiants simples pour éviter la récursion JSON */
+    private Long utilisateurId;
+    private Long membreId;
+
+    /** Optionnel : on garde pour compat si tu l’utilisais déjà */
     private UtilisateurDTO utilisateur;
 
-    // Getters et Setters
-    public Long getId() {
-        return id;
-    }
+    // ===== Getters / Setters =====
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTypeDocument() { return typeDocument; }
+    public void setTypeDocument(String typeDocument) { this.typeDocument = typeDocument; }
 
-    public String getTypeDocument() {
-        return typeDocument;
-    }
+    public String getNomDocument() { return nomDocument; }
+    public void setNomDocument(String nomDocument) { this.nomDocument = nomDocument; }
 
-    public void setTypeDocument(String typeDocument) {
-        this.typeDocument = typeDocument;
-    }
+    public String getCheminFichier() { return cheminFichier; }
+    public void setCheminFichier(String cheminFichier) { this.cheminFichier = cheminFichier; }
 
-    public String getNomDocument() {
-        return nomDocument;
-    }
+    public LocalDateTime getDateDepot() { return dateDepot; }
+    public void setDateDepot(LocalDateTime dateDepot) { this.dateDepot = dateDepot; }
 
-    public void setNomDocument(String nomDocument) {
-        this.nomDocument = nomDocument;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public String getCheminFichier() {
-        return cheminFichier;
-    }
+    public String getCommentaire() { return commentaire; }
+    public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
 
-    public void setCheminFichier(String cheminFichier) {
-        this.cheminFichier = cheminFichier;
-    }
+    public Long getUtilisateurId() { return utilisateurId; }
+    public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
 
-    public LocalDateTime getDateDepot() {
-        return dateDepot;
-    }
+    public Long getMembreId() { return membreId; }
+    public void setMembreId(Long membreId) { this.membreId = membreId; }
 
-    public void setDateDepot(LocalDateTime dateDepot) {
-        this.dateDepot = dateDepot;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public UtilisateurDTO getUtilisateur() {
-        return utilisateur;
-    }
-
-    public void setUtilisateur(UtilisateurDTO utilisateur) {
-        this.utilisateur = utilisateur;
-    }
+    public UtilisateurDTO getUtilisateur() { return utilisateur; }
+    public void setUtilisateur(UtilisateurDTO utilisateur) { this.utilisateur = utilisateur; }
 }
