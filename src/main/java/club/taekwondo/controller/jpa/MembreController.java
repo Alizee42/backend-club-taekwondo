@@ -1,16 +1,11 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.MembreDTO;
-import club.taekwondo.dto.UtilisateurDTO;
-import club.taekwondo.entity.jpa.Membre;
-import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.MembreService;
 import club.taekwondo.service.jpa.UtilisateurService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -20,41 +15,95 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 public class MembreController {
 
-    @Autowired
-    private MembreService membreService;
+    private final MembreService membreService;
 
-    @Autowired
-    private UtilisateurService utilisateurService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    // --- Récupérer tous les membres ---
-    @GetMapping
-    public ResponseEntity<List<MembreDTO>> getAllMembres() {
-        return ResponseEntity.ok(membreService.getAllMembres());
+    public MembreController(MembreService membreService, UtilisateurService utilisateurService) {
+        this.membreService = membreService;
     }
 
-    // --- Récupérer un membre par ID ---
+    // ------------------ READ ------------------
+
+    /** Polyvalent :
+     * - Si l'utilisateur connecté est PARENT => retourne uniquement SES enfants (ignore les query params).
+     * - Sinon, si ?parentId=... est fourni => enfants de ce parent (usage admin).
+     * - Sinon => tous les membres (ex: admin).
+     */
+    @GetMapping
+    public ResponseEntity<?> getMembres(
+            @RequestParam(value = "parentId", required = false) Long parentId,
+            Authentication authentication
+    ) {
+        boolean isParent = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
+
+        if (isParent) {
+            String email = authentication.getName();
+            List<MembreDTO> mine = membreService.getMembresByParentEmail(email);
+            return mine.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(mine);
+        }
+
+        if (parentId != null) {
+            List<MembreDTO> children = membreService.getMembresByUtilisateurId(parentId);
+            return children.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(children);
+        }
+
+        List<MembreDTO> all = membreService.getAllMembres();
+        return all.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(all);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getMembreById(@PathVariable Long id) {
         return membreService.getMembreById(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "Membre non trouvé avec l'ID : " + id)));
     }
 
-    // --- Créer un nouveau membre ---
+    /** Parent : récupère uniquement SES enfants (via le JWT) */
+    @GetMapping("/mes-enfants")
+    public ResponseEntity<?> getMembresDuParentConnecte(Authentication authentication) {
+        String email = authentication.getName();
+        List<MembreDTO> enfants = membreService.getMembresByParentEmail(email);
+        return enfants.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(enfants);
+    }
+
+    /** 1-1 éventuel : membre rattaché à un utilisateur adulte, renvoie DTO */
+    @GetMapping("/by-user/{utilisateurId}")
+    public ResponseEntity<?> getMembreByUtilisateurId(@PathVariable Long utilisateurId) {
+        return membreService.getMembreEntityByIdUtilisateur(utilisateurId)
+                .<ResponseEntity<?>>map(m -> ResponseEntity.ok(membreService.toMembreDTO(m)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Aucun membre trouvé pour cet utilisateur.")));
+    }
+
+    /** Admin: utile pour sélecteur enfants par parent en BO */
+    @GetMapping("/by-parent/{parentId}")
+    public ResponseEntity<List<Map<String, Object>>> getByParent(@PathVariable Long parentId) {
+        List<MembreDTO> enfants = membreService.getMembresByUtilisateurId(parentId);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (MembreDTO m : enfants) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", m.getId());
+            item.put("prenom", m.getPrenom());
+            item.put("nom", m.getNom());
+            out.add(item);
+        }
+        return out.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build() : ResponseEntity.ok(out);
+    }
+
+    // ------------------ CREATE / UPDATE / DELETE ------------------
+
     @PostMapping
     public ResponseEntity<?> createMembre(@RequestBody MembreDTO membreDTO) {
         try {
             MembreDTO nouveauMembre = membreService.createMembre(membreDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(nouveauMembre);
-        } catch (DataIntegrityViolationException e) {
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Le numéro de licence est déjà utilisé."));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -62,13 +111,12 @@ public class MembreController {
         }
     }
 
-    // --- Mettre à jour un membre ---
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMembre(@PathVariable Long id, @RequestBody MembreDTO membreDTO) {
         if (membreService.getMembreById(id).isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
         }
-
         try {
             MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
             return ResponseEntity.ok(membreMisAJour);
@@ -78,14 +126,12 @@ public class MembreController {
         }
     }
 
-    // --- Supprimer un membre ---
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMembre(@PathVariable Long id) {
         if (membreService.getMembreById(id).isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
         }
-
         try {
             membreService.deleteMembre(id);
             return ResponseEntity.ok(Map.of("message", "Membre supprimé avec succès."));
@@ -93,93 +139,6 @@ public class MembreController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Erreur lors de la suppression du membre."));
         }
-    }
-
-    // --- Récupérer le membre ou utilisateur connecté ---
-    @GetMapping("/me")
-    public ResponseEntity<?> getMembreConnecte(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String token) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "En-tête Authorization manquant ou invalide."));
-        }
-
-        try {
-            String jwt = token.replace("Bearer ", "");
-            String email = jwtUtil.extractEmail(jwt);
-
-            Optional<MembreDTO> membreOpt = membreService.getMembreByEmail(email);
-            if (membreOpt.isPresent()) return ResponseEntity.ok(membreOpt.get());
-
-            Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
-            return utilisateurOpt.<ResponseEntity<?>>map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body(Map.of("message", "Aucun membre ou utilisateur trouvé avec l'email : " + email)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Erreur lors de la récupération des informations utilisateur."));
-        }
-    }
-
-    // --- Récupérer les membres rattachés au parent connecté ---
-    @GetMapping("/mes-enfants")
-    public ResponseEntity<?> getMembresDuParentConnecte(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String token) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "En-tête Authorization manquant ou invalide."));
-        }
-
-        try {
-            String jwt = token.replace("Bearer ", "");
-            String email = jwtUtil.extractEmail(jwt);
-            System.out.println("[DEBUG] Email extrait du token : " + email);
-
-            Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.getUtilisateurByEmail(email);
-            if (utilisateurOpt.isEmpty()) {
-                System.out.println("[DEBUG] Aucun utilisateur trouvé pour l'email : " + email);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "Utilisateur non trouvé."));
-            }
-
-            Long parentId = utilisateurOpt.get().getId();
-            System.out.println("[DEBUG] ID du parent connecté : " + parentId);
-
-            List<MembreDTO> enfants = membreService.getMembresByUtilisateurId(parentId);
-            System.out.println("[DEBUG] Membres enfants récupérés : " + enfants);
-
-            return ResponseEntity.ok(enfants);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Erreur lors de la récupération des enfants du parent."));
-        }
-    }
-
-    // --- Récupérer le membre associé à un utilisateur (si 1-1) ---
-    @GetMapping("/by-user/{utilisateurId}")
-    public ResponseEntity<?> getMembreByUtilisateurId(@PathVariable Long utilisateurId) {
-        Optional<Membre> membre = membreService.getMembreEntityByIdUtilisateur(utilisateurId);
-        if (membre.isPresent()) {
-            return ResponseEntity.ok(membre.get());
-        } else {
-            return ResponseEntity.status(404).body("Aucun membre trouvé pour cet utilisateur.");
-        }
-    }
-
-    // ✅ AJOUT : utilisé par le front admin (PaymentAdminService.getMembresByParent)
-    // GET /api/membres/by-parent/{parentId} → [{ id, prenom, nom }]
-    @GetMapping("/by-parent/{parentId}")
-    public ResponseEntity<List<Map<String, Object>>> getByParent(@PathVariable Long parentId) {
-        List<MembreDTO> enfants = membreService.getMembresByUtilisateurId(parentId); // réutilise ton service existant
-
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (MembreDTO m : enfants) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("id", m.getId());
-            item.put("prenom", m.getPrenom());
-            item.put("nom", m.getNom());
-            out.add(item);
-        }
-        return ResponseEntity.ok(out);
     }
 }
 

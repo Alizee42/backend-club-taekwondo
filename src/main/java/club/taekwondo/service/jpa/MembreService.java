@@ -41,12 +41,12 @@ public class MembreService {
         return membreRepository.findById(id);
     }
 
-    // ✅ Ajouté : alias simple attendu par d'autres services/contrôleurs
+    // ✅ Alias simple attendu par d'autres services/contrôleurs
     public Optional<Membre> findById(Long id) {
         return membreRepository.findById(id);
     }
 
-    // 🔹 Récupérer un membre (DTO) par email utilisateur
+    // 🔹 Récupérer un membre (DTO) par email utilisateur (compte utilisateur adulte)
     public Optional<MembreDTO> getMembreByEmail(String email) {
         return membreRepository.findByCompteUtilisateur_Email(email)
                 .map(this::toMembreDTO);
@@ -94,7 +94,7 @@ public class MembreService {
         return membreRepository.findByCompteUtilisateur_Id(utilisateurId);
     }
 
-    // ✅ Ajouté : alias attendu ailleurs (ex. StripeController)
+    // ✅ Alias attendu ailleurs (ex. StripeController)
     public Optional<Membre> findByCompteUtilisateurId(Long utilisateurId) {
         return membreRepository.findByCompteUtilisateur_Id(utilisateurId);
     }
@@ -127,6 +127,16 @@ public class MembreService {
         return membres.stream()
                 .map(this::toMembreDTO)
                 .collect(Collectors.toList());
+    }
+
+    // ✅ NOUVEAU : récupérer les enfants du parent via l'email (extrait du JWT)
+    public List<MembreDTO> getMembresByParentEmail(String email) {
+        Optional<Utilisateur> parentOpt = utilisateurRepository.findByEmailIgnoreCase(email);
+        if (parentOpt.isEmpty()) {
+            return List.of();
+        }
+        Long parentId = parentOpt.get().getId();
+        return getMembresByUtilisateurId(parentId);
     }
 
     // ✅ Utilitaire simple : utilisé par d'autres services
