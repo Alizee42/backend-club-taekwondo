@@ -28,7 +28,7 @@ public class AvisController {
     /** 🔧 Normalisation du type : lower-case, trim, renvoie null si invalide/vide */
     private String normalizeType(String typeAvis) {
         if (typeAvis == null) return null;
-        String t = typeAvis.trim().toLowerCase();
+        String t = typeAvis.trim().toLowerCase(Locale.ROOT);
         return t.isBlank() ? null : (ALLOWED_TYPES.contains(t) ? t : null);
     }
 
@@ -42,7 +42,8 @@ public class AvisController {
             @RequestParam(value = "approuve", required = false) Boolean approuve,
             @RequestParam(value = "typeAvis", required = false) String typeAvis
     ) {
-        List<AvisDTO> avisList = avisService.getAllAvis();
+        List<AvisDTO> avisList = Optional.ofNullable(avisService.getAllAvis())
+                .orElseGet(List::of);
 
         if (approuve != null) {
             avisList = avisList.stream()
@@ -55,9 +56,12 @@ public class AvisController {
 
         String normalizedType = normalizeType(typeAvis);
         if (normalizedType != null) {
+            String nt = normalizedType; // effectively final pour lambda
             avisList = avisList.stream()
-                    .filter(a -> normalizedType.equals(
-                            Optional.ofNullable(a.getTypeAvis()).map(String::toLowerCase).orElse(null)
+                    .filter(a -> nt.equals(
+                            Optional.ofNullable(a.getTypeAvis())
+                                    .map(s -> s.toLowerCase(Locale.ROOT))
+                                    .orElse(null)
                     ))
                     .collect(Collectors.toList());
         }
@@ -101,8 +105,9 @@ public class AvisController {
             // ——— Upload éventuel de la photo ———
             String nomFichier = null;
             if (photoFile != null && !photoFile.isEmpty()) {
-                // Optionnel: contrôle type/poids
-                if (photoFile.getContentType() != null && !photoFile.getContentType().startsWith("image/")) {
+                // ⚠️ getContentType() peut être null -> on met en variable et on teste avant tout usage
+                String contentType = photoFile.getContentType();
+                if (contentType != null && !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
                     return ResponseEntity.badRequest().body("Le fichier doit être une image.");
                 }
                 if (photoFile.getSize() > 3_000_000) { // 3 Mo
@@ -112,14 +117,16 @@ public class AvisController {
                 String dossier = "uploads/avis/";
                 Files.createDirectories(Paths.get(dossier));
 
-                String ext = Optional.ofNullable(photoFile.getOriginalFilename())
-                        .filter(fn -> fn.contains("."))
-                        .map(fn -> fn.substring(fn.lastIndexOf('.')))
-                        .orElse("");
-                nomFichier = UUID.randomUUID() + ext;
+                String originalName = photoFile.getOriginalFilename();
+                String ext = (originalName != null && originalName.contains("."))
+                        ? originalName.substring(originalName.lastIndexOf('.'))
+                        : "";
 
+                nomFichier = UUID.randomUUID() + ext;
                 Path chemin = Paths.get(dossier).resolve(nomFichier);
-                photoFile.transferTo(chemin.toFile());
+
+                // Copie sûre (alternative à transferTo)
+                Files.copy(photoFile.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
             }
 
             // ——— Construction de l'entité ———

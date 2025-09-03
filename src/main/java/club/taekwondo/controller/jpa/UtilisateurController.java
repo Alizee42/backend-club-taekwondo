@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class UtilisateurController {
         return (pwd == null) ? "null" : "***(" + pwd.length() + " chars)";
     }
     private String safeUser(UtilisateurDTO u) {
+        if (u == null) return "null";
         return String.format(
             "nom=%s, prenom=%s, email=%s, tel=%s, adresse='%s', dateNaissance=%s, role=%s, password=%s",
             u.getNom(), u.getPrenom(), u.getEmail(), u.getTelephone(),
@@ -54,14 +56,17 @@ public class UtilisateurController {
 
         System.out.println("[" + now() + "][USR][LIST] params role=" + role + ", q=" + q);
 
-        List<UtilisateurDTO> all = utilisateurService.getAllUtilisateurs();
-        System.out.println("[" + now() + "][USR][LIST] total avant filtres=" + (all != null ? all.size() : 0));
+        // ⚙️ Sécurise contre un retour null du service
+        List<UtilisateurDTO> all = Optional.ofNullable(utilisateurService.getAllUtilisateurs())
+                .orElse(Collections.emptyList());
+
+        System.out.println("[" + now() + "][USR][LIST] total avant filtres=" + all.size());
 
         if (role != null && !role.isBlank()) {
             String wanted = role.trim().toUpperCase(Locale.ROOT);
             all = all.stream()
                     .filter(u -> {
-                        Object r = u.getRole();
+                        Object r = (u != null) ? u.getRole() : null;
                         if (r == null) return false;
                         String val = String.valueOf(r);
                         return val.equalsIgnoreCase(wanted);
@@ -73,11 +78,11 @@ public class UtilisateurController {
         if (q != null && !q.isBlank()) {
             String s = q.trim().toLowerCase(Locale.ROOT);
             all = all.stream()
-                    .filter(u ->
+                    .filter(u -> u != null && (
                             (u.getNom() != null && u.getNom().toLowerCase(Locale.ROOT).contains(s)) ||
                             (u.getPrenom() != null && u.getPrenom().toLowerCase(Locale.ROOT).contains(s)) ||
                             (u.getEmail() != null && u.getEmail().toLowerCase(Locale.ROOT).contains(s))
-                    )
+                    ))
                     .toList();
             System.out.println("[" + now() + "][USR][LIST] après filtre q='" + s + "' => " + all.size());
         }
@@ -86,10 +91,21 @@ public class UtilisateurController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UtilisateurDTO utilisateurDTO) {
+    public ResponseEntity<?> register(@RequestBody(required = false) UtilisateurDTO utilisateurDTO) {
         System.out.println("[" + now() + "][USR][REGISTER] ⬅ payload reçu: " + safeUser(utilisateurDTO));
         try {
+            if (utilisateurDTO == null) {
+                System.out.println("[" + now() + "][USR][REGISTER] ❌ payload null");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Requête invalide : données manquantes."));
+            }
+
             String email = utilisateurDTO.getEmail();
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Email obligatoire."));
+            }
+
             Optional<Utilisateur> exist = utilisateurService.getUtilisateurEntityByEmail(email);
             System.out.println("[" + now() + "][USR][REGISTER] email=" + email + " déjà existant? " + exist.isPresent());
 
@@ -136,10 +152,19 @@ public class UtilisateurController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
-        System.out.println("[" + now() + "][USR][LOGIN] ⬅ email=" + loginDTO.getEmail()
-                + ", password=" + maskPwd(loginDTO.getPassword()));
+    public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO) {
+        System.out.println("[" + now() + "][USR][LOGIN] ⬅ payload reçu");
         try {
+            if (loginDTO == null || loginDTO.getEmail() == null || loginDTO.getEmail().isBlank()
+                    || loginDTO.getPassword() == null || loginDTO.getPassword().isBlank()) {
+                System.out.println("[" + now() + "][USR][LOGIN] ❌ email ou mot de passe manquant");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Email et mot de passe sont obligatoires."));
+            }
+
+            System.out.println("[" + now() + "][USR][LOGIN] ⬅ email=" + loginDTO.getEmail()
+                    + ", password=" + maskPwd(loginDTO.getPassword()));
+
             Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.login(loginDTO.getEmail(), loginDTO.getPassword());
             if (utilisateurOpt.isEmpty()) {
                 System.out.println("[" + now() + "][USR][LOGIN] ❌ échec authentification -> 401");
@@ -170,7 +195,7 @@ public class UtilisateurController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         System.out.println("[" + now() + "][USR][ME] ⬅ Authorization header présent? " + (authHeader != null));
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -209,3 +234,4 @@ public class UtilisateurController {
         }
     }
 }
+

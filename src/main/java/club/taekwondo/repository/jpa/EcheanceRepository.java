@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull; // ✅ import ajouté
 import org.springframework.stereotype.Repository;
 
 import club.taekwondo.entity.jpa.Echeance;
@@ -19,6 +20,7 @@ public interface EcheanceRepository extends JpaRepository<Echeance, Long> {
     // findAll avec EntityGraph pour charger paiement + utilisateur (parent) + membre (enfant)
     @Override
     @EntityGraph(attributePaths = {"paiement", "paiement.utilisateur", "paiement.membre"})
+    @NonNull
     List<Echeance> findAll();
 
     // Récupération des échéances d’un paiement, triées par numéro, avec relations chargées
@@ -40,3 +42,4 @@ public interface EcheanceRepository extends JpaRepository<Echeance, Long> {
        // List<Echeance> findAllWithJoins();
        ----------------------------------------------- */
 }
+

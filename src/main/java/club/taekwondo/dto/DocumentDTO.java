@@ -16,6 +16,8 @@ public class DocumentDTO {
     /** Nouveaux : identifiants simples pour éviter la récursion JSON */
     private Long utilisateurId;
     private Long membreId;
+    private Long enfantId;     // alias lisible par le front (même valeur que membreId)
+    private MembreDTO enfant;  // objet enfant (id, prenom, nom, numeroLicence)
 
     /** Optionnel : on garde pour compat si tu l’utilisais déjà */
     private UtilisateurDTO utilisateur;
@@ -50,4 +52,17 @@ public class DocumentDTO {
 
     public UtilisateurDTO getUtilisateur() { return utilisateur; }
     public void setUtilisateur(UtilisateurDTO utilisateur) { this.utilisateur = utilisateur; }
+	public Long getEnfantId() {
+		return enfantId;
+	}
+	public void setEnfantId(Long enfantId) {
+		this.enfantId = enfantId;
+	}
+	public MembreDTO getEnfant() {
+		return enfant;
+	}
+	public void setEnfant(MembreDTO enfant) {
+		this.enfant = enfant;
+	}
+    
 }

@@ -1,6 +1,8 @@
 package club.taekwondo.repository.jpa;
 
 import club.taekwondo.entity.jpa.Document;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -21,6 +23,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     // ✅ Nouveau : par membre (Document.membre.id)
     List<Document> findByMembreId(Long membreId);
 
+    /** Ramène tous les documents avec utilisateur + membre (enfant) chargés */
+    @EntityGraph(attributePaths = {"utilisateur", "membre"}) // <-- adapte si le champ s'appelle autrement
+    List<Document> findAllBy();
 
     // ---- Versions avec FETCH JOIN (évite N+1 et LazyInitialization) ----------
 

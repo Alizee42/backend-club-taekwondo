@@ -62,9 +62,9 @@ public class UtilisateurService {
         }
     }
 
-    /** Surcharge pour accepter un objet Role directement */
+    /** Surcharge pour accepter un objet Role directement (délègue à la version String pour lever l’avertissement IDE) */
     private Role parseRoleOrDefault(Role role) {
-        return role != null ? role : Role.MEMBRE;
+        return parseRoleOrDefault(role != null ? role.name() : null);
     }
 
     /* =======================

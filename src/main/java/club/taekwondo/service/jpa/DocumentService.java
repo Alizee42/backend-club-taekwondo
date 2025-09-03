@@ -1,6 +1,7 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.DocumentDTO;
+import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Document;
 import club.taekwondo.entity.jpa.Membre;
@@ -30,10 +31,12 @@ public class DocumentService {
 
     // ====================== READ ======================
 
-    /** Tous les documents (+ mapping utilisateur & membre) */
+    /** Tous les documents (+ mapping utilisateur & membre/enfant) */
     public List<DocumentDTO> getAllDocumentsWithUtilisateur() {
         System.out.println("Récupération de tous les documents...");
-        List<DocumentDTO> documents = documentRepository.findAllWithUtilisateurAndMembre().stream()
+        List<DocumentDTO> documents = documentRepository
+                .findAllWithUtilisateurAndMembre() // ⚠️ doit charger utilisateur + membre (enfant)
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
         System.out.println("Documents récupérés: " + documents.size());
@@ -44,7 +47,9 @@ public class DocumentService {
     public List<DocumentDTO> getDocumentsByUtilisateurId(Long utilisateurId) {
         System.out.println("Récupération des documents pour l'utilisateur ID: " + utilisateurId);
         validatePositiveId(utilisateurId, "L'ID de l'utilisateur doit être valide et supérieur à 0.");
-        List<DocumentDTO> documents = documentRepository.findByUtilisateurId(utilisateurId).stream()
+        List<DocumentDTO> documents = documentRepository
+                .findByUtilisateurId(utilisateurId) // idéalement annoté @EntityGraph(utilisateur,membre)
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
         System.out.println("Documents trouvés: " + documents.size());
@@ -55,7 +60,9 @@ public class DocumentService {
     public List<DocumentDTO> getDocumentsByMembreId(Long membreId) {
         System.out.println("Récupération des documents pour le membre ID: " + membreId);
         validatePositiveId(membreId, "L'ID du membre doit être valide et supérieur à 0.");
-        List<DocumentDTO> documents = documentRepository.findByMembreId(membreId).stream()
+        List<DocumentDTO> documents = documentRepository
+                .findByMembreId(membreId) // idéalement annoté @EntityGraph(utilisateur,membre)
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
         System.out.println("Documents trouvés: " + documents.size());
@@ -73,7 +80,9 @@ public class DocumentService {
         if (status == null || status.isEmpty()) {
             throw new IllegalArgumentException("Le statut ne peut pas être null ou vide.");
         }
-        List<DocumentDTO> documents = documentRepository.findByStatus(status).stream()
+        List<DocumentDTO> documents = documentRepository
+                .findByStatus(status) // idéalement annoté @EntityGraph(utilisateur,membre)
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
         System.out.println("Documents trouvés: " + documents.size());
@@ -132,7 +141,14 @@ public class DocumentService {
         documentDTO.setUtilisateurId(document.getUtilisateur() != null ? document.getUtilisateur().getId() : null);
         documentDTO.setMembreId(document.getMembre() != null ? document.getMembre().getId() : null);
 
-        // Compat : on renvoie aussi un UtilisateurDTO si besoin ailleurs
+        // ✅ Nouvel alias enfantId (lisible par le front) = membreId
+        if (document.getMembre() != null) {
+            documentDTO.setEnfantId(document.getMembre().getId());
+        } else {
+            documentDTO.setEnfantId(null);
+        }
+
+        // Utilisateur (léger)
         Utilisateur utilisateur = document.getUtilisateur();
         if (utilisateur != null) {
             UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
@@ -145,6 +161,25 @@ public class DocumentService {
             documentDTO.setUtilisateur(utilisateurDTO);
         }
 
+        // ✅ Enfant (Membre → MembreDTO) pour afficher prénom/nom/licence
+        Membre membre = document.getMembre();
+        if (membre != null) {
+            MembreDTO enfantDTO = new MembreDTO();
+            enfantDTO.setId(membre.getId());
+            enfantDTO.setPrenom(membre.getPrenom());
+            enfantDTO.setNom(membre.getNom());
+            enfantDTO.setNumeroLicence(membre.getNumeroLicence());
+            // champs optionnels si présents dans MembreDTO :
+            enfantDTO.setDateNaissance(membre.getDateNaissance());
+            enfantDTO.setEstAdulte(membre.isEstAdulte());
+            if (membre.getParent() != null) {
+                enfantDTO.setUtilisateurId(membre.getParent().getId());
+            }
+            documentDTO.setEnfant(enfantDTO);
+        } else {
+            documentDTO.setEnfant(null);
+        }
+
         return documentDTO;
     }
 
@@ -154,30 +189,33 @@ public class DocumentService {
             throw new IllegalArgumentException("Le document ne peut pas être null.");
         }
 
-        // ===== utilisateurId "effectivement final" =====
-        final Long utilisateurId =
+        // ===== utilisateurId effectif (final) =====
+        final Long uid =
             (dto.getUtilisateur() != null && dto.getUtilisateur().getId() != null)
                 ? dto.getUtilisateur().getId()
                 : dto.getUtilisateurId();
 
-        validatePositiveId(utilisateurId, "Un utilisateur valide est requis pour créer/modifier un document.");
+        validatePositiveId(uid, "Un utilisateur valide est requis pour créer/modifier un document.");
+        final Utilisateur utilisateur = utilisateurRepository.findById(uid)
+            .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé: " + uid));
 
-        final Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé: " + utilisateurId));
+        // ===== Membre (enfant) optionnel : accepte membreId, enfantId, ou dto.enfant.id =====
+        final Long resolvedMembreId =
+            (dto.getEnfant() != null && dto.getEnfant().getId() != null) ? dto.getEnfant().getId()
+            : (dto.getEnfantId() != null ? dto.getEnfantId()
+            :  dto.getMembreId());
 
-        // ===== Membre optionnel =====
         Membre membre = null;
-        if (dto.getMembreId() != null) {
-            final Long membreId = dto.getMembreId();
-            validatePositiveId(membreId, "L'ID du membre doit être valide et supérieur à 0.");
+        if (resolvedMembreId != null) {
+            validatePositiveId(resolvedMembreId, "L'ID du membre doit être valide et supérieur à 0.");
+            final Long mid = resolvedMembreId; // ✅ final pour la lambda
+            membre = membreRepository.findById(mid)
+                .orElseThrow(() -> new IllegalArgumentException("Membre non trouvé: " + mid));
 
-            membre = membreRepository.findById(membreId)
-                    .orElseThrow(() -> new IllegalArgumentException("Membre non trouvé: " + membreId));
-
-            // Vérification via la relation parent (Membre.getParent())
+            // Vérifie l'appartenance à l'utilisateur parent
             if (membre.getParent() == null || membre.getParent().getId() == null
-                    || !membre.getParent().getId().equals(utilisateurId)) {
-                throw new IllegalArgumentException("Ce membre n'appartient pas à l'utilisateur " + utilisateurId);
+                    || !membre.getParent().getId().equals(uid)) {
+                throw new IllegalArgumentException("Ce membre (id=" + mid + ") n'appartient pas à l'utilisateur " + uid);
             }
         }
 
@@ -199,7 +237,9 @@ public class DocumentService {
         doc.setUtilisateur(utilisateur);
         doc.setMembre(membre);
 
-        System.out.println("Document créé avec ID: " + doc.getId());
+        System.out.println("Document prêt pour persistance; id=" + doc.getId()
+                + ", utilisateurId=" + (utilisateur != null ? utilisateur.getId() : null)
+                + ", membreId=" + (membre != null ? membre.getId() : null));
         return doc;
     }
 
