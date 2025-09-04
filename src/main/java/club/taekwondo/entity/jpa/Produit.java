@@ -92,6 +92,7 @@ public class Produit {
     public void setCategorie(String categorie) {
         this.categorie = categorie;
     }
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -100,4 +101,8 @@ public class Produit {
         this.imageUrl = imageUrl;
     }
 
+    // Ajout de la méthode getPrixBase
+    public BigDecimal getPrixBase() {
+        return prix != null ? prix : BigDecimal.ZERO;
+    }
 }

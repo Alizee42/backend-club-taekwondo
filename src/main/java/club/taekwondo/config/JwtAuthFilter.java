@@ -20,9 +20,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -32,9 +30,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final UtilisateurService utilisateurService;
 
+    // Routes publiques (on ne traite pas le JWT ici)
+    private static final List<String> PUBLIC_PREFIXES = List.of(
+    	    "/error",
+    	    "/api/stripe/public-key",
+    	    "/api/stripe/webhook",
+    	    "/api/stripe/create-payment-intent",  
+    	    "/api/utilisateurs/login",
+    	    "/api/utilisateurs/register",
+    	    "/api/parametres-paiement/public",
+    	    "/api/avis",
+    	    "/api/actualites",
+    	    "/api/debug/"
+    	);
+
+
     public JwtAuthFilter(JwtUtil jwtUtil, UtilisateurService utilisateurService) {
         this.jwtUtil = jwtUtil;
         this.utilisateurService = utilisateurService;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) return false;
+        for (String p : PUBLIC_PREFIXES) {
+            if (uri.startsWith(p)) return true;
+        }
+        // Laisse passer les préflights CORS
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
+        return false;
     }
 
     @Override
@@ -43,18 +68,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Trace de la requête
         log.debug("[SEC] {} {}", request.getMethod(), request.getRequestURI());
-
-        // Laisse passer les préflights CORS
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
         String authHeader = request.getHeader("Authorization");
 
-        // Pas de bearer → anonyme
+        // Pas de Bearer → anonyme
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
             log.debug("[SEC] Pas de Bearer → anonyme");
             filterChain.doFilter(request, response);
@@ -65,7 +83,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7).trim();
 
         // Cas fréquents en front : "null" / "undefined"
-        if (!StringUtils.hasText(token) || "null".equalsIgnoreCase(token) || "undefined".equalsIgnoreCase(token)) {
+        if (!StringUtils.hasText(token)
+                || "null".equalsIgnoreCase(token)
+                || "undefined".equalsIgnoreCase(token)) {
             log.debug("[SEC] Bearer vide/'null'/'undefined' → anonyme");
             filterChain.doFilter(request, response);
             return;
@@ -85,12 +105,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
             if (SecurityContextHolder.getContext().getAuthentication() != null) {
-                log.debug("[SEC] Auth déjà présente dans le contexte → skip setAuthentication");
+                log.debug("[SEC] Auth déjà présente → skip setAuthentication");
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // Valider le token d'abord (signature/expiration/sujet)
+            // Valider le token (signature/expiration/sujet)
             if (!jwtUtil.validateToken(token, email)) {
                 log.warn("[SEC] JWT invalide/expiré pour {}", email);
                 filterChain.doFilter(request, response);
@@ -108,10 +128,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             Utilisateur user = opt.get();
             log.debug("[SEC] Utilisateur trouvé: {}", user.getNom());
 
-            // Construire les authorities depuis le rôle (enum)
-            String role = (user.getRole() != null) ? user.getRole().name().toUpperCase() : "PARENT";
+            // --- Normalisation du rôle (String ou Enum) ---
+            String rawRole = null;
+            try {
+                Object roleObj = user.getRole(); // String OU Enum selon ta version
+                rawRole = (roleObj == null) ? null : roleObj.toString();
+            } catch (Exception ignored) {}
+            String role = (rawRole == null || rawRole.isBlank()) ? "PARENT" : rawRole.trim().toUpperCase();
+            if (role.startsWith("ROLE_")) role = role.substring(5); // garde "ADMIN" au lieu de "ROLE_ADMIN"
             log.debug("[SEC] Role utilisateur: {}", role);
-            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>(2);
             authorities.add(new SimpleGrantedAuthority(role));            // ex: "ADMIN"
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role));  // ex: "ROLE_ADMIN"
 
@@ -123,7 +150,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.debug("[SEC] Auth OK: user={} roles={}", email, authorities);
 
         } catch (Exception ex) {
-            // En cas d'erreur, on nettoie le contexte et on laisse passer → @PreAuthorize tranchera.
+            // En cas d'erreur, on nettoie le contexte et on laisse passer → Security/PreAuthorize tranchera.
             SecurityContextHolder.clearContext();
             log.warn("[SEC] Erreur parsing/validation JWT: {}", ex.getMessage());
         }

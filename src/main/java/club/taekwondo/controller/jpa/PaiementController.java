@@ -1,5 +1,6 @@
 package club.taekwondo.controller.jpa;
 
+// 🔽 import pour la création depuis le panier
 import club.taekwondo.dto.*;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Membre;
@@ -22,7 +23,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.NoSuchElementException;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/paiements")
@@ -210,7 +211,7 @@ public class PaiementController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Erreur lors de l’ajout du paiement"));
+                    .body(Map.of("message", "Erreur lors de l'ajout du paiement"));
         }
     }
 
@@ -234,7 +235,7 @@ public class PaiementController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Erreur lors de l’ajout du paiement"));
+                    .body(Map.of("message", "Erreur lors de l'ajout du paiement"));
         }
     }
 
@@ -285,7 +286,7 @@ public class PaiementController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Erreur lors de l’ajout du paiement"));
+                    .body(Map.of("message", "Erreur lors de l'ajout du paiement"));
         }
     }
 
@@ -306,7 +307,7 @@ public class PaiementController {
      *   Espace Parent
      * =========================== */
 
-    @PreAuthorize("hasAnyAuthority('PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('PARENT','ADMIN')")  // ✅ Corrigé
     @GetMapping("/parent/mes-paiements")
     public ResponseEntity<List<PaiementDTO>> getPaiementsPourParentConnecte(
             @RequestHeader("Authorization") String authHeader) {
@@ -324,7 +325,7 @@ public class PaiementController {
         return ResponseEntity.ok(paiements);
     }
 
-    @PreAuthorize("hasAnyAuthority('PARENT','ADMIN')")
+    @PreAuthorize("hasAnyRole('PARENT','ADMIN')")  // ✅ Corrigé
     @PostMapping("/parent/ajouter")
     public ResponseEntity<PaiementDTO> ajouterPaiementParent(
             @RequestHeader("Authorization") String authHeader,
@@ -377,10 +378,7 @@ public class PaiementController {
     /**
      * Route dédiée aux MEMBRE / PARENT.
      * - MEMBRE : on ne passe PAS par des setters d'entité; on construit un DTO et on délègue au service.
-     *            On ne requiert pas membreId (on rattache par utilisateurId).
-     * - PARENT : membreId requis et on vérifie qu'il s'agit bien d'un de ses enfants.
-     * Body attendu (JSON minimal) :
-     * { "montantTotal": 300, "type": "UNIQUE|ECHELONNE", "modePaiement": "CB|VIREMENT|CHEQUE|ESPECES", "nombreEcheances": 3, "membreId": <enfant si parent> }
+     * - PARENT : membreId requis et vérifié.
      */
     @PreAuthorize("hasAnyRole('MEMBRE','PARENT')")
     @PostMapping("/ajouter-membre")
@@ -417,7 +415,6 @@ public class PaiementController {
                 nbEch = 1;
             }
 
-            // Construire un DTO et laisser le service créer l'entité (évite les setters manquants)
             PaiementRequestDTO req = new PaiementRequestDTO();
             req.setUtilisateurId(utilisateur.getId());
             req.setTypePaiement(typeBack);
@@ -426,7 +423,6 @@ public class PaiementController {
             req.setNombreEcheances(nbEch);
             req.setDatePaiement(LocalDate.now().toString());
 
-            // Si PARENT → membreId obligatoire + vérification appartenance
             boolean isParent = utilisateur.getRole() != null &&
                     ("PARENT".equalsIgnoreCase(utilisateur.getRole().toString()) ||
                      "ROLE_PARENT".equalsIgnoreCase(utilisateur.getRole().toString()));
@@ -441,9 +437,6 @@ public class PaiementController {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Ce membre ne vous est pas rattaché"));
                 }
                 req.setMembreId(membreId);
-            } else {
-                // MEMBRE: idéalement rattacher au membre du compte (si ton service sait le faire via utilisateurId)
-                // On ne met PAS de membreId pour éviter d'exiger un service backend spécifique ici.
             }
 
             List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
@@ -461,6 +454,70 @@ public class PaiementController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /* ===========================
+     *   🆕 Boutique : panier → paiement UNIQUE (avant Stripe)
+     * =========================== */
+
+    /**
+     * MEMBRE / PARENT / ADMIN : crée un Paiement UNIQUE "en attente" à partir du panier.
+     * Corps attendu (CartCheckoutRequest) :
+     * {
+     *   "modePaiement": "stripe" | "cb" | "carte" | ...
+     *   "membreId": 123,               // optionnel (si achat pour un enfant)
+     *   "items": [
+     *     {"produitId":1,"quantite":2,"taille":"150 cm","couleur":"Blanc","flocageActif":true,"flocage":"PRENOM"}
+     *   ]
+     * }
+     * Réponse: 201 Created { "paiementId": <id> }
+     */
+    @PreAuthorize("hasAnyRole('MEMBRE','PARENT','ADMIN')")
+    @PostMapping(value = "/from-cart", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> creerDepuisPanier(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody CartCheckoutRequest req
+    ) {
+        try {
+            System.out.println("🛒 [PaiementController] /from-cart appelé avec: " + req);
+            
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Token manquant ou invalide"));
+            }
+            final String jwt = authHeader.substring(7);
+            final String email = jwtUtil.extractEmail(jwt);
+
+            Utilisateur user = utilisateurService.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+            System.out.println("✅ Utilisateur trouvé: " + user.getEmail() + " (rôle: " + user.getRole() + ")");
+            
+            // Validation des données
+            if (req.getItems() == null || req.getItems().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Aucun article dans le panier"));
+            }
+
+            Paiement p = paiementService.creerPaiementDepuisPanier(user, req);
+
+            System.out.println("🎉 Paiement créé avec succès - ID: " + p.getId());
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("paiementId", p.getId());
+            resp.put("statut", p.getStatut());
+            resp.put("modePaiement", p.getModePaiement());
+            resp.put("montantTotal", p.getMontantTotal());
+
+            return created("/api/paiements/" + p.getId(), resp);
+        } catch (IllegalArgumentException e) {
+            System.err.println("❌ Erreur validation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("❌ Erreur création paiement: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Erreur lors de la création du paiement depuis le panier"));
         }
     }
 
@@ -533,7 +590,7 @@ public class PaiementController {
         return "ESPECES";
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}/annuler")
     public ResponseEntity<PaiementDTO> annulerPaiement(
             @PathVariable Long id,
@@ -542,4 +599,3 @@ public class PaiementController {
         return ResponseEntity.ok(out);
     }
 }
-

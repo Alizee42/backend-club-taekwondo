@@ -28,14 +28,19 @@ public class StripeService {
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
+        System.out.println("✅ Stripe API Key initialized.");
     }
 
     public String getPublicKey() {
+        System.out.println("ℹ️ Getting public key for Stripe.");
         return stripePublicKey;
     }
 
     /** Crée un PaymentIntent avec metadata + idempotency key fournie */
     public PaymentIntent createPaymentIntentWithMetadata(Map<String, Object> req, String idempotencyKey) throws StripeException {
+        System.out.println("===============================");
+        System.out.println("🚀 Création d'un PaymentIntent avec idempotencyKey: " + idempotencyKey);
+
         long amount = parseLongStrict(req.get("amount"), "amount (centimes)");
         if (amount <= 0) throw new IllegalArgumentException("Montant invalide (centimes).");
 
@@ -61,20 +66,26 @@ public class StripeService {
             }
         }
 
+        System.out.println("ℹ️ Requête PaymentIntent avec montant : " + amount + " et devise : " + currency);
+
         RequestOptions opts = RequestOptions.builder()
                 .setIdempotencyKey(idempotencyKey) // clé passée par le controller (inclut échéance)
                 .build();
 
-        return PaymentIntent.create(builder.build(), opts);
+        PaymentIntent paymentIntent = PaymentIntent.create(builder.build(), opts);
+        System.out.println("✅ PaymentIntent créé avec succès : " + paymentIntent.getId());
+        return paymentIntent;
     }
 
     /** Utilitaire : récupère le client_secret (non utilisé si on check le statut côté controller) */
     public String retrieveClientSecret(String paymentIntentId) {
+        System.out.println("ℹ️ Récupération du clientSecret pour PaymentIntent : " + paymentIntentId);
         try {
             if (paymentIntentId == null || paymentIntentId.isBlank()) return null;
             PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
             return intent != null ? intent.getClientSecret() : null;
         } catch (Exception e) {
+            System.out.println("⚠️ Erreur lors de la récupération du clientSecret : " + e.getMessage());
             return null;
         }
     }
@@ -85,6 +96,7 @@ public class StripeService {
             if (o instanceof Number n) return n.longValue();
             return Long.parseLong(String.valueOf(o));
         } catch (Exception e) {
+            System.out.println("⚠️ Champ invalide '" + fieldName + "': " + o);
             throw new IllegalArgumentException("Champ invalide '" + fieldName + "': " + o);
         }
     }

@@ -56,6 +56,10 @@ public class Paiement {
     @JoinColumn(name = "membre_id", nullable = false)
     private Membre membre;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commande_id", nullable = true) // Relation avec la commande (facultatif)
+    private Commande commande;  // Ajout de la relation avec Commande
+
     @OneToMany(mappedBy = "paiement", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("numero ASC, dateEcheance ASC")
     @JsonManagedReference
@@ -147,6 +151,9 @@ public class Paiement {
     public Membre getMembre() { return membre; }
     public void setMembre(Membre membre) { this.membre = membre; }
 
+    public Commande getCommande() { return commande; }
+    public void setCommande(Commande commande) { this.commande = commande; }  // Getters et Setters pour Commande
+
     public List<Echeance> getEcheances() { return echeances; }
     public void setEcheances(List<Echeance> echeances) { this.echeances = echeances; }
 
@@ -174,34 +181,16 @@ public class Paiement {
     public String getAdminResponsable() { return adminResponsable; }
     public void setAdminResponsable(String adminResponsable) { this.adminResponsable = adminResponsable; }
 
-    
-    /* ---------------- Helpers (facultatif) ---------------- */
+    public String getChargeId() { return chargeId; }
+    public void setChargeId(String chargeId) { this.chargeId = chargeId; }
 
-    public String getChargeId() {
-		return chargeId;
-	}
+    public String getReceiptUrl() { return receiptUrl; }
+    public void setReceiptUrl(String receiptUrl) { this.receiptUrl = receiptUrl; }
 
-	public void setChargeId(String chargeId) {
-		this.chargeId = chargeId;
-	}
+    public String getStripeStatus() { return stripeStatus; }
+    public void setStripeStatus(String stripeStatus) { this.stripeStatus = stripeStatus; }
 
-	public String getReceiptUrl() {
-		return receiptUrl;
-	}
-
-	public void setReceiptUrl(String receiptUrl) {
-		this.receiptUrl = receiptUrl;
-	}
-
-	public String getStripeStatus() {
-		return stripeStatus;
-	}
-
-	public void setStripeStatus(String stripeStatus) {
-		this.stripeStatus = stripeStatus;
-	}
-
-	public void addEcheance(Echeance e) {
+    public void addEcheance(Echeance e) {
         this.echeances.add(e);
         e.setPaiement(this);
     }
@@ -210,6 +199,4 @@ public class Paiement {
         this.echeances.remove(e);
         e.setPaiement(null);
     }
-    
-    
 }

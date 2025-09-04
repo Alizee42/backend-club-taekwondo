@@ -30,7 +30,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/stripe/webhook", "/api/stripe/public-key", "/api/utilisateurs/login", "/api/utilisateurs/register").permitAll()
+            	.requestMatchers("/api/stripe/webhook", "/api/stripe/public-key", "/api/stripe/create-payment-intent", "/api/utilisateurs/login", "/api/utilisateurs/register").permitAll()
                 .requestMatchers("/api/debug/**").permitAll()  // utilitaire
                 .anyRequest().permitAll() // la vraie barrière est via @PreAuthorize dans les contrôleurs
             )

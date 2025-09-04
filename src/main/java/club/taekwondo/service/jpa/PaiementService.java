@@ -1,18 +1,17 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.*;
-import club.taekwondo.entity.jpa.Echeance;
-import club.taekwondo.entity.jpa.Membre;
-import club.taekwondo.entity.jpa.Paiement;
-import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.entity.jpa.*;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.PaiementRepository;
+import club.taekwondo.repository.jpa.CommandeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,17 +27,26 @@ public class PaiementService {
     private final EcheanceService echeanceService;
     private final UtilisateurService utilisateurService;
     private final MembreService membreService;
+    private final ProduitService produitService;
+    private final LigneCommandeService ligneCommandeService;
+    private final CommandeRepository commandeRepository; // ⬅️ AJOUT
 
     public PaiementService(
             PaiementRepository paiementRepository,
             EcheanceService echeanceService,
             UtilisateurService utilisateurService,
-            MembreService membreService
+            MembreService membreService,
+            ProduitService produitService,
+            LigneCommandeService ligneCommandeService,
+            CommandeRepository commandeRepository // ⬅️ AJOUT
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
         this.utilisateurService = utilisateurService;
         this.membreService = membreService;
+        this.produitService = produitService;
+        this.ligneCommandeService = ligneCommandeService;
+        this.commandeRepository = commandeRepository; // ⬅️ AJOUT
     }
 
     /* ===========================
@@ -123,7 +131,6 @@ public class PaiementService {
         return dtos;
     }
 
-    /** Ajouté pour le contrôleur Stripe */
     public Optional<Paiement> findById(Long id) { return paiementRepository.findById(id); }
 
     public Optional<Paiement> getById(Long id) { return paiementRepository.findById(id); }
@@ -149,11 +156,6 @@ public class PaiementService {
      *  Commandes
      * =========================== */
 
-    /**
-     * Sauvegarde "safe":
-     * - Création (id == null) : initialise le statut selon le type et NE REMPLACE PAS la liste d’échéances sauf création.
-     * - Mise à jour (id != null) : ne remplace jamais la collection -> sync par ID + recalc agrégats.
-     */
     @Transactional
     public Paiement save(Paiement detached) {
         if (detached.getId() == null) {
@@ -170,7 +172,6 @@ public class PaiementService {
             detached.setModePaiement(mode);
 
             if (isTypeUnique(type) || (!isTypeUnique(type) && !isTypeEchelonne(type))) {
-                // UNIQUE (ou autre assimilé) → en attente, pas d'échéances
                 detached.setMontantPaye(0.0);
                 detached.setMontantRestant(safeMontant(detached.getMontantTotal()));
                 detached.setStatut("en attente");
@@ -181,16 +182,14 @@ public class PaiementService {
                 detached.setMontantPaye(0.0);
                 detached.setMontantRestant(safeMontant(detached.getMontantTotal()));
                 detached.setStatut("en attente");
-                // garde la liste transmise à la création (si présente)
             }
 
             return paiementRepository.save(detached);
         } else {
-            // --- Mise à jour sans remplacer la collection ---
+            // --- Mise à jour ---
             Paiement managed = paiementRepository.findById(detached.getId())
                     .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + detached.getId()));
 
-            // Champs scalaires (on reste conservateur)
             if (detached.getStatut() != null) managed.setStatut(detached.getStatut());
             if (detached.getMontantTotal() != null) managed.setMontantTotal(detached.getMontantTotal());
             if (detached.getMontantPaye() != null) managed.setMontantPaye(detached.getMontantPaye());
@@ -200,14 +199,10 @@ public class PaiementService {
             if (detached.getModePaiement() != null) managed.setModePaiement(normalizeMode(detached.getModePaiement()));
             if (detached.getType() != null) managed.setType(normalizeType(detached.getType()));
 
-            // Synchroniser uniquement les champs des échéances existantes
             syncEcheancesFromDetached(managed, detached);
-
-            // Recalcule agrégats à partir du managed
             recomputeAggregates(managed);
 
-            Paiement saved = paiementRepository.save(managed);
-            return saved;
+            return paiementRepository.save(managed);
         }
     }
 
@@ -318,7 +313,6 @@ public class PaiementService {
 
     @Transactional
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
-        // (ton code d’origine conservé)
         Paiement paiement = new Paiement();
         String type = (dto.getType() == null || dto.getType().isBlank()) ? "COTISATION" : norm(dto.getType());
         paiement.setType(type);
@@ -409,7 +403,7 @@ public class PaiementService {
     }
 
     /* =========================================================
-       ============  NOUVEAU : Orchestration complète  =========
+       ============  Orchestration complète  =================
        ========================================================= */
 
     @Transactional
@@ -533,7 +527,6 @@ public class PaiementService {
         p.setEcheancesRestantes(0);
     }
 
-    /** ❗ Corrigé : plus de pré-paiement CB de la 1ʳᵉ échéance */
     private void fillEchelonne(Paiement p, PaiementRequestDTO req, LocalDate startDate) {
         List<PaiementRequestDTO.EcheanceInput> in = req.getEcheances();
         List<Echeance> echs = new ArrayList<>();
@@ -546,7 +539,6 @@ public class PaiementService {
                 ee.setNumero(e.getNumero() != null ? e.getNumero() : numAuto++);
                 ee.setDateEcheance(LocalDate.parse(e.getDateEcheance()));
                 ee.setMontant(Optional.ofNullable(e.getMontant()).orElse(0.0));
-                // Toutes en attente (sauf si la requête impose explicitement "payé")
                 ee.setStatut(Optional.ofNullable(e.getStatut()).orElse("en attente"));
                 ee.setModePaiement(null);
                 ee.setReference(null);
@@ -554,7 +546,6 @@ public class PaiementService {
                 echs.add(ee);
             }
         } else if (req.getNombreEcheances() != null && req.getNombreEcheances() > 0) {
-            // Auto-split : toutes "en attente"
             echs.addAll(autoSplitEcheances(startDate, p.getMontantTotal(), req.getNombreEcheances(), 30, p));
         } else {
             throw new IllegalArgumentException("Aucune échéance fournie pour un paiement échelonné.");
@@ -576,7 +567,6 @@ public class PaiementService {
         p.setEcheancesRestantes(restantes);
         p.setStatut(p.getMontantRestant() <= 0.0 ? "payé" : "en attente");
 
-        // Logs diagnostic
         log.info("[CREATE:ECH] total={} paye={} restant={} restantes={}",
                 p.getMontantTotal(), p.getMontantPaye(), p.getMontantRestant(), p.getEcheancesRestantes());
         echs.stream().sorted(Comparator.comparingInt(Echeance::getNumero)).forEach(ee ->
@@ -702,7 +692,6 @@ public class PaiementService {
         return toPaiementDTO(saved);
     }
 
-    /** ❗ Corrigé : plus de pré-paiement CB de la 1ʳᵉ échéance */
     @Transactional
     public Paiement ajouterPaiementParent(PaiementRequestDTO req, Long parentId) {
         log.info("=== [PaiementService] Début ajout paiement parent ===");
@@ -729,12 +718,11 @@ public class PaiementService {
         Paiement paiement = new Paiement();
         paiement.setType(type);
         paiement.setModePaiement(mode);
-        paiement.setDatePaiement(LocalDate.now()); // date de création (pas une preuve de paiement)
+        paiement.setDatePaiement(LocalDate.now());
         paiement.setUtilisateur(membre.getParent());
         paiement.setMembre(membre);
         paiement.setMontantTotal(montant);
 
-        // À la création : rien n'est payé
         paiement.setMontantPaye(0.0);
         paiement.setMontantRestant(montant);
         paiement.setStatut("en attente");
@@ -757,7 +745,6 @@ public class PaiementService {
                     e.setDateEcheance(LocalDate.parse(ein.getDateEcheance()));
                     e.setMontant(ein.getMontant());
 
-                    // Toutes en attente à la création
                     e.setStatut(Optional.ofNullable(ein.getStatut()).orElse("en attente"));
                     e.setModePaiement(null);
                     e.setReference(null);
@@ -783,7 +770,7 @@ public class PaiementService {
                     e.setNumero(i + 1);
                     e.setDateEcheance(start.plusMonths(i));
                     e.setMontant(part);
-                    e.setStatut("en attente");   // ✅ TOUTES en attente à la création
+                    e.setStatut("en attente");
                     e.setModePaiement(null);
                     e.setReference(null);
                     e.setDatePaiementReel(null);
@@ -812,13 +799,10 @@ public class PaiementService {
 
         Paiement saved = paiementRepository.save(paiement);
         log.info("[Paiement enregistré] ID={} | MembreID={} | UtilisateurID={} | Total={} | Payé={} | Restant={} | Statut={}",
-                saved.getId(),
-                saved.getMembre() != null ? saved.getMembre().getId() : null,
+                saved.getId(), saved.getMembre() != null ? saved.getMembre().getId() : null,
                 saved.getUtilisateur() != null ? saved.getUtilisateur().getId() : null,
-                saved.getMontantTotal(),
-                saved.getMontantPaye(),
-                saved.getMontantRestant(),
-                saved.getStatut());
+                saved.getMontantTotal(), saved.getMontantPaye(),
+                saved.getMontantRestant(), saved.getStatut());
         if (saved.getEcheances() != null) {
             saved.getEcheances().stream()
                     .sorted(Comparator.comparingInt(Echeance::getNumero))
@@ -829,10 +813,6 @@ public class PaiementService {
         return saved;
     }
 
-    /* ===========================
-     *  ✅ Validation admin (safe)
-     * =========================== */
-
     @Transactional
     public Paiement validerPaiementAdmin(Long id) {
         Paiement p = paiementRepository.findById(id)
@@ -841,7 +821,6 @@ public class PaiementService {
         log.debug("[PAY] Validation admin id={} type={} mode={} total={}",
                 p.getId(), p.getType(), p.getModePaiement(), p.getMontantTotal());
 
-        // Ne JAMAIS remplacer la collection
         if (p.getEcheances() != null && !p.getEcheances().isEmpty()) {
             for (Echeance e : p.getEcheances()) {
                 e.setStatut("payé");
@@ -859,11 +838,6 @@ public class PaiementService {
         return saved;
     }
 
-    /* ===========================
-     *  Helpers "safe update"
-     * =========================== */
-
-    /** Recalcule les agrégats depuis l'état courant du paiement (sans créer/remplacer de collection). */
     private void recomputeAggregates(Paiement p) {
         double paye = 0.0;
         double restant = 0.0;
@@ -901,10 +875,6 @@ public class PaiementService {
         }
     }
 
-    /**
-     * Synchronise les champs des échéances sans remplacer la collection :
-     * met à jour statut/date/montant sur les IDs existants uniquement.
-     */
     private void syncEcheancesFromDetached(Paiement managed, Paiement detached) {
         if (managed.getEcheances() == null || managed.getEcheances().isEmpty()) return;
         if (detached.getEcheances() == null || detached.getEcheances().isEmpty()) return;
@@ -932,13 +902,9 @@ public class PaiementService {
     }
 
     /* =========================================================
-       =========  🆕 Méthodes Stripe / Échéances (BDD)  =========
+       =========  Méthodes Stripe / Échéances (BDD)  ==========
        ========================================================= */
 
-    /**
-     * Enregistre l'identifiant Stripe PaymentIntent sur l'échéance donnée (champ reference),
-     * afin d'éviter toute collision entre échéances.
-     */
     @Transactional
     public void saveEcheanceReference(Long echeanceId, String paymentIntentId) {
         if (echeanceId == null || paymentIntentId == null || paymentIntentId.isBlank()) {
@@ -951,14 +917,9 @@ public class PaiementService {
         log.info("💾 Référence PaymentIntent {} enregistrée sur échéance {}", paymentIntentId, echeanceId);
     }
 
-    /**
-     * Appelée par le webhook Stripe (payment_intent.succeeded).
-     * Marque l’échéance comme payée, met à jour les montants agrégés et conserve la référence PI.
-     */
     @Transactional
     public void marquerEcheancePayeeParStripe(Long paiementId, Long echeanceId, String paymentIntentId, Long amountCents) {
         if (echeanceId == null) {
-            // Paiement unique (sans échéances)
             if (paiementId == null) return;
             Paiement p = paiementRepository.findById(paiementId)
                     .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + paiementId));
@@ -967,14 +928,12 @@ public class PaiementService {
             p.setMontantPaye(safeMontant(p.getMontantTotal()));
             p.setMontantRestant(0.0);
             p.setDatePaiement(LocalDate.now());
-            // optionnel : si le champ existe
             p.setPaymentIntentId(paymentIntentId);
             paiementRepository.save(p);
             log.info("✅ Paiement unique {} marqué payé via Stripe (PI={})", p.getId(), paymentIntentId);
             return;
         }
 
-        // Cas échéance identifiée
         Echeance e = echeanceService.getEcheanceEntityById(echeanceId)
                 .orElseThrow(() -> new NoSuchElementException("Échéance introuvable id=" + echeanceId));
         Paiement p = e.getPaiement();
@@ -1003,5 +962,99 @@ public class PaiementService {
             log.info("✅ Échéance {} du paiement {} marquée payée (PI={})", echeanceId, p.getId(), paymentIntentId);
         }
     }
-}
 
+    /* =========================================================
+       =============== 🆕 Panier → Paiement UNIQUE ==============
+       ========================================================= */
+
+    /**
+     * ⬅️ MÉTHODE CORRIGÉE : Crée d'abord une commande, puis le paiement lié
+     */
+    @Transactional
+    public Paiement creerPaiementDepuisPanier(Utilisateur user, CartCheckoutRequest req) {
+        if (user == null) throw new IllegalArgumentException("Utilisateur manquant.");
+        if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Panier vide.");
+        }
+
+        // 1) Calcul du total
+        double total = 0.0;
+        for (CartItemDTO it : req.getItems()) {
+            if (it.getProduitId() == null || it.getQuantite() == null || it.getQuantite() <= 0) {
+                throw new IllegalArgumentException("Ligne panier invalide (produitId/quantite).");
+            }
+
+            Produit produit = produitService.getProduitEntityById(it.getProduitId())
+                    .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
+            
+            double unit = produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0;
+            total += unit * it.getQuantite();
+        }
+        total = round2(total);
+
+        if (total <= 0.0) throw new IllegalArgumentException("Montant total invalide.");
+
+        // 2) ⬅️ CORRECTION : Utiliser LocalDate.now() au lieu de LocalDateTime.now()
+        Commande commande = new Commande();
+        commande.setDateCommande(LocalDate.now()); // ✅ LocalDate
+        commande.setStatut("EN_ATTENTE");
+        commande.setMontantTotal(BigDecimal.valueOf(total)); // ✅ Conversion en BigDecimal
+        commande.setUtilisateur(user); // ✅ Lier l'utilisateur
+        
+        // Sauvegarder pour obtenir un ID
+        commande = commandeRepository.save(commande);
+        log.info("📋 Commande créée avec ID: {}", commande.getId());
+
+        // 3) Créer le paiement lié à cette commande
+        Paiement p = new Paiement();
+        p.setUtilisateur(user);
+
+        // Membre optionnel
+        if (req.getMembreId() != null) {
+            Membre m = membreService.getMembreEntityById(req.getMembreId())
+                    .orElseThrow(() -> new IllegalArgumentException("Membre introuvable"));
+            p.setMembre(m);
+        }
+
+        p.setType("BOUTIQUE");
+        p.setModePaiement(normalizeMode(req.getModePaiement()));
+        p.setDatePaiement(LocalDate.now());
+        p.setMontantTotal(total);
+        p.setMontantPaye(0.0);
+        p.setMontantRestant(total);
+        p.setStatut("en attente");
+        p.setEcheancesTotales(0);
+        p.setEcheancesRestantes(0);
+        p.setEcheances(Collections.emptyList());
+
+        // ⬅️ LIER LE PAIEMENT À LA COMMANDE
+        p.setCommande(commande);
+
+        Paiement saved = paiementRepository.save(p);
+        log.info("💳 Paiement créé avec ID: {} lié à commande: {}", saved.getId(), commande.getId());
+
+        // 4) Créer les lignes de commande liées
+        for (CartItemDTO it : req.getItems()) {
+            Produit produit = produitService.getProduitEntityById(it.getProduitId())
+                    .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
+            
+            double unit = produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0;
+
+            ligneCommandeService.creerPourPaiement(
+                    saved,
+                    produit,
+                    unit,
+                    it.getQuantite(),
+                    it.getTaille(),
+                    it.getCouleur(),
+                    it.getFlocageActif() != null && it.getFlocageActif(),
+                    it.getFlocage()
+            );
+        }
+
+        log.info("🧾 Paiement créé depuis panier -> id={} commandeId={} total={} mode={} type={}",
+                saved.getId(), commande.getId(), saved.getMontantTotal(), saved.getModePaiement(), saved.getType());
+
+        return saved;
+    }
+}

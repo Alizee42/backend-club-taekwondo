@@ -11,6 +11,7 @@ import com.stripe.exception.IdempotencyException;
 import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +23,16 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/stripe")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", maxAge = 3600) 
 public class StripeController {
 
     private final PaiementService paiementService;
     private final UtilisateurService utilisateurService;
     private final JwtUtil jwtUtil;
     private final StripeService stripeService;
+
+    @Value("${stripe.public.key:}")
+    private String publishableKey;
 
     public StripeController(PaiementService paiementService,
                             UtilisateurService utilisateurService,
@@ -40,10 +44,14 @@ public class StripeController {
         this.stripeService = stripeService;
     }
 
-    /**
-     * Création (ou réutilisation) d'un PaymentIntent Stripe.
-     * Mappings conservés pour compat : /payment-intent et /create-payment-intent
-     */
+    @GetMapping("/public-key")
+    public ResponseEntity<?> getPublicKey() {
+        if (publishableKey == null || publishableKey.isBlank()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(Map.of("publicKey", publishableKey));
+    }
+
     @PostMapping({"/payment-intent", "/create-payment-intent"})
     public ResponseEntity<?> createPaymentIntent(@RequestBody Map<String, Object> body,
                                                  @RequestHeader HttpHeaders headers,
@@ -135,7 +143,7 @@ public class StripeController {
                         System.out.printf("==============================%n%n");
                         return ResponseEntity.ok(Map.of(
                                 "clientSecret", existing.getClientSecret(),
-                                "paymentIntentId", existing.getId() // ✅ exposé au front
+                                "paymentIntentId", existing.getId()
                         ));
                     }
                 } catch (Exception ex) {
@@ -159,12 +167,10 @@ public class StripeController {
 
             // ------------ Email pour reçu Stripe natif ------------
             if (customerEmail == null || customerEmail.isBlank()) {
-                // 1) email du propriétaire du paiement si dispo
                 if (p.getUtilisateur() != null && p.getUtilisateur().getEmail() != null) {
                     String e = p.getUtilisateur().getEmail().trim();
                     if (!e.isEmpty()) customerEmail = e;
                 }
-                // 2) sinon email de l'utilisateur authentifié
                 if ((customerEmail == null || customerEmail.isBlank()) && utilisateur != null && utilisateur.getEmail() != null) {
                     String e = utilisateur.getEmail().trim();
                     if (!e.isEmpty()) customerEmail = e;
@@ -184,19 +190,11 @@ public class StripeController {
             piReq.put("currency", "eur");
             piReq.put("metadata", metadata);
             piReq.put("description", "Cotisation / Paiement #" + paiementId);
-
-            // ✅ 3DS automatique
             piReq.put("automatic_payment_methods", Map.of("enabled", true));
 
-            // 💌 Reçu email Stripe (si dispo)
             if (customerEmail != null && !customerEmail.isBlank()) {
                 piReq.put("receipt_email", customerEmail);
             }
-
-            // 👉 Pour FORCER 3DS en test, décommente ce bloc :
-            // Map<String, Object> cardOpts = Map.of("request_three_d_secure", "any");
-            // Map<String, Object> pmo = Map.of("card", cardOpts);
-            // piReq.put("payment_method_options", pmo);
 
             System.out.printf("🟢 Envoi création PaymentIntent à Stripe avec: %s%n", piReq);
             System.out.printf("🔁 Idempotency-Key utilisée: %s%n", idempotencyKey);
@@ -228,7 +226,7 @@ public class StripeController {
             System.out.printf("==============================%n%n");
             return ResponseEntity.ok(Map.of(
                     "clientSecret", paymentIntent.getClientSecret(),
-                    "paymentIntentId", paymentIntent.getId() // ✅ pour sync côté front
+                    "paymentIntentId", paymentIntent.getId()
             ));
 
         } catch (Exception e) {
@@ -239,10 +237,6 @@ public class StripeController {
         }
     }
 
-    /**
-     * 🆕 Endpoint de synchronisation (utile en DEV local quand le webhook ne peut pas appeler ton localhost).
-     * Body attendu: { "paymentIntentId": "pi_xxx" }
-     */
     @PostMapping("/sync-payment")
     public ResponseEntity<?> syncPayment(@RequestBody Map<String, Object> body,
                                          @RequestHeader HttpHeaders headers) {
@@ -268,18 +262,15 @@ public class StripeController {
             if (opt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Paiement introuvable"));
             Paiement paiement = opt.get();
 
-            // Déjà soldé ? on renvoie OK
             if ("payé".equalsIgnoreCase(paiement.getStatut()) &&
                 (paiement.getMontantRestant() == null || paiement.getMontantRestant() <= 0.0)) {
                 return ResponseEntity.ok(Map.of("status","already-paid"));
             }
 
-            // Marquer payé
             paiement.setModePaiement("CB");
             if ("ECHELONNE".equalsIgnoreCase(paiement.getType()) &&
                 paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
 
-                // si echeanceId présent -> cible précise, sinon 1ère impayée
                 Echeance cible = null;
                 if (echeanceId != null) {
                     for (Echeance e : paiement.getEcheances()) {
@@ -324,17 +315,12 @@ public class StripeController {
         }
     }
 
-    /**
-     * 🧾 Redirection vers le reçu Stripe hébergé pour un paiement donné.
-     * On tente d'abord la dernière échéance PAYÉE (référence = PI), sinon le PI stocké sur le paiement.
-     */
     @GetMapping("/receipt/{paiementId}")
     public ResponseEntity<?> redirectToStripeReceipt(@PathVariable Long paiementId) {
         try {
             Paiement p = paiementService.getById(paiementId)
                     .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable"));
 
-            // 1) Trouver le PaymentIntent ID (échéance payée en priorité, sinon paiement unique)
             String piId = null;
             if (p.getEcheances() != null && !p.getEcheances().isEmpty()) {
                 for (int i = p.getEcheances().size() - 1; i >= 0; i--) {
@@ -352,19 +338,16 @@ public class StripeController {
                         .body(Map.of("error", "Aucun PaymentIntent associé"));
             }
 
-            // 2) Récupérer le PI (sans getCharges())
             PaymentIntent pi = PaymentIntent.retrieve(piId);
 
             String receiptUrl = null;
 
-            // a) Chemin principal : latest_charge → Charge → receipt_url
             String latestChargeId = pi.getLatestCharge();
             if (latestChargeId != null && !latestChargeId.isBlank()) {
                 Charge charge = Charge.retrieve(latestChargeId);
                 if (charge != null) receiptUrl = charge.getReceiptUrl();
             }
 
-            // b) Optionnel : si latest_charge a été étendu ailleurs
             if ((receiptUrl == null || receiptUrl.isBlank())) {
                 Object latestObj = pi.getLatestChargeObject();
                 if (latestObj instanceof Charge) {

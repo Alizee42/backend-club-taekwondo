@@ -6,6 +6,7 @@ import club.taekwondo.repository.jpa.ProduitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,9 +30,25 @@ public class ProduitService {
         return produitRepository.findById(id).map(this::convertToDTO);
     }
 
+    // 🚨 Nouvelle méthode pour obtenir un produit Entity directement par ID
+    public Optional<Produit> getProduitEntityById(Long id) {
+        return produitRepository.findById(id);
+    }
+
     // 🔁 Créer un produit 
     public ProduitDTO createProduit(ProduitDTO produitDTO) {
+        if (produitRepository.existsByNom(produitDTO.getNom())) {
+            throw new IllegalArgumentException("Un produit avec ce nom existe déjà.");
+        }
         Produit produit = convertToEntity(produitDTO);
+        
+        // Comparaison avec BigDecimal
+        if (produit.getPrix().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Le prix du produit doit être supérieur à zéro.");
+        }
+        if (produit.getStock() < 0) {
+            throw new IllegalArgumentException("Le stock du produit ne peut pas être négatif.");
+        }
         return convertToDTO(produitRepository.save(produit));
     }
 
@@ -42,16 +59,23 @@ public class ProduitService {
         }
         Produit produit = convertToEntity(produitDTO);
         produit.setId(id);
+        
+        // Comparaison avec BigDecimal
+        if (produit.getPrix().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Le prix du produit doit être supérieur à zéro.");
+        }
+        if (produit.getStock() < 0) {
+            throw new IllegalArgumentException("Le stock du produit ne peut pas être négatif.");
+        }
         return convertToDTO(produitRepository.save(produit));
     }
 
     // ❌ Supprimer un produit
     public void deleteProduit(Long id) {
-        if (produitRepository.existsById(id)) {
-            produitRepository.deleteById(id);
-        } else {
+        if (!produitRepository.existsById(id)) {
             throw new IllegalArgumentException("Le produit avec l'ID " + id + " n'existe pas.");
         }
+        produitRepository.deleteById(id);
     }
 
     // 🔁 Conversion Entity → DTO
@@ -80,3 +104,5 @@ public class ProduitService {
         return produit;
     }
 }
+
+
