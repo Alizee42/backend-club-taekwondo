@@ -126,4 +126,6 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     // ➕ récupérer la receipt_url en direct (utile pour exposer rapidement l’URL)
     @Query("SELECT p.receiptUrl FROM Paiement p WHERE p.id = :id")
     Optional<String> getReceiptUrl(@Param("id") Long paiementId);
+
+    Optional<Paiement> findTopByCommandeIdOrderByIdDesc(Long commandeId);
 }

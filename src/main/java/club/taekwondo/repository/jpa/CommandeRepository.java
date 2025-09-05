@@ -23,8 +23,4 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
     // 🔹 Trouver les commandes par utilisateur
     List<Commande> findByUtilisateurId(Long utilisateurId);
-
-    // 🔹 Trouver les commandes disponibles au club
-    @Query("SELECT c FROM Commande c WHERE c.disponibleAuClub = true")
-    List<Commande> findCommandesDisponiblesAuClub();
 }

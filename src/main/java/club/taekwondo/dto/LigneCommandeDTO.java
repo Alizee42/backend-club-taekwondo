@@ -28,6 +28,9 @@ public class LigneCommandeDTO {
     private String couleur;
     private String flocage;
 
+    private Long beneficiaireId;
+    private String beneficiairePrenom;
+    private String beneficiaireNom;
     // Getters et Setters
     public Long getId() {
         return id;
@@ -108,4 +111,31 @@ public class LigneCommandeDTO {
     public void setFlocage(String flocage) {
         this.flocage = flocage;
     }
+
+	public Long getBeneficiaireId() {
+		return beneficiaireId;
+	}
+
+	public void setBeneficiaireId(Long beneficiaireId) {
+		this.beneficiaireId = beneficiaireId;
+	}
+
+	public String getBeneficiairePrenom() {
+		return beneficiairePrenom;
+	}
+
+	public void setBeneficiairePrenom(String beneficiairePrenom) {
+		this.beneficiairePrenom = beneficiairePrenom;
+	}
+
+	public String getBeneficiaireNom() {
+		return beneficiaireNom;
+	}
+
+	public void setBeneficiaireNom(String beneficiaireNom) {
+		this.beneficiaireNom = beneficiaireNom;
+	}
+    
+    
 }
+

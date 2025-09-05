@@ -23,13 +23,16 @@ public class CommandeDTO {
     @NotBlank(message = "Le statut est obligatoire")
     private String statut;
 
-    private Boolean disponibleAuClub;
 
     @NotNull(message = "L'utilisateur est obligatoire")
     private Long utilisateurId;
 
     private UtilisateurCommandeDTO utilisateur;
 
+    private Long beneficiaireId;
+    private String beneficiairePrenom;
+    private String beneficiaireNom;
+    
     @NotNull(message = "La commande doit contenir au moins une ligne")
     @Size(min = 1, message = "La commande doit contenir au moins une ligne")
     private List<LigneCommandeDTO> lignesCommande;
@@ -91,20 +94,37 @@ public class CommandeDTO {
         this.utilisateur = utilisateur;
     }
 
-    public List<LigneCommandeDTO> getLignesCommande() {
+    
+    public Long getBeneficiaireId() {
+		return beneficiaireId;
+	}
+
+	public void setBeneficiaireId(Long beneficiaireId) {
+		this.beneficiaireId = beneficiaireId;
+	}
+
+	public String getBeneficiairePrenom() {
+		return beneficiairePrenom;
+	}
+
+	public void setBeneficiairePrenom(String beneficiairePrenom) {
+		this.beneficiairePrenom = beneficiairePrenom;
+	}
+
+	public String getBeneficiaireNom() {
+		return beneficiaireNom;
+	}
+
+	public void setBeneficiaireNom(String beneficiaireNom) {
+		this.beneficiaireNom = beneficiaireNom;
+	}
+
+	public List<LigneCommandeDTO> getLignesCommande() {
         return lignesCommande;
     }
 
     public void setLignesCommande(List<LigneCommandeDTO> lignesCommande) {
         this.lignesCommande = lignesCommande;
-    }
-
-    public Boolean getDisponibleAuClub() {
-        return disponibleAuClub;
-    }
-
-    public void setDisponibleAuClub(Boolean disponibleAuClub) {
-        this.disponibleAuClub = disponibleAuClub;
     }
 
     public LocalDate getDatePaiement() {

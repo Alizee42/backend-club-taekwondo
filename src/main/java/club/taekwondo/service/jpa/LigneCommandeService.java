@@ -3,16 +3,21 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.LigneCommandeDTO;
 import club.taekwondo.entity.jpa.Commande;
 import club.taekwondo.entity.jpa.LigneCommande;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Produit;
 import club.taekwondo.repository.jpa.CommandeRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
 import club.taekwondo.repository.jpa.ProduitRepository;
+import club.taekwondo.repository.jpa.MembreRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,14 +27,10 @@ public class LigneCommandeService {
 
     private static final Logger log = LoggerFactory.getLogger(LigneCommandeService.class);
 
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private ProduitRepository produitRepository;
+    @Autowired private LigneCommandeRepository ligneCommandeRepository;
+    @Autowired private CommandeRepository commandeRepository;
+    @Autowired private ProduitRepository produitRepository;
+    @Autowired private MembreRepository membreRepository; // ✅ manquant auparavant
 
     public List<LigneCommandeDTO> getAllLignesCommande() {
         return ligneCommandeRepository.findAll()
@@ -42,11 +43,13 @@ public class LigneCommandeService {
         return ligneCommandeRepository.findById(id).map(this::convertToDTO);
     }
 
+    @Transactional
     public LigneCommandeDTO createLigneCommande(LigneCommandeDTO ligneCommande) {
         LigneCommande entity = convertToEntity(ligneCommande);
         return convertToDTO(ligneCommandeRepository.save(entity));
     }
 
+    @Transactional
     public LigneCommandeDTO updateLigneCommande(Long id, LigneCommandeDTO ligneCommande) {
         if (!ligneCommandeRepository.existsById(id)) {
             throw new RuntimeException("Ligne de commande non trouvée avec ID : " + id);
@@ -56,100 +59,164 @@ public class LigneCommandeService {
         return convertToDTO(ligneCommandeRepository.save(entity));
     }
 
+    @Transactional
     public void deleteLigneCommande(Long id) {
         ligneCommandeRepository.deleteById(id);
     }
 
-    // Conversion Entity → DTO
+    // =========================
+    //    Conversion Entity → DTO
+    // =========================
     private LigneCommandeDTO convertToDTO(LigneCommande ligneCommande) {
-        LigneCommandeDTO ligneCommandeDTO = new LigneCommandeDTO();
-        ligneCommandeDTO.setId(ligneCommande.getId());
-        ligneCommandeDTO.setCommandeId(ligneCommande.getCommande().getId());
-        ligneCommandeDTO.setProduitId(ligneCommande.getProduit().getId());
-        ligneCommandeDTO.setQuantite(ligneCommande.getQuantite());
-        ligneCommandeDTO.setPrixUnitaire(ligneCommande.getPrixUnitaire());
-        ligneCommandeDTO.setSousTotal(ligneCommande.getSousTotal());
+        LigneCommandeDTO dto = new LigneCommandeDTO();
+        dto.setId(ligneCommande.getId());
 
-        // Champs personnalisés :
-        ligneCommandeDTO.setTaille(ligneCommande.getTaille());
-        ligneCommandeDTO.setCouleur(ligneCommande.getCouleur());
-        ligneCommandeDTO.setFlocage(ligneCommande.getFlocage());
+        // null-safety
+        Commande cmd = ligneCommande.getCommande();
+        Produit prod = ligneCommande.getProduit();
+        Membre ben = ligneCommande.getBeneficiaire();
 
-        return ligneCommandeDTO;
+        dto.setCommandeId(cmd != null ? cmd.getId() : null);
+        dto.setProduitId(prod != null ? prod.getId() : null);
+
+        dto.setQuantite(ligneCommande.getQuantite());
+        dto.setPrixUnitaire(ligneCommande.getPrixUnitaire());
+        dto.setSousTotal(ligneCommande.getSousTotal());
+
+        // Champs personnalisés
+        dto.setTaille(ligneCommande.getTaille());
+        dto.setCouleur(ligneCommande.getCouleur());
+        dto.setFlocage(ligneCommande.getFlocage());
+
+        // ✅ Bénéficiaire (enfant)
+        if (ben != null) {
+            dto.setBeneficiaireId(ben.getId());
+            dto.setBeneficiairePrenom(ben.getPrenom());
+            dto.setBeneficiaireNom(ben.getNom());
+        }
+
+        return dto;
     }
 
-    // Conversion DTO → Entity
-    private LigneCommande convertToEntity(LigneCommandeDTO ligneCommandeDTO) {
-        LigneCommande ligneCommande = new LigneCommande();
-        ligneCommande.setQuantite(ligneCommandeDTO.getQuantite());
-        ligneCommande.setPrixUnitaire(ligneCommandeDTO.getPrixUnitaire());
-        ligneCommande.setSousTotal(ligneCommandeDTO.getSousTotal());
+    // =========================
+    //    Conversion DTO → Entity
+    // =========================
+    private LigneCommande convertToEntity(LigneCommandeDTO dto) {
+        LigneCommande entity = new LigneCommande();
 
-        ligneCommande.setTaille(ligneCommandeDTO.getTaille());
-        ligneCommande.setCouleur(ligneCommandeDTO.getCouleur());
-        ligneCommande.setFlocage(ligneCommandeDTO.getFlocage());
+        entity.setQuantite(dto.getQuantite());
+        entity.setPrixUnitaire(dto.getPrixUnitaire());
+        entity.setSousTotal(dto.getSousTotal());
 
-        Commande commande = commandeRepository.findById(ligneCommandeDTO.getCommandeId())
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
-        Produit produit = produitRepository.findById(ligneCommandeDTO.getProduitId())
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
+        entity.setTaille(dto.getTaille());
+        entity.setCouleur(dto.getCouleur());
+        entity.setFlocage(dto.getFlocage());
 
-        ligneCommande.setCommande(commande);
-        ligneCommande.setProduit(produit);
+        // Rattachements obligatoires
+        Commande commande = commandeRepository.findById(dto.getCommandeId())
+                .orElseThrow(() -> new RuntimeException("Commande non trouvée: " + dto.getCommandeId()));
+        Produit produit = produitRepository.findById(dto.getProduitId())
+                .orElseThrow(() -> new RuntimeException("Produit non trouvé: " + dto.getProduitId()));
 
-        return ligneCommande;
+        entity.setCommande(commande);
+        entity.setProduit(produit);
+
+        // ✅ Bénéficiaire (enfant) optionnel
+        if (dto.getBeneficiaireId() != null) {
+            Membre enfant = membreRepository.findById(dto.getBeneficiaireId())
+                    .orElseThrow(() -> new RuntimeException("Bénéficiaire (membre) introuvable: " + dto.getBeneficiaireId()));
+            entity.setBeneficiaire(enfant);
+        } else {
+            entity.setBeneficiaire(null);
+        }
+
+        return entity;
     }
 
     /**
-     * ✅ MÉTHODE CORRIGÉE : Utilise la vraie commande liée au paiement
+     * ✅ Utilise la vraie commande liée au paiement
      */
-    public LigneCommande creerPourPaiement(Paiement paiement, Produit produit, double prixUnitaire, int quantite, 
-                                            String taille, String couleur, boolean flocageActif, String flocage) {
+    @Transactional
+public LigneCommande creerPourPaiement(Paiement paiement,
+                                       Produit produit,
+                                       double prixUnitaire,
+                                       int quantite,
+                                       String taille,
+                                       String couleur,
+                                       boolean flocageActif,
+                                       String flocage,
+                                       Long beneficiaireId) {
 
-        // Vérifications
-        if (paiement == null || paiement.getId() == null) {
-            throw new IllegalArgumentException("Le paiement doit avoir un ID valide");
-        }
-        if (paiement.getCommande() == null || paiement.getCommande().getId() == null) {
-            throw new IllegalArgumentException("Le paiement doit être lié à une commande valide");
-        }
-        if (produit == null || prixUnitaire <= 0 || quantite <= 0) {
-            throw new IllegalArgumentException("Produit, prix ou quantité invalides.");
-        }
-
-        // Calcul du sous-total
-        double sousTotal = prixUnitaire * quantite;
-
-        // Créer la ligne de commande
-        LigneCommande ligneCommande = new LigneCommande();
-        ligneCommande.setQuantite(quantite);
-        ligneCommande.setPrixUnitaire(prixUnitaire);
-        ligneCommande.setSousTotal(sousTotal);
-        ligneCommande.setTaille(taille);
-        ligneCommande.setCouleur(couleur);
-        ligneCommande.setFlocage(flocageActif ? flocage : null);
-
-        // ✅ UTILISER LA VRAIE COMMANDE du paiement
-        ligneCommande.setCommande(paiement.getCommande());
-        ligneCommande.setProduit(produit);
-
-        // Sauvegarder
-        LigneCommande saved = ligneCommandeRepository.save(ligneCommande);
-        
-        log.info("📦 LigneCommande créée: ID={} | CommandeID={} | ProduitID={} | Quantité={} | Prix={} | Total={}",
-                saved.getId(), saved.getCommande().getId(), saved.getProduit().getId(), 
-                saved.getQuantite(), saved.getPrixUnitaire(), saved.getSousTotal());
-
-        return saved;
+    // Vérifs de base
+    if (paiement == null || paiement.getId() == null) {
+        throw new IllegalArgumentException("Le paiement doit avoir un ID valide.");
     }
+    if (paiement.getCommande() == null || paiement.getCommande().getId() == null) {
+        throw new IllegalArgumentException("Le paiement doit être lié à une commande valide.");
+    }
+    if (produit == null) {
+        throw new IllegalArgumentException("Produit invalide.");
+    }
+    if (prixUnitaire < 0) {
+        throw new IllegalArgumentException("Prix unitaire invalide.");
+    }
+    if (quantite <= 0) {
+        throw new IllegalArgumentException("Quantité invalide.");
+    }
+
+    // Arrondis
+    double unit = Math.round(prixUnitaire * 100.0) / 100.0;
+    double sousTotal = Math.round(unit * quantite * 100.0) / 100.0;
+
+    // Création de la ligne
+    LigneCommande ligne = new LigneCommande();
+    ligne.setCommande(paiement.getCommande());
+    ligne.setProduit(produit);
+    ligne.setQuantite(quantite);
+    ligne.setPrixUnitaire(unit);
+    ligne.setSousTotal(sousTotal);
+    ligne.setTaille(taille);
+    ligne.setCouleur(couleur);
+    ligne.setFlocage(flocageActif ? flocage : null);
+
+    // ✅ Bénéficiaire (enfant) optionnel
+    if (beneficiaireId != null) {
+        Membre ben = membreRepository.findById(beneficiaireId)
+                .orElseThrow(() -> new IllegalArgumentException("Bénéficiaire introuvable id=" + beneficiaireId));
+        ligne.setBeneficiaire(ben);
+    }
+
+    LigneCommande saved = ligneCommandeRepository.save(ligne);
+
+    // 🔄 Mise à jour du total de la commande
+    Commande cmd = paiement.getCommande();
+    BigDecimal current = cmd.getMontantTotal() != null ? cmd.getMontantTotal() : BigDecimal.ZERO;
+    BigDecimal newTotal = current.add(BigDecimal.valueOf(sousTotal)).setScale(2, RoundingMode.HALF_UP);
+    cmd.setMontantTotal(newTotal);
+    commandeRepository.save(cmd);
+
+    log.info("📦 LigneCommande créée: id={} | cmd={} | produit={} | qte={} | prix={} | total={} | benef={}",
+            saved.getId(),
+            cmd.getId(),
+            produit.getId(),
+            saved.getQuantite(),
+            saved.getPrixUnitaire(),
+            saved.getSousTotal(),
+            saved.getBeneficiaire() != null ? saved.getBeneficiaire().getId() : null
+    );
+
+    return saved;
+}
 
     /**
      * 🔍 Méthode pour récupérer les lignes d'une commande
+     * (Astuce: idéalement, crée ligneCommandeRepository.findByCommandeId(commandeId))
      */
     public List<LigneCommande> getLignesParCommande(Long commandeId) {
+        // TODO: remplace par un vrai finder du repository pour éviter de charger tout
         return ligneCommandeRepository.findAll().stream()
-                .filter(ligne -> ligne.getCommande() != null && 
-                               ligne.getCommande().getId().equals(commandeId))
+                .filter(ligne -> ligne.getCommande() != null &&
+                        commandeId.equals(ligne.getCommande().getId()))
                 .collect(Collectors.toList());
     }
 

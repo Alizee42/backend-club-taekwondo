@@ -104,14 +104,7 @@ public class CommandeController {
         }
     }
 
-    @PutMapping("/{id}/disponibilite-club")
-    public ResponseEntity<Void> definirDisponibiliteAuClub(
-            @PathVariable Long id,
-            @RequestBody Map<String, Boolean> payload) {
-        boolean dispo = payload.getOrDefault("disponible", false);
-        commandeService.definirDisponibiliteAuClub(id, dispo);
-        return ResponseEntity.ok().build();
-    }
+
 
     @GetMapping("/paiement-club")
     public ResponseEntity<List<CommandeDTO>> getCommandesPaiementClub() {

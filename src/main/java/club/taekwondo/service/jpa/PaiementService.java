@@ -29,7 +29,7 @@ public class PaiementService {
     private final MembreService membreService;
     private final ProduitService produitService;
     private final LigneCommandeService ligneCommandeService;
-    private final CommandeRepository commandeRepository; // ⬅️ AJOUT
+    private final CommandeRepository commandeRepository;
 
     public PaiementService(
             PaiementRepository paiementRepository,
@@ -38,7 +38,7 @@ public class PaiementService {
             MembreService membreService,
             ProduitService produitService,
             LigneCommandeService ligneCommandeService,
-            CommandeRepository commandeRepository // ⬅️ AJOUT
+            CommandeRepository commandeRepository
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
@@ -46,7 +46,7 @@ public class PaiementService {
         this.membreService = membreService;
         this.produitService = produitService;
         this.ligneCommandeService = ligneCommandeService;
-        this.commandeRepository = commandeRepository; // ⬅️ AJOUT
+        this.commandeRepository = commandeRepository;
     }
 
     /* ===========================
@@ -833,6 +833,12 @@ public class PaiementService {
         p.setStatut("payé");
 
         Paiement saved = paiementRepository.save(p);
+
+        // ✅ si un paiement (ex. au club) est validé manuellement, on marque la commande payée aussi
+        if (saved.getCommande() != null) {
+            marquerCommandePayee(saved.getCommande(), saved.getModePaiement());
+        }
+
         log.info("✅ [PAY] Paiement validé id={} statut={} payé={} restant={}",
                 saved.getId(), saved.getStatut(), saved.getMontantPaye(), saved.getMontantRestant());
         return saved;
@@ -905,6 +911,14 @@ public class PaiementService {
        =========  Méthodes Stripe / Échéances (BDD)  ==========
        ========================================================= */
 
+    private void marquerCommandePayee(Commande cmd, String mode) {
+        if (cmd == null) return;
+        cmd.setStatut("PAYEE");
+        cmd.setModePaiement(normalizeMode(mode != null ? mode : "CB"));
+        cmd.setDatePaiement(LocalDate.now());
+        commandeRepository.save(cmd);
+    }
+
     @Transactional
     public void saveEcheanceReference(Long echeanceId, String paymentIntentId) {
         if (echeanceId == null || paymentIntentId == null || paymentIntentId.isBlank()) {
@@ -923,6 +937,7 @@ public class PaiementService {
             if (paiementId == null) return;
             Paiement p = paiementRepository.findById(paiementId)
                     .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + paiementId));
+
             p.setModePaiement("CB");
             p.setStatut("payé");
             p.setMontantPaye(safeMontant(p.getMontantTotal()));
@@ -930,6 +945,10 @@ public class PaiementService {
             p.setDatePaiement(LocalDate.now());
             p.setPaymentIntentId(paymentIntentId);
             paiementRepository.save(p);
+
+            // ✅ commande -> PAYEE
+            marquerCommandePayee(p.getCommande(), "CB");
+
             log.info("✅ Paiement unique {} marqué payé via Stripe (PI={})", p.getId(), paymentIntentId);
             return;
         }
@@ -959,6 +978,14 @@ public class PaiementService {
             p.setModePaiement("CB");
             recomputeAggregates(p);
             paiementRepository.save(p);
+
+            // ✅ si tout payé → commande PAYEE
+            if ("payé".equalsIgnoreCase(p.getStatut())
+                    || p.getMontantRestant() == null
+                    || p.getMontantRestant() <= 0.0) {
+                marquerCommandePayee(p.getCommande(), "CB");
+            }
+
             log.info("✅ Échéance {} du paiement {} marquée payée (PI={})", echeanceId, p.getId(), paymentIntentId);
         }
     }
@@ -968,7 +995,9 @@ public class PaiementService {
        ========================================================= */
 
     /**
-     * ⬅️ MÉTHODE CORRIGÉE : Crée d'abord une commande, puis le paiement lié
+     * Crée d'abord une commande, puis un paiement lié.
+     * CB : commande marquée PAYEE immédiatement (visible en "payé" côté admin).
+     * Autres modes (club, chèque, virement) : EN_ATTENTE, datePaiement = null.
      */
     @Transactional
     public Paiement creerPaiementDepuisPanier(Utilisateur user, CartCheckoutRequest req) {
@@ -983,63 +1012,92 @@ public class PaiementService {
             if (it.getProduitId() == null || it.getQuantite() == null || it.getQuantite() <= 0) {
                 throw new IllegalArgumentException("Ligne panier invalide (produitId/quantite).");
             }
-
             Produit produit = produitService.getProduitEntityById(it.getProduitId())
                     .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
-            
-            double unit = produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0;
+
+            double unit = (it.getPrixUnitaire() != null)
+                    ? it.getPrixUnitaire()
+                    : (produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0);
+
             total += unit * it.getQuantite();
         }
         total = round2(total);
-
         if (total <= 0.0) throw new IllegalArgumentException("Montant total invalide.");
 
-        // 2) ⬅️ CORRECTION : Utiliser LocalDate.now() au lieu de LocalDateTime.now()
+        // 2) Commande (LocalDate) + logique mode/statut/date
+        final String mode = normalizeMode(req.getModePaiement()); // "CB", "CLUB", "CHEQUE", "VIREMENT", ...
         Commande commande = new Commande();
-        commande.setDateCommande(LocalDate.now()); // ✅ LocalDate
-        commande.setStatut("EN_ATTENTE");
-        commande.setMontantTotal(BigDecimal.valueOf(total)); // ✅ Conversion en BigDecimal
-        commande.setUtilisateur(user); // ✅ Lier l'utilisateur
-        
-        // Sauvegarder pour obtenir un ID
+        commande.setDateCommande(LocalDate.now());
+        commande.setModePaiement(mode);
+        if ("CB".equalsIgnoreCase(mode)) {
+            commande.setStatut("PAYEE");
+            commande.setDatePaiement(LocalDate.now());
+        } else {
+            commande.setStatut("EN_ATTENTE");
+            commande.setDatePaiement(null);
+        }
+        commande.setMontantTotal(BigDecimal.valueOf(total));
+        commande.setUtilisateur(user);
         commande = commandeRepository.save(commande);
-        log.info("📋 Commande créée avec ID: {}", commande.getId());
+        log.info("📋 Commande créée id={} statut={} mode={} datePaiement={}",
+                commande.getId(), commande.getStatut(), commande.getModePaiement(), commande.getDatePaiement());
 
-        // 3) Créer le paiement lié à cette commande
+        // 3) Paiement lié
         Paiement p = new Paiement();
         p.setUtilisateur(user);
 
-        // Membre optionnel
+        // Membre : si absent → créer un "adulte" rattaché pour ne pas bloquer
+        Membre membreCible;
         if (req.getMembreId() != null) {
-            Membre m = membreService.getMembreEntityById(req.getMembreId())
+            membreCible = membreService.getMembreEntityById(req.getMembreId())
                     .orElseThrow(() -> new IllegalArgumentException("Membre introuvable"));
-            p.setMembre(m);
+        } else {
+            Membre adulte = new Membre();
+            adulte.setPrenom(Optional.ofNullable(user.getPrenom()).orElse("Adulte"));
+            adulte.setNom(Optional.ofNullable(user.getNom()).orElse("Inconnu"));
+            adulte.setParent(user);
+            membreCible = membreService.save(adulte);
         }
+        p.setMembre(membreCible);
 
         p.setType("BOUTIQUE");
-        p.setModePaiement(normalizeMode(req.getModePaiement()));
-        p.setDatePaiement(LocalDate.now());
+        p.setModePaiement(mode);
         p.setMontantTotal(total);
-        p.setMontantPaye(0.0);
-        p.setMontantRestant(total);
-        p.setStatut("en attente");
+        if ("CB".equalsIgnoreCase(mode)) {
+            // CB : paiement réglé immédiatement
+            p.setStatut("payé");
+            p.setMontantPaye(total);
+            p.setMontantRestant(0.0);
+            p.setDatePaiement(LocalDate.now());
+        } else {
+            // Club / chèque / virement
+            p.setStatut("en attente");
+            p.setMontantPaye(0.0);
+            p.setMontantRestant(total);
+            p.setDatePaiement(null);
+        }
         p.setEcheancesTotales(0);
         p.setEcheancesRestantes(0);
         p.setEcheances(Collections.emptyList());
-
-        // ⬅️ LIER LE PAIEMENT À LA COMMANDE
         p.setCommande(commande);
 
         Paiement saved = paiementRepository.save(p);
-        log.info("💳 Paiement créé avec ID: {} lié à commande: {}", saved.getId(), commande.getId());
+        log.info("💳 Paiement créé id={} lié à commande={}", saved.getId(), commande.getId());
 
-        // 4) Créer les lignes de commande liées
+        // 4) Lignes de commande (avec bénéficiaire par ligne)
         for (CartItemDTO it : req.getItems()) {
             Produit produit = produitService.getProduitEntityById(it.getProduitId())
                     .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
-            
-            double unit = produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0;
 
+            double unit = (it.getPrixUnitaire() != null)
+                    ? it.getPrixUnitaire()
+                    : (produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0);
+
+            Long lineBenefId = (it.getBeneficiaireId() != null) ? it.getBeneficiaireId()
+                    : (req.getMembreId() != null ? req.getMembreId()
+                    : (membreCible != null ? membreCible.getId() : null));
+
+            // ⚠️ Assure-toi que cette signature existe côté service des lignes
             ligneCommandeService.creerPourPaiement(
                     saved,
                     produit,
@@ -1048,13 +1106,15 @@ public class PaiementService {
                     it.getTaille(),
                     it.getCouleur(),
                     it.getFlocageActif() != null && it.getFlocageActif(),
-                    it.getFlocage()
+                    it.getFlocage(),
+                    lineBenefId
             );
         }
 
-        log.info("🧾 Paiement créé depuis panier -> id={} commandeId={} total={} mode={} type={}",
-                saved.getId(), commande.getId(), saved.getMontantTotal(), saved.getModePaiement(), saved.getType());
+        log.info("🧾 Paiement depuis panier -> id={} commandeId={} total={} mode={} statutPaiement={}",
+                saved.getId(), commande.getId(), saved.getMontantTotal(), saved.getModePaiement(), saved.getStatut());
 
         return saved;
     }
+
 }

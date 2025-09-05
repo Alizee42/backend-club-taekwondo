@@ -12,6 +12,9 @@ public class CartItemDTO {
     private Double prixUnitaire; // si fourni par le front
     private Double prixTotal;    // si déjà calculé côté front
 
+    // ⬇️ NOUVEAU : bénéficiaire (enfant) pour CETTE ligne
+    private Long beneficiaireId;
+
     // --- getters/setters ---
     public Long getProduitId() { return produitId; }
     public void setProduitId(Long produitId) { this.produitId = produitId; }
@@ -36,4 +39,7 @@ public class CartItemDTO {
 
     public Double getPrixTotal() { return prixTotal; }
     public void setPrixTotal(Double prixTotal) { this.prixTotal = prixTotal; }
+
+    public Long getBeneficiaireId() { return beneficiaireId; }
+    public void setBeneficiaireId(Long beneficiaireId) { this.beneficiaireId = beneficiaireId; }
 }

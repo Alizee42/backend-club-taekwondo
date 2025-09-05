@@ -38,6 +38,10 @@ public class LigneCommande {
     @Column(nullable = true)
     private String flocage;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "beneficiaire_id") // nullable autorisé
+    private Membre beneficiaire;
+    
     // Constructeur par défaut
     public LigneCommande() {}
 
@@ -126,4 +130,14 @@ public class LigneCommande {
     public void setFlocage(String flocage) {
         this.flocage = flocage;
     }
+
+	public Membre getBeneficiaire() {
+		return beneficiaire;
+	}
+
+	public void setBeneficiaire(Membre beneficiaire) {
+		this.beneficiaire = beneficiaire;
+	}
+    
+    
 }

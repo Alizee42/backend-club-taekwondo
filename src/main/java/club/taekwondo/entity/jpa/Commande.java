@@ -28,9 +28,6 @@ public class Commande {
     @Column(name = "date_paiement")
     private LocalDate datePaiement;
 
-    
-    @Column(name = "disponible_au_club")
-    private Boolean disponibleAuClub;
 
     // Clé étrangère vers Utilisateur
     @ManyToOne
@@ -98,13 +95,7 @@ public class Commande {
 		this.modePaiement = modePaiement;
 	}
 
-	 public Boolean getDisponibleAuClub() {
-	        return disponibleAuClub;
-	    }
 
-	    public void setDisponibleAuClub(Boolean disponibleAuClub) {
-	        this.disponibleAuClub = disponibleAuClub;
-	    }
 
 		public LocalDate getDatePaiement() {
 			return datePaiement;
