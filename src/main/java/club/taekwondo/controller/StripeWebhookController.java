@@ -43,7 +43,8 @@ public class StripeWebhookController {
         final Event event;
         try {
             event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
-        } catch (SignatureVerificationException e) {
+        } 
+        catch (SignatureVerificationException e) {
             System.err.println("❌ Signature Stripe invalide : " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Signature invalide");
         }
@@ -93,7 +94,6 @@ public class StripeWebhookController {
                 return ResponseEntity.ok("amount-currency-mismatch");
             }
 
-            // ===== GARDE-FOU GLOBAL : ce PI est-il déjà lié à une échéance ? =====
             Echeance bound = null;
             if (paiement.getEcheances() != null) {
                 for (Echeance e : paiement.getEcheances()) {
@@ -110,11 +110,9 @@ public class StripeWebhookController {
                     System.out.println("↩️ already-processed (même PI, même échéance).");
                     return ResponseEntity.ok("already-processed");
                 }
-                // sinon, on la (re)prend comme cible (ex: sync-payment rejoué)
                 System.out.println("↩️ reprise de la même échéance liée pour finaliser.");
             }
 
-            // ===== Paiement ECHELONNE =====
             if ("ECHELONNE".equalsIgnoreCase(safe(paiement.getType()))
                     && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
 
@@ -140,7 +138,6 @@ public class StripeWebhookController {
                 }
 
                 if (cible == null) {
-                    // Fallback legacy : 1ʳᵉ impayée (uniquement si PI non encore lié à une autre échéance)
                     cible = paiement.getEcheances().stream()
                             .filter(e -> !"payé".equalsIgnoreCase(safe(e.getStatut())))
                             .sorted(Comparator.comparingInt(Echeance::getNumero))
@@ -153,7 +150,6 @@ public class StripeWebhookController {
                     System.out.printf("🎯 Cible par fallback: ech#%d (id=%d)%n", cible.getNumero(), cible.getId());
                 }
 
-                // Anti-croisement supplémentaire : si la cible est déjà liée à un autre PI différent → ignore
                 if (!isBlank(cible.getReference()) && !Objects.equals(cible.getReference(), piId)) {
                     System.out.printf("↩️ PI %s ignoré (échéance %d déjà liée à %s)%n",
                             piId, cible.getNumero(), cible.getReference());
@@ -172,7 +168,6 @@ public class StripeWebhookController {
                     return ResponseEntity.ok("installment-already-paid");
                 }
 
-                // Solder uniquement cette échéance + lier au PI courant
                 cible.setStatut("payé");
                 cible.setDatePaiementReel(LocalDate.now());
                 cible.setModePaiement("CB");
@@ -214,6 +209,7 @@ public class StripeWebhookController {
             paiement.setMontantRestant(0.0);
             paiement.setDatePaiement(LocalDate.now());
             paiement.setModePaiement("CB");
+
             paiementService.save(paiement);
             dumpPaiementState("AFTER", paiement);
             System.out.printf("✅ Paiement UNIQUE %d soldé%n", paiement.getId());

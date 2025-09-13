@@ -21,49 +21,15 @@ public class Paiement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /** Forme: unique | échelonné | cotisation */
     @Column(nullable = false)
     private String type;
-
-    /** Date de création / réalisation (facultative) */
     @Column(name = "date_paiement")
     private LocalDate datePaiement;
-
-    /** Statut global: payé | en attente | en retard | annulé | inconnu */
     private String statut;
-
-    /**
-     * Moyen par défaut (utile surtout pour les paiements UNIQUES).
-     * Pour un ÉCHÉLONNÉ, le moyen réel est porté par chaque échéance.
-     * Ex: cb | virement | espèces
-     */
     @Column(name = "mode_paiement")
     private String modePaiement;
-
-    /**
-     * Identifiant Stripe PaymentIntent (permet l'idempotence et le suivi).
-     * Exemple: pi_3Pxxxxx...
-     */
     @Column(name = "payment_intent_id", unique = true, length = 100)
     private String paymentIntentId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "utilisateur_id", nullable = false)
-    private Utilisateur utilisateur;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "membre_id", nullable = false)
-    private Membre membre;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "commande_id", nullable = true) // Relation avec la commande (facultatif)
-    private Commande commande;  // Ajout de la relation avec Commande
-
-    @OneToMany(mappedBy = "paiement", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("numero ASC, dateEcheance ASC")
-    @JsonManagedReference
-    private List<Echeance> echeances = new ArrayList<>();
 
     @Column(name = "montant_total")
     private Double montantTotal;
@@ -98,6 +64,23 @@ public class Paiement {
     @Column(name = "stripe_status", length = 50)
     private String stripeStatus;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "utilisateur_id", nullable = false)
+    private Utilisateur utilisateur;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "membre_id", nullable = false)
+    private Membre membre;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commande_id", nullable = true) 
+    private Commande commande; 
+
+    @OneToMany(mappedBy = "paiement", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("numero ASC, dateEcheance ASC")
+    @JsonManagedReference
+    private List<Echeance> echeances = new ArrayList<>();
+    
     public Paiement() {}
 
     /* ---------------- Hooks ---------------- */

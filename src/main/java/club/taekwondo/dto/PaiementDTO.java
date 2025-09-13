@@ -3,36 +3,17 @@ package club.taekwondo.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * DTO de réponse pour l'affichage et le suivi des paiements.
- *
- * Conventions:
- * - type         : "UNIQUE" | "ECHELONNE" | "COTISATION"
- * - modePaiement : "CB" | "VIREMENT" | "ESPECES"
- * - statut       : "payé" | "en attente" | "en retard" | "annulé"
- *
- * Dates renvoyées en String ISO (yyyy-MM-dd) pour simplicité côté Angular.
- */
 public class PaiementDTO {
 
     private Long id;
-
-    /** "UNIQUE" | "ECHELONNE" | "COTISATION" */
     private String type;
-
-    /** Date du paiement initial (ISO yyyy-MM-dd) */
-    private String datePaiement;
-
-    /** "payé" | "en attente" | "en retard" | "annulé" */
+    private String datePaiement;   // ISO-8601 en String (ex: "2025-03-10")
     private String statut;
+    private String modePaiement;   // "CB", "VIREMENT", "ESPECES", ...
 
-    /** Mode principal (si échéances, le détail peut être au niveau de l’échéance) */
-    private String modePaiement; // "CB" | "VIREMENT" | "ESPECES"
-
-    /** Montants */
-    private Double montantTotal;   // total
-    private Double montantPaye;    // déjà payé
-    private Double montantRestant; // >= 0
+    private Double montantTotal;
+    private Double montantPaye;
+    private Double montantRestant;
 
     /** Utilisateur (parent/adulte) payeur */
     private Long utilisateurId;
@@ -44,10 +25,10 @@ public class PaiementDTO {
     private Long membreId;
     private String membreNom;
     private String membrePrenom;
-    private String enfantNomComplet; // confort d'affichage
+    private String enfantNomComplet;
 
     /** Détail des échéances si type = ECHELONNE */
-    private List<EcheanceDTO> echeances;
+    private List<EcheanceDTO> echeances; // <-- réutilise ton DTO externe
 
     /** Infos d'annulation (optionnel) */
     private String motifAnnulation;
@@ -114,38 +95,4 @@ public class PaiementDTO {
 
     public String getAdminResponsable() { return adminResponsable; }
     public void setAdminResponsable(String adminResponsable) { this.adminResponsable = adminResponsable; }
-
-    // ===== Échéance (réponse) =====
-    public static class EcheanceDTO {
-        private Long id;
-        private Integer numero;        // 1..N
-        private String dateEcheance;   // ISO yyyy-MM-dd
-        private Double montant;
-        private String statut;         // "en attente" | "payé" | "en retard"
-        private String modePaiement;   // "CB" | "VIREMENT" | "ESPECES" (si géré par échéance)
-        private String reference;      // référence externe (optionnel)
-
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-
-        public Integer getNumero() { return numero; }
-        public void setNumero(Integer numero) { this.numero = numero; }
-
-        public String getDateEcheance() { return dateEcheance; }
-        public void setDateEcheance(String dateEcheance) { this.dateEcheance = dateEcheance; }
-
-        public Double getMontant() { return montant; }
-        public void setMontant(Double montant) { this.montant = montant; }
-
-        public String getStatut() { return statut; }
-        public void setStatut(String statut) { this.statut = statut; }
-
-        public String getModePaiement() { return modePaiement; }
-        public void setModePaiement(String modePaiement) { this.modePaiement = modePaiement; }
-
-        public String getReference() { return reference; }
-        public void setReference(String reference) { this.reference = reference; }
-    }
 }
-
-

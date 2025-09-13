@@ -71,7 +71,6 @@ public class JwtUtil {
 
     // ====== génération ======
 
-    /** Génère un token simple (sans rôle explicite) */
     public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)

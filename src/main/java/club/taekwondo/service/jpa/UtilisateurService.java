@@ -82,7 +82,7 @@ public class UtilisateurService {
         dto.setAdresse(utilisateur.getAdresse());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
-        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null); // String coté DTO
+        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null); 
         System.out.println("[" + now() + "][USR-SVC][convertToDTO] out: " + safeDto(dto));
         return dto;
     }
@@ -195,10 +195,6 @@ public class UtilisateurService {
         return out;
     }
 
-    /* =======================
-     *   Création
-     * ======================= */
-
     public Utilisateur createUtilisateur(UtilisateurDTO dto) {
         System.out.println("[" + now() + "][USR-SVC][createUtilisateur] in DTO: " + safeDto(dto));
 
@@ -240,9 +236,6 @@ public class UtilisateurService {
         return saved;
     }
 
-    /* =======================
-     *   Mise à jour
-     * ======================= */
 
     public void updateUtilisateurFromDTO(Long id, UtilisateurDTO dto) {
         System.out.println("[" + now() + "][USR-SVC][updateUtilisateurFromDTO] id=" + id + ", DTO: " + safeDto(dto));

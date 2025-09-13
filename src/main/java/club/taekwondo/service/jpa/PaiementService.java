@@ -360,20 +360,31 @@ public class PaiementService {
             int restantes = 0;
             double montantPaye = 0.0;
             int numeroAuto = 1;
-            for (PaiementDTO.EcheanceDTO edto : dto.getEcheances()) {
+        
+            // !!! Utiliser le DTO externe
+            for (EcheanceDTO edto : dto.getEcheances()) {
                 if (edto.getMontant() == null || edto.getMontant() <= 0) {
                     throw new RuntimeException("Échéance invalide (montant).");
                 }
-                if (edto.getDateEcheance() == null || edto.getDateEcheance().isBlank()) {
+                if (edto.getDateEcheance() == null) {
                     throw new RuntimeException("Échéance invalide (date manquante).");
                 }
+        
                 Echeance e = new Echeance();
                 e.setPaiement(paiement);
                 e.setNumero(edto.getNumero() != null ? edto.getNumero() : numeroAuto++);
-                e.setDateEcheance(LocalDate.parse(edto.getDateEcheance()));
+                // DTO externe -> LocalDate directement
+                e.setDateEcheance(edto.getDateEcheance());
                 e.setMontant(edto.getMontant());
                 e.setStatut(edto.getStatut() != null ? edto.getStatut() : "en attente");
+        
+                // si ton entité Echeance possède ces champs :
+                e.setModePaiement(edto.getModePaiement());
+                e.setDatePaiementReel(edto.getDatePaiementReel());
+                e.setReference(edto.getReference());
+        
                 echeances.add(e);
+        
                 total += edto.getMontant();
                 if ("payé".equalsIgnoreCase(e.getStatut())) {
                     montantPaye += edto.getMontant();
@@ -381,6 +392,7 @@ public class PaiementService {
                     restantes++;
                 }
             }
+        
             paiement.setEcheances(echeances);
             paiement.setMontantTotal(total);
             paiement.setMontantPaye(montantPaye);
@@ -627,32 +639,38 @@ public class PaiementService {
 
         double montantPaye = 0.0;
 
-        if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
-            List<PaiementDTO.EcheanceDTO> liste = new ArrayList<>();
-            for (Echeance e : paiement.getEcheances()) {
-                PaiementDTO.EcheanceDTO edto = new PaiementDTO.EcheanceDTO();
-                edto.setId(e.getId());
-                edto.setNumero(e.getNumero());
-                edto.setDateEcheance(e.getDateEcheance() != null ? e.getDateEcheance().toString() : null);
-                edto.setMontant(e.getMontant());
-                edto.setStatut(e.getStatut());
+if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+    List<EcheanceDTO> liste = new ArrayList<>();
+    for (Echeance e : paiement.getEcheances()) {
+        EcheanceDTO edto = new EcheanceDTO();
+        edto.setId(e.getId());
+        edto.setNumero(e.getNumero());
+        // DTO externe -> LocalDate
+        edto.setDateEcheance(e.getDateEcheance());
+        edto.setMontant(e.getMontant());
+        edto.setStatut(e.getStatut());
 
-                if ("payé".equalsIgnoreCase(e.getStatut())) {
-                    montantPaye += safeMontant(e.getMontant());
-                }
+        // champs supplémentaires de ton DTO externe
+        edto.setModePaiement(e.getModePaiement());
+        edto.setDatePaiementReel(e.getDatePaiementReel());
+        edto.setReference(e.getReference());
 
-                liste.add(edto);
-            }
-            dto.setEcheances(liste);
-        } else {
-            if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                montantPaye = safeMontant(paiement.getMontantTotal());
-            }
+        if ("payé".equalsIgnoreCase(e.getStatut())) {
+            montantPaye += safeMontant(e.getMontant());
         }
 
-        double total = safeMontant(paiement.getMontantTotal());
-        dto.setMontantPaye(montantPaye);
-        dto.setMontantRestant(Math.max(0.0, total - montantPaye));
+        liste.add(edto);
+    }
+    dto.setEcheances(liste);
+} else {
+    if ("payé".equalsIgnoreCase(paiement.getStatut())) {
+        montantPaye = safeMontant(paiement.getMontantTotal());
+    }
+}
+
+double total = safeMontant(paiement.getMontantTotal());
+dto.setMontantPaye(montantPaye);
+dto.setMontantRestant(Math.max(0.0, total - montantPaye));
 
         return dto;
     }
@@ -990,15 +1008,6 @@ public class PaiementService {
         }
     }
 
-    /* =========================================================
-       =============== 🆕 Panier → Paiement UNIQUE ==============
-       ========================================================= */
-
-    /**
-     * Crée d'abord une commande, puis un paiement lié.
-     * CB : commande marquée PAYEE immédiatement (visible en "payé" côté admin).
-     * Autres modes (club, chèque, virement) : EN_ATTENTE, datePaiement = null.
-     */
     @Transactional
     public Paiement creerPaiementDepuisPanier(Utilisateur user, CartCheckoutRequest req) {
         if (user == null) throw new IllegalArgumentException("Utilisateur manquant.");
