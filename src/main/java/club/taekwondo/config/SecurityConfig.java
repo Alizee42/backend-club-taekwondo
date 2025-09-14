@@ -26,7 +26,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthFilter jwtAuthFilter) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ important
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ utilise notre config CORS
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
@@ -54,29 +54,28 @@ public class SecurityConfig {
                     res.getWriter().write("{\"message\":\"Access Denied\"}");
                 })
             );
-    
+
         return http.build();
     }
-    
-    // 🌍 CORS: Angular local + Netlify
+
+    // 🌍 CORS: Angular local + Netlify (prod + previews)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowCredentials(true);
-    
-        // 🔑 précise bien tes origins
-        c.setAllowedOrigins(List.of(
+
+        // ✅ accepte localhost et tous les sous-domaines *.netlify.app
+        c.setAllowedOriginPatterns(List.of(
             "http://localhost:4200",
-            "https://frontend-club-taekwondo.netlify.app"
+            "https://*.netlify.app"
         ));
-    
-        c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
+
+        c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         c.setAllowedHeaders(List.of("*"));
-        c.setExposedHeaders(List.of("Location","Authorization"));
-    
+        c.setExposedHeaders(List.of("Location", "Authorization"));
+
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);
         return s;
     }
-    
 }
