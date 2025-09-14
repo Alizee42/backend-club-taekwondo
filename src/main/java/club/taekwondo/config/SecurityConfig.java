@@ -1,6 +1,7 @@
 package club.taekwondo.config;
 
-import org.slf4j.Logger; import org.slf4j.LoggerFactory;
+import org.slf4j.Logger; 
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -21,7 +22,6 @@ public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
-    // ⚠️ INJECTION PAR PARAMÈTRE: évite les champs @Autowired et la plupart des cycles
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthFilter jwtAuthFilter) throws Exception {
@@ -30,11 +30,20 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-            	.requestMatchers("/api/stripe/webhook", "/api/stripe/public-key", "/api/stripe/create-payment-intent", "/api/utilisateurs/login", "/api/utilisateurs/register").permitAll()
-                .requestMatchers("/api/debug/**").permitAll()  // utilitaire
-                .anyRequest().permitAll() // la vraie barrière est via @PreAuthorize dans les contrôleurs
+                // 🔓 Endpoints publics
+                .requestMatchers(
+                    "/api/stripe/webhook",
+                    "/api/stripe/public-key",
+                    "/api/stripe/create-payment-intent",
+                    "/api/utilisateurs/login",
+                    "/api/utilisateurs/register",
+                    "/api/parametres-paiement/public" // 👈 accès sans JWT
+                ).permitAll()
+                .requestMatchers("/api/debug/**").permitAll() // utilitaire
+                // 🔒 Tout le reste nécessite auth
+                .anyRequest().authenticated()
             )
-            // ➜ Branche TON filtre JWT AVANT UsernamePasswordAuthenticationFilter
+            // ➜ Branche ton filtre JWT AVANT UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
                 .accessDeniedHandler((req, res, e) -> {
@@ -48,13 +57,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS: Angular local
+    // 🌍 CORS: Angular local + Netlify
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(List.of(
-            "http://localhost:4200", // Angular en local
-            "https://frontend-club-taekwondo.netlify.app" // Déploiement Netlify
+            "http://localhost:4200",               // Angular local
+            "https://frontend-club-taekwondo.netlify.app" // Front en prod
         ));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         c.setAllowedHeaders(List.of("*"));
