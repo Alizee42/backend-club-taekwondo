@@ -15,6 +15,7 @@ public class FileUploadService {
      * Enregistre un fichier dans un sous-dossier spécifique (ex: "evenements", "photos", etc.).
      * Retourne le chemin relatif (ex: "evenements/image.jpg") à stocker côté base ou front.
      */
+    
     public String uploadFile(MultipartFile file, String subFolder) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Le fichier est vide ou invalide.");

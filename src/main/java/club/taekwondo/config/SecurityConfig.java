@@ -52,13 +52,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of("http://localhost:4200"));
+        c.setAllowedOrigins(List.of(
+            "http://localhost:4200", // Angular en local
+            "https://frontend-club-taekwondo.netlify.app" // Déploiement Netlify
+        ));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         c.setAllowedHeaders(List.of("*"));
         c.setAllowCredentials(true);
         c.setExposedHeaders(List.of("Location","Authorization"));
+
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);
         return s;
     }
+
 }
