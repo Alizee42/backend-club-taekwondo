@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/parametres-paiement")
-@CrossOrigin(origins = "*")
 public class ParametresPaiementController {
 
     private static final Logger log = LoggerFactory.getLogger(ParametresPaiementController.class);
@@ -24,8 +23,7 @@ public class ParametresPaiementController {
         this.parametresPaiementService = parametresPaiementService;
     }
 
-    /** 🔓 Lecture publique pour la page membre (pas d'auth requise) */
-    @PreAuthorize("permitAll()")
+    /** 🔓 Lecture publique (pas besoin d’authentification) */
     @GetMapping("/public")
     public ResponseEntity<ParametresPaiementDTO> getParametresPaiementPublic() {
         log.debug("[CTRL] GET /api/parametres-paiement/public");
@@ -33,7 +31,7 @@ public class ParametresPaiementController {
         return ResponseEntity.ok(dto);
     }
 
-    /** 🔒 Lecture réservée ADMIN (inchangé) */
+    /** 🔒 Lecture réservée ADMIN */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ParametresPaiementDTO> getParametresPaiement(Authentication auth) {
@@ -45,7 +43,7 @@ public class ParametresPaiementController {
         return ResponseEntity.ok(dto);
     }
 
-    /** 🔒 Mise à jour réservée ADMIN (inchangé) */
+    /** 🔒 Mise à jour réservée ADMIN */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ParametresPaiementDTO> updateParametresPaiement(
