@@ -15,6 +15,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/avis")
+@CrossOrigin(origins = {
+        "http://localhost:4200",
+        "https://frontend-club-taekwondo.netlify.app"
+})
 public class AvisController {
 
     @Autowired
@@ -32,11 +36,7 @@ public class AvisController {
         return t.isBlank() ? null : (ALLOWED_TYPES.contains(t) ? t : null);
     }
 
-    /** 🔹 Récupérer les avis (avec filtres optionnels) :
-     *  /api/avis?approuve=false
-     *  /api/avis?typeAvis=cours
-     *  /api/avis?approuve=true&typeAvis=evenements
-     */
+    /** 🔹 Récupérer les avis (lecture publique sans JWT) */
     @GetMapping
     public ResponseEntity<List<AvisDTO>> getAllAvis(
             @RequestParam(value = "approuve", required = false) Boolean approuve,
@@ -56,7 +56,7 @@ public class AvisController {
 
         String normalizedType = normalizeType(typeAvis);
         if (normalizedType != null) {
-            String nt = normalizedType; // effectively final pour lambda
+            String nt = normalizedType; // effectively final
             avisList = avisList.stream()
                     .filter(a -> nt.equals(
                             Optional.ofNullable(a.getTypeAvis())
@@ -69,10 +69,7 @@ public class AvisController {
         return ResponseEntity.ok(avisList);
     }
 
-    /** 🔹 Compteur (utile pour les badges) :
-     *  /api/avis/count?approuve=false
-     *  /api/avis/count?typeAvis=cours
-     */
+    /** 🔹 Compteur (public aussi) */
     @GetMapping("/count")
     public ResponseEntity<Long> countAvis(
             @RequestParam(value = "approuve", required = false) Boolean approuve,
@@ -83,7 +80,7 @@ public class AvisController {
         return ResponseEntity.ok(count);
     }
 
-    // 🔹 Ajouter un nouvel avis avec upload d'image
+    /** 🔹 Ajouter un nouvel avis (public, pas besoin de JWT) */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createAvisAvecFichier(
             @RequestParam("contenu") String contenu,
@@ -93,24 +90,21 @@ public class AvisController {
             @RequestParam(value = "photo", required = false) MultipartFile photoFile
     ) {
         try {
-            // ——— Validation simple ———
             if (contenu == null || contenu.trim().length() < 3) {
                 return ResponseEntity.badRequest().body("Le contenu de l'avis est trop court.");
             }
             if (pseudoVisiteur == null || pseudoVisiteur.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Le nom/pseudo est requis.");
             }
-            int safeNote = Math.max(1, Math.min(5, note == null ? 5 : note)); // clamp 1..5
+            int safeNote = Math.max(1, Math.min(5, note == null ? 5 : note));
 
-            // ——— Upload éventuel de la photo ———
             String nomFichier = null;
             if (photoFile != null && !photoFile.isEmpty()) {
-                // ⚠️ getContentType() peut être null -> on met en variable et on teste avant tout usage
                 String contentType = photoFile.getContentType();
                 if (contentType != null && !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
                     return ResponseEntity.badRequest().body("Le fichier doit être une image.");
                 }
-                if (photoFile.getSize() > 3_000_000) { // 3 Mo
+                if (photoFile.getSize() > 3_000_000) {
                     return ResponseEntity.badRequest().body("Image trop volumineuse (max 3 Mo).");
                 }
 
@@ -124,23 +118,17 @@ public class AvisController {
 
                 nomFichier = UUID.randomUUID() + ext;
                 Path chemin = Paths.get(dossier).resolve(nomFichier);
-
-                // Copie sûre (alternative à transferTo)
                 Files.copy(photoFile.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            // ——— Construction de l'entité ———
             Avis avis = new Avis();
             avis.setContenu(contenu.trim());
             avis.setNote(safeNote);
             avis.setPseudoVisiteur(pseudoVisiteur.trim());
-
-            // ✅ type optionnel + normalisé ; jamais "cours" par défaut
             avis.setTypeAvis(normalizeType(typeAvis));
-
             avis.setDatePub(LocalDate.now());
-            avis.setApprouve(false);         // en attente de validation par défaut
-            avis.setPhoto(nomFichier);       // peut être null
+            avis.setApprouve(false);
+            avis.setPhoto(nomFichier);
 
             avisService.ajouterAvis(avis);
             return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -151,11 +139,10 @@ public class AvisController {
         }
     }
 
-    // 🔹 Mettre à jour un avis existant
+    /** 🔒 Admin seulement */
     @PutMapping("/{id}")
     public ResponseEntity<AvisDTO> updateAvis(@PathVariable Integer id, @RequestBody AvisDTO avisDTO) {
         try {
-            // Normalise type si présent
             if (avisDTO.getTypeAvis() != null) {
                 avisDTO.setTypeAvis(normalizeType(avisDTO.getTypeAvis()));
             }
@@ -166,7 +153,6 @@ public class AvisController {
         }
     }
 
-    // 🔹 Approuver un avis
     @PutMapping("/{id}/approuver")
     public ResponseEntity<AvisDTO> approuverAvis(@PathVariable Integer id) {
         try {
@@ -177,7 +163,6 @@ public class AvisController {
         }
     }
 
-    // 🔹 Supprimer un avis
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAvis(@PathVariable Integer id) {
         avisService.deleteAvis(id);

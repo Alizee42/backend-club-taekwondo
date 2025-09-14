@@ -1,6 +1,6 @@
 package club.taekwondo.config;
 
-import org.slf4j.Logger; 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration; 
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -37,13 +37,14 @@ public class SecurityConfig {
                     "/api/stripe/create-payment-intent",
                     "/api/utilisateurs/login",
                     "/api/utilisateurs/register",
-                    "/api/parametres-paiement/public" // 👈 accès sans JWT
+                    "/api/parametres-paiement/public",
+                    "/api/actualites/**",
+                    "/api/avis/**"
                 ).permitAll()
-                .requestMatchers("/api/debug/**").permitAll() // utilitaire
+                .requestMatchers("/api/debug/**").permitAll()
                 // 🔒 Tout le reste nécessite auth
                 .anyRequest().authenticated()
             )
-            // ➜ Branche ton filtre JWT AVANT UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
                 .accessDeniedHandler((req, res, e) -> {
@@ -61,9 +62,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of(
-            "http://localhost:4200",               // Angular local
-            "https://frontend-club-taekwondo.netlify.app" // Front en prod
+        c.setAllowedOriginPatterns(List.of(
+            "http://localhost:4200",
+            "https://frontend-club-taekwondo.netlify.app"
         ));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         c.setAllowedHeaders(List.of("*"));
