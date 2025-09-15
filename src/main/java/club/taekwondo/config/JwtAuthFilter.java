@@ -32,18 +32,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     // Routes publiques (on ne traite pas le JWT ici)
     private static final List<String> PUBLIC_PREFIXES = List.of(
-    	    "/error",
-    	    "/api/stripe/public-key",
-    	    "/api/stripe/webhook",
-    	    "/api/stripe/create-payment-intent",  
-    	    "/api/utilisateurs/login",
-    	    "/api/utilisateurs/register",
-    	    "/api/parametres-paiement/public",
-    	    "/api/avis",
-    	    "/api/actualites",
-    	    "/api/debug/"
-    	);
-
+            "/error",
+            "/api/stripe/public-key",
+            "/api/stripe/webhook",
+            "/api/stripe/create-payment-intent",
+            "/api/utilisateurs/login",
+            "/api/utilisateurs/register",
+            "/api/parametres-paiement/public",
+            "/api/avis",
+            "/api/actualites",
+            "/api/debug/"
+    );
 
     public JwtAuthFilter(JwtUtil jwtUtil, UtilisateurService utilisateurService) {
         this.jwtUtil = jwtUtil;
@@ -71,6 +70,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         log.debug("[SEC] {} {}", request.getMethod(), request.getRequestURI());
 
         String authHeader = request.getHeader("Authorization");
+        log.debug("[SEC] Header Authorization: {}", authHeader);
 
         // Pas de Bearer → anonyme
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
