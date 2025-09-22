@@ -4,9 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -26,7 +30,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthFilter jwtAuthFilter) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ utilise notre config CORS
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
@@ -39,14 +43,22 @@ public class SecurityConfig {
                     "/api/utilisateurs/register",
                     "/api/parametres-paiement/public",
                     "/api/actualites/**",
-                    "/api/avis/**"
+                    "/api/avis/**",
+                    "/api/debug/**"
                 ).permitAll()
-                .requestMatchers("/api/debug/**").permitAll()
-                // 🔒 Tout le reste nécessite auth
+                // 🔒 Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
+                // 401 si pas de token / token invalide
+                .authenticationEntryPoint((req, res, e) -> {
+                    log.warn("[SEC] 401 {} {}", req.getMethod(), req.getRequestURI());
+                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"message\":\"Unauthorized\"}");
+                })
+                // 403 si token valide mais rôle insuffisant
                 .accessDeniedHandler((req, res, e) -> {
                     log.warn("[SEC] 403 {} {}", req.getMethod(), req.getRequestURI());
                     res.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -58,18 +70,15 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🌍 CORS: Angular local + Netlify (prod + previews)
+    // 🌍 CORS : Angular local + Netlify (prod + previews)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowCredentials(true);
-
-        // ✅ accepte localhost et tous les sous-domaines *.netlify.app
         c.setAllowedOriginPatterns(List.of(
             "http://localhost:4200",
             "https://*.netlify.app"
         ));
-
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         c.setAllowedHeaders(List.of("*"));
         c.setExposedHeaders(List.of("Location", "Authorization"));

@@ -95,7 +95,6 @@ public class UtilisateurController {
         System.out.println("[" + now() + "][USR][REGISTER] ⬅ payload reçu: " + safeUser(utilisateurDTO));
         try {
             if (utilisateurDTO == null) {
-                System.out.println("[" + now() + "][USR][REGISTER] ❌ payload null");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Requête invalide : données manquantes."));
             }
@@ -107,49 +106,34 @@ public class UtilisateurController {
             }
 
             Optional<Utilisateur> exist = utilisateurService.getUtilisateurEntityByEmail(email);
-            System.out.println("[" + now() + "][USR][REGISTER] email=" + email + " déjà existant? " + exist.isPresent());
-
             if (exist.isPresent()) {
-                System.out.println("[" + now() + "][USR][REGISTER] ❌ email déjà utilisé -> 400");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            // rôle reçu (string ou enum.toString)
-            String roleRecu = String.valueOf(utilisateurDTO.getRole());
-            System.out.println("[" + now() + "][USR][REGISTER] role reçu = '" + roleRecu + "'");
-
-            // si vide -> MEMBRE par défaut (compat)
             if (utilisateurDTO.getRole() == null || String.valueOf(utilisateurDTO.getRole()).isBlank()) {
                 utilisateurDTO.setRole(Role.MEMBRE.name());
-                System.out.println("[" + now() + "][USR][REGISTER] role manquant -> set MEMBRE");
             }
-
-            // log final avant création
-            System.out.println("[" + now() + "][USR][REGISTER] ➡ création avec: " + safeUser(utilisateurDTO));
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
 
-            System.out.println("[" + now() + "][USR][REGISTER] ✅ créé id=" + nouvelUtilisateur.getId()
-                    + ", role=" + (nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : "null"));
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("message", "Utilisateur créé avec succès.");
+            response.put("id", nouvelUtilisateur.getId());
+            response.put("email", nouvelUtilisateur.getEmail());
+            response.put("role", nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : null);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Utilisateur créé avec succès.",
-                    "id", nouvelUtilisateur.getId(),
-                    "email", nouvelUtilisateur.getEmail(),
-                    "role", nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : null
-            ));
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
         } catch (IllegalArgumentException e) {
-            System.out.println("[" + now() + "][USR][REGISTER] ❌ IllegalArgumentException: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            System.out.println("[" + now() + "][USR][REGISTER] ❌ Exception: " + e.getClass().getSimpleName()
-                    + " -> " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Erreur lors de l'inscription."));
         }
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO) {
