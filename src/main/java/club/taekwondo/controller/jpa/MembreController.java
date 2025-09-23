@@ -140,5 +140,35 @@ public class MembreController {
                     .body(Map.of("message", "Erreur lors de la suppression du membre."));
         }
     }
+    @GetMapping("/me")
+    public ResponseEntity<?> getMembreConnecte(Authentication authentication) {
+        String email = authentication.getName();
+
+        // 🔹 On récupère le rôle via les authorities
+        boolean isParent = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+
+        // 🚫 Cas ADMIN : pas de membre associé → on renvoie 204 No Content
+        if (isAdmin) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // 🔹 Cas ADULTE : membre lié à l’utilisateur
+        Optional<MembreDTO> membre = membreService.getMembreByUtilisateurEmail(email);
+        if (membre.isPresent()) {
+            return ResponseEntity.ok(membre.get());
+        }
+
+        // 🔹 Cas PARENT : retourne null (car parent n’est pas un membre pratiquant)
+        if (isParent) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Aucun membre trouvé pour l’utilisateur connecté."));
+    }
+
 }
 

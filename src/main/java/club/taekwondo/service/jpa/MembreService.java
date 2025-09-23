@@ -51,7 +51,10 @@ public class MembreService {
         return membreRepository.findByCompteUtilisateur_Email(email)
                 .map(this::toMembreDTO);
     }
-
+    
+    public Optional<MembreDTO> getMembreByUtilisateurEmail(String email) {
+        return getMembreByEmail(email);
+    }
     // 🔹 Créer un membre sans rattachement explicite
     public MembreDTO createMembre(MembreDTO membreDTO) {
         return createMembre(membreDTO, membreDTO.getUtilisateurId());
