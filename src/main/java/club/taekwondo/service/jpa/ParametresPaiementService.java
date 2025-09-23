@@ -14,22 +14,26 @@ public class ParametresPaiementService {
     private ParametresPaiementRepository parametresPaiementRepository;
 
     /** ✅ Lecture avec fallback (utilisé par ADMIN et par le GET public) */
+       // ...existing code...
+    
     public ParametresPaiementDTO getParametresPaiement() {
         return parametresPaiementRepository.findById(1L)
                 .map(this::mapToDTO)
                 .orElseGet(() -> {
-                    // Valeurs par défaut si aucun enregistrement n'existe encore
+                    // ✅ CORRECTION : Valeurs par défaut permettant les échéances
                     ParametresPaiementDTO defaut = new ParametresPaiementDTO();
-                    defaut.setMontantCotisation(100);       // ta valeur par défaut côté serveur
+                    defaut.setMontantCotisation(100);
                     defaut.setVirement(true);
                     defaut.setEspeces(true);
                     defaut.setStripe(true);
                     defaut.setModePaiementParDefaut("stripe");
-                    defaut.setEcheancesAutorisees(1);
-                    defaut.setIntervalleEcheance("30 jours");
+                    defaut.setEcheancesAutorisees(4);        // ✅ CHANGÉ : 3 au lieu de 1
+                    defaut.setIntervalleEcheance("MENSUEL"); // ✅ CHANGÉ : format cohérent
                     return defaut;
                 });
     }
+    
+    // ...existing code...
 
     /** ✅ Écriture ADMIN : met à jour (ou crée) la ligne ID=1 de façon sûre */
     @Transactional
