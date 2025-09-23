@@ -76,9 +76,9 @@ public class SecurityConfig {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowCredentials(true);
         c.setAllowedOriginPatterns(List.of(
-            "http://localhost:4200",
-            "https://*.netlify.app"
-        ));
+        	    "http://localhost:4200",
+        	    "https://frontend-club-taekwondo.netlify.app"
+        	));
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         c.setAllowedHeaders(List.of("*"));
         c.setExposedHeaders(List.of("Location", "Authorization"));

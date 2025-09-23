@@ -16,10 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/actualites", produces = MediaType.APPLICATION_JSON_VALUE) // ✅ garantit JSON
-@CrossOrigin(origins = {
-        "http://localhost:4200",
-        "https://frontend-club-taekwondo.netlify.app"
-})
+
 public class ActualiteController {
 
     private static final Logger log = LoggerFactory.getLogger(ActualiteController.class);

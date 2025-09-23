@@ -15,10 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/avis", produces = MediaType.APPLICATION_JSON_VALUE)
-@CrossOrigin(origins = {
-        "http://localhost:4200",
-        "https://frontend-club-taekwondo.netlify.app"
-})
+
 public class AvisController {
 
     @Autowired
