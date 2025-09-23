@@ -5,6 +5,7 @@ import club.taekwondo.service.mongo.ActualiteService;
 import club.taekwondo.service.common.FileUploadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/actualites") // ✅ cohérent avec Angular
+@RequestMapping(value = "/api/actualites", produces = MediaType.APPLICATION_JSON_VALUE) // ✅ garantit JSON
 @CrossOrigin(origins = {
         "http://localhost:4200",
         "https://frontend-club-taekwondo.netlify.app"
@@ -51,14 +52,14 @@ public class ActualiteController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ActualiteDTO> create(@RequestBody ActualiteDTO actualiteDTO) {
         log.debug("[CTRL] POST /api/actualites payload={}", actualiteDTO);
         actualiteDTO.setDatePublication(LocalDateTime.now());
         return ResponseEntity.status(201).body(actualiteService.create(actualiteDTO));
     }
 
-    @PostMapping("/with-image")
+    @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createWithImage(
             @RequestParam String titre,
             @RequestParam String contenu,
@@ -83,12 +84,13 @@ public class ActualiteController {
             return ResponseEntity.status(201).body(actualiteService.create(actualiteDTO));
         } catch (IOException e) {
             log.error("[CTRL] Erreur upload image", e);
+            // ✅ réponse JSON au lieu de string brut
             return ResponseEntity.internalServerError()
-                    .body("{\"message\":\"Erreur lors de l'upload de l'image\"}");
+                    .body(new ErrorResponse("Erreur lors de l'upload de l'image"));
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ActualiteDTO> update(@PathVariable String id, @RequestBody ActualiteDTO actualiteDTO) {
         log.debug("[CTRL] PUT /api/actualites/{} payload={}", id, actualiteDTO);
         ActualiteDTO updated = actualiteService.update(id, actualiteDTO);
@@ -113,4 +115,7 @@ public class ActualiteController {
         actualiteService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    // ✅ classe utilitaire pour renvoyer des erreurs en JSON
+    private record ErrorResponse(String message) {}
 }
