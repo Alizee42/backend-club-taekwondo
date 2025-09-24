@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +49,22 @@ public class CommandeService {
     // Récupérer une commande par son ID
     public Optional<CommandeDTO> getCommandeById(Long id) {
         return commandeRepository.findById(id).map(this::convertToDTO);
+    }
+
+    // Récupérer les commandes d’un membre
+    public List<CommandeDTO> getCommandesParMembre(Long membreId) {
+        return commandeRepository.findAll().stream()
+                .filter(c -> c.getUtilisateur() != null && c.getUtilisateur().getId().equals(membreId))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Récupérer les commandes d’un parent (lui + ses enfants)
+    public List<CommandeDTO> getCommandesParParent(Long parentId) {
+        return commandeRepository.findAll().stream()
+                .filter(c -> c.getUtilisateur() != null && c.getUtilisateur().getId().equals(parentId))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // Créer une commande simple (sans lignes)
@@ -98,7 +113,6 @@ public class CommandeService {
             commande.setStatut("PAYEE");
             commande.setDatePaiement(LocalDate.now());
         } else {
-            // CLUB / ESPECES / VIREMENT / autres -> en attente
             commande.setStatut("EN_ATTENTE");
             commande.setDatePaiement(null);
         }
@@ -126,7 +140,6 @@ public class CommandeService {
                 ligne.setQuantite(ligneDTO.getQuantite());
                 ligne.setPrixUnitaire(ligneDTO.getPrixUnitaire());
 
-                // Sous-total en BigDecimal pour éviter les erreurs d'arrondi
                 BigDecimal pu = BigDecimal.valueOf(ligneDTO.getPrixUnitaire() != null ? ligneDTO.getPrixUnitaire() : 0.0);
                 BigDecimal qte = BigDecimal.valueOf(ligneDTO.getQuantite() != null ? ligneDTO.getQuantite() : 0);
                 BigDecimal ligneTotal = pu.multiply(qte);
@@ -136,7 +149,6 @@ public class CommandeService {
                 ligne.setCouleur(ligneDTO.getCouleur());
                 ligne.setFlocage(ligneDTO.getFlocage());
 
-                // Bénéficiaire (enfant) optionnel par ligne
                 if (ligneDTO.getBeneficiaireId() != null) {
                     Membre enfant = membreRepository.findById(ligneDTO.getBeneficiaireId())
                             .orElseThrow(() -> new RuntimeException("Bénéficiaire (membre) introuvable: " + ligneDTO.getBeneficiaireId()));
@@ -164,36 +176,6 @@ public class CommandeService {
         } else {
             throw new IllegalArgumentException("Commande avec ID " + id + " non trouvée.");
         }
-    }
-
-    // Valider manuellement un paiement (admin)
-    @Transactional
-    public void validerPaiementManuel(Long id, String statut, String modePaiement, String datePaiement) {
-        Commande commande = commandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID : " + id));
-
-        final String statutNorm = nullSafeUpper(statut);
-        final String modeNorm = normalizeMode(modePaiement);
-
-        commande.setStatut(statutNorm);
-        commande.setModePaiement(modeNorm);
-
-        if (datePaiement != null && !datePaiement.isBlank()) {
-            try {
-                commande.setDatePaiement(LocalDate.parse(datePaiement)); // "YYYY-MM-DD"
-            } catch (DateTimeParseException ex) {
-                throw new IllegalArgumentException("Format de datePaiement invalide (attendu YYYY-MM-DD) : " + datePaiement);
-            }
-        } else {
-            // Si on valide en PAYEE et mode CB sans date fournie, on pose la date du jour
-            if ("PAYEE".equals(statutNorm) && "CB".equals(modeNorm)) {
-                commande.setDatePaiement(LocalDate.now());
-            } else {
-                commande.setDatePaiement(null);
-            }
-        }
-
-        commandeRepository.save(commande);
     }
 
     // Mise à jour partielle d’une commande (statut/mode/date)
@@ -231,10 +213,49 @@ public class CommandeService {
     }
 
     // =========================
+    //    Actions sur commande
+    // =========================
+
+    @Transactional
+    public CommandeDTO validerCommande(Long id, String modePaiement) {
+        Commande commande = commandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec ID " + id));
+
+        commande.setStatut("PAYEE");
+        commande.setModePaiement(normalizeMode(modePaiement));
+        commande.setDatePaiement(LocalDate.now());
+
+        commande = commandeRepository.save(commande);
+        return convertToDTO(commande);
+    }
+
+    @Transactional
+    public CommandeDTO annulerCommande(Long id, String motif) {
+        Commande commande = commandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec ID " + id));
+
+        commande.setStatut("ANNULEE");
+        commande.setDatePaiement(null);
+
+        commande = commandeRepository.save(commande);
+        return convertToDTO(commande);
+    }
+
+    @Transactional
+    public CommandeDTO marquerCommandeARetirer(Long id) {
+        Commande commande = commandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec ID " + id));
+
+        commande.setStatut("A_RETIRER");
+
+        commande = commandeRepository.save(commande);
+        return convertToDTO(commande);
+    }
+
+    // =========================
     //       Conversions
     // =========================
 
-    // Conversion Commande -> DTO (avec lignes + utilisateur)
     private CommandeDTO convertToDTO(Commande commande) {
         CommandeDTO dto = new CommandeDTO();
         dto.setId(commande.getId());
@@ -264,7 +285,6 @@ public class CommandeService {
         return dto;
     }
 
-    // Conversion LigneCommande -> DTO (incluant le bénéficiaire enfant)
     private LigneCommandeDTO convertLigneToDTO(LigneCommande ligne) {
         LigneCommandeDTO dto = new LigneCommandeDTO();
         dto.setId(ligne.getId());
@@ -285,7 +305,6 @@ public class CommandeService {
         dto.setCouleur(ligne.getCouleur());
         dto.setFlocage(ligne.getFlocage());
 
-        // mapping bénéficiaire
         Membre ben = ligne.getBeneficiaire();
         if (ben != null) {
             dto.setBeneficiaireId(ben.getId());
@@ -304,14 +323,6 @@ public class CommandeService {
         return s == null ? null : s.toUpperCase();
     }
 
-    /**
-     * Normalise le mode de paiement pour le stocker en base :
-     * - "stripe", "cb", "carte", "carte bancaire" -> "CB"
-     * - "club" -> "CLUB"
-     * - "especes"/"espèces" -> "ESPECES"
-     * - "virement" -> "VIREMENT"
-     * - sinon renvoie la version UPPERCASE trim.
-     */
     private static String normalizeMode(String raw) {
         if (raw == null) return null;
         String m = raw.trim().toLowerCase();
@@ -333,6 +344,4 @@ public class CommandeService {
                 return raw.trim().toUpperCase();
         }
     }
-
-    // NOTE: plus de champ "disponible_au_club" -> méthode retirée (ou no-op si appelée ailleurs)
 }

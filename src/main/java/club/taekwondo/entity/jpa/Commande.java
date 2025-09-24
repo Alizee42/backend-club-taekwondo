@@ -3,6 +3,7 @@ package club.taekwondo.entity.jpa;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Access(AccessType.FIELD)
@@ -28,11 +29,14 @@ public class Commande {
     @Column(name = "date_paiement")
     private LocalDate datePaiement;
 
-
-    // Clé étrangère vers Utilisateur
+    // 🔹 Relation avec Utilisateur (parent/membre avec compte)
     @ManyToOne
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
     private Utilisateur utilisateur;
+
+    // 🔹 Relation avec les lignes de commande
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LigneCommande> lignes;
 
     // Constructeur par défaut
     public Commande() {}
@@ -87,22 +91,27 @@ public class Commande {
         this.utilisateur = utilisateur;
     }
 
-	public String getModePaiement() {
-		return modePaiement;
-	}
+    public String getModePaiement() {
+        return modePaiement;
+    }
 
-	public void setModePaiement(String modePaiement) {
-		this.modePaiement = modePaiement;
-	}
+    public void setModePaiement(String modePaiement) {
+        this.modePaiement = modePaiement;
+    }
 
+    public LocalDate getDatePaiement() {
+        return datePaiement;
+    }
 
+    public void setDatePaiement(LocalDate datePaiement) {
+        this.datePaiement = datePaiement;
+    }
 
-		public LocalDate getDatePaiement() {
-			return datePaiement;
-		}
+    public List<LigneCommande> getLignes() {
+        return lignes;
+    }
 
-		public void setDatePaiement(LocalDate datePaiement) {
-			this.datePaiement = datePaiement;
-		}
-    
+    public void setLignes(List<LigneCommande> lignes) {
+        this.lignes = lignes;
+    }
 }

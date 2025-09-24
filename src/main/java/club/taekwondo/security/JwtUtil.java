@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -27,12 +28,10 @@ public class JwtUtil {
     }
 
     // ====== extraction ======
-    /** Retourne l'email/username stocké en "sub" (subject). */
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    /** Compatibilité avec le code appelant : alias de extractEmail. */
     public String extractUsername(String token) {
         return extractEmail(token);
     }
@@ -41,6 +40,14 @@ public class JwtUtil {
         Claims c = extractAllClaims(token);
         Object r = c.get("role");
         return r == null ? null : String.valueOf(r);
+    }
+
+    public Object extractUtilisateurId(String token) {
+        return extractAllClaims(token).get("utilisateurId");
+    }
+
+    public Object extractMembreId(String token) {
+        return extractAllClaims(token).get("membreId");
     }
 
     public Date extractExpiration(String token) {
@@ -63,7 +70,6 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    // ====== validation ======
     public boolean validateToken(String token, String email) {
         String subject = extractEmail(token);
         return subject != null && subject.equals(email) && !isTokenExpired(token);
@@ -80,7 +86,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    /** Génère un token avec un claim "role" (ex: "ADMIN") */
+    /** Génère un token simple avec role */
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
@@ -89,5 +95,26 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    /** 🔥 Génère un token complet avec ID + role */
+    public String generateToken(String email, String role, Long utilisateurId, Long membreId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        if (utilisateurId != null) {
+            claims.put("utilisateurId", utilisateurId);
+        }
+        if (membreId != null) {
+            claims.put("membreId", membreId);
+        }
+
+        return Jwts.builder()
+        .setSubject(email) // "sub"
+        .addClaims(claims) // ajoute role, utilisateurId, membreId
+        .setIssuedAt(new Date())
+        .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+        .compact();
+
     }
 }

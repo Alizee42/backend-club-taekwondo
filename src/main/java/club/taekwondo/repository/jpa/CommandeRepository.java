@@ -1,13 +1,12 @@
 package club.taekwondo.repository.jpa;
 
 import club.taekwondo.entity.jpa.Commande;
-
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface CommandeRepository extends JpaRepository<Commande, Long> {
@@ -21,6 +20,13 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
             @Param("statut") String statut,
             @Param("modesPaiement") List<String> modesPaiement);
 
-    // 🔹 Trouver les commandes par utilisateur
+    // 🔹 Trouver les commandes par utilisateur (parent/membre avec compte)
     List<Commande> findByUtilisateurId(Long utilisateurId);
+
+    // 🔹 Trouver les commandes par bénéficiaire (membre enfant)
+    @Query("SELECT DISTINCT c FROM Commande c JOIN c.lignes l WHERE l.beneficiaire.id = :membreId")
+    List<Commande> findByMembreId(@Param("membreId") Long membreId);
+
+    // 🔹 Toutes les commandes triées par date (utile pour l’admin)
+    List<Commande> findAllByOrderByDateCommandeDesc();
 }

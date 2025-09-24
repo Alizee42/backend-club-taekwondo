@@ -1125,5 +1125,13 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
 
         return saved;
     }
+    public List<PaiementDTO> getPaiementsParMembre(Long membreId) {
+        if (membreId == null) return Collections.emptyList();
+
+        return paiementRepository.findAll().stream()
+                .filter(p -> p.getMembre() != null && Objects.equals(p.getMembre().getId(), membreId))
+                .map(this::toPaiementDTO)
+                .collect(Collectors.toList());
+    }
 
 }

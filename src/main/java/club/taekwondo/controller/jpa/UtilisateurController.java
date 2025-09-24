@@ -136,47 +136,56 @@ public class UtilisateurController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO) {
-        System.out.println("[" + now() + "][USR][LOGIN] ⬅ payload reçu");
-        try {
-            if (loginDTO == null || loginDTO.getEmail() == null || loginDTO.getEmail().isBlank()
-                    || loginDTO.getPassword() == null || loginDTO.getPassword().isBlank()) {
-                System.out.println("[" + now() + "][USR][LOGIN] ❌ email ou mot de passe manquant");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "Email et mot de passe sont obligatoires."));
-            }
-
-            System.out.println("[" + now() + "][USR][LOGIN] ⬅ email=" + loginDTO.getEmail()
-                    + ", password=" + maskPwd(loginDTO.getPassword()));
-
-            Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.login(loginDTO.getEmail(), loginDTO.getPassword());
-            if (utilisateurOpt.isEmpty()) {
-                System.out.println("[" + now() + "][USR][LOGIN] ❌ échec authentification -> 401");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Email ou mot de passe incorrect."));
-            }
-
-            UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
-            String roleStr = String.valueOf(utilisateurDTO.getRole());
-            System.out.println("[" + now() + "][USR][LOGIN] ✅ OK email=" + utilisateurDTO.getEmail()
-                    + ", role=" + roleStr);
-
-            String token = jwtUtil.generateToken(utilisateurDTO.getEmail(), roleStr);
-
-            return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "role", roleStr,
-                    "email", utilisateurDTO.getEmail(),
-                    "utilisateur", utilisateurDTO
-            ));
-        } catch (Exception e) {
-            System.out.println("[" + now() + "][USR][LOGIN] ❌ Exception: " + e.getClass().getSimpleName()
-                    + " -> " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Erreur lors de l'authentification."));
+public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO) {
+    System.out.println("[" + now() + "][USR][LOGIN] ⬅ payload reçu");
+    try {
+        if (loginDTO == null || loginDTO.getEmail() == null || loginDTO.getEmail().isBlank()
+                || loginDTO.getPassword() == null || loginDTO.getPassword().isBlank()) {
+            System.out.println("[" + now() + "][USR][LOGIN] ❌ email ou mot de passe manquant");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Email et mot de passe sont obligatoires."));
         }
+
+        System.out.println("[" + now() + "][USR][LOGIN] ⬅ email=" + loginDTO.getEmail()
+                + ", password=" + maskPwd(loginDTO.getPassword()));
+
+        Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.login(loginDTO.getEmail(), loginDTO.getPassword());
+        if (utilisateurOpt.isEmpty()) {
+            System.out.println("[" + now() + "][USR][LOGIN] ❌ échec authentification -> 401");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Email ou mot de passe incorrect."));
+        }
+
+        UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
+        String roleStr = String.valueOf(utilisateurDTO.getRole());
+        System.out.println("[" + now() + "][USR][LOGIN] ✅ OK email=" + utilisateurDTO.getEmail()
+                + ", role=" + roleStr);
+
+        // 🔥 Ajout de l’ID utilisateur dans le token
+        String token = jwtUtil.generateToken(
+                utilisateurDTO.getEmail(),
+                roleStr,
+                utilisateurDTO.getId(),  // utilisateurId
+                null                     // membreId pas encore géré
+        );
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "role", roleStr,
+                "email", utilisateurDTO.getEmail(),
+                "utilisateurId", utilisateurDTO.getId(), // utile côté front
+                "utilisateur", utilisateurDTO
+        ));
+    } catch (Exception e) {
+        System.out.println("[" + now() + "][USR][LOGIN] ❌ Exception: " + e.getClass().getSimpleName()
+                + " -> " + e.getMessage());
+        e.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Erreur lors de l'authentification."));
     }
+}
+
+
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {

@@ -1,5 +1,6 @@
 package club.taekwondo.entity.jpa;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,11 +12,14 @@ public class LigneCommande {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    // 🔹 Relation vers Commande (plusieurs lignes appartiennent à une commande)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commande_id", nullable = false)
+    @JsonBackReference
     private Commande commande;
 
-    @ManyToOne
+    // 🔹 Relation vers Produit
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produit_id", nullable = false)
     private Produit produit;
 
@@ -28,7 +32,7 @@ public class LigneCommande {
     @Column(nullable = false)
     private Double sousTotal;
 
-    // Ajout des nouveaux champs pour correspondre au frontend
+    // Champs additionnels pour personnalisation
     @Column(nullable = true)
     private String taille;
 
@@ -38,15 +42,19 @@ public class LigneCommande {
     @Column(nullable = true)
     private String flocage;
 
+    // 🔹 Bénéficiaire (enfant) optionnel
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "beneficiaire_id") // nullable autorisé
     private Membre beneficiaire;
-    
-    // Constructeur par défaut
+
+    // =========================
+    // Constructeurs
+    // =========================
     public LigneCommande() {}
 
-    // Constructeur avec paramètres
-    public LigneCommande(Long id, Commande commande, Produit produit, Integer quantite, Double prixUnitaire, Double sousTotal, String taille, String couleur, String flocage) {
+    public LigneCommande(Long id, Commande commande, Produit produit,
+                         Integer quantite, Double prixUnitaire, Double sousTotal,
+                         String taille, String couleur, String flocage) {
         this.id = id;
         this.commande = commande;
         this.produit = produit;
@@ -58,7 +66,9 @@ public class LigneCommande {
         this.flocage = flocage;
     }
 
+    // =========================
     // Getters et Setters
+    // =========================
     public Long getId() {
         return id;
     }
@@ -131,13 +141,11 @@ public class LigneCommande {
         this.flocage = flocage;
     }
 
-	public Membre getBeneficiaire() {
-		return beneficiaire;
-	}
+    public Membre getBeneficiaire() {
+        return beneficiaire;
+    }
 
-	public void setBeneficiaire(Membre beneficiaire) {
-		this.beneficiaire = beneficiaire;
-	}
-    
-    
+    public void setBeneficiaire(Membre beneficiaire) {
+        this.beneficiaire = beneficiaire;
+    }
 }

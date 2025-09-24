@@ -370,7 +370,28 @@ public class PaiementController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    /* ===========================
+     *   Espace Membre (ajouté)
+     * =========================== */
+    @PreAuthorize("hasAnyRole('MEMBRE','ADMIN')")
+    @GetMapping("/membre/mes-paiements")
+    public ResponseEntity<List<PaiementDTO>> getPaiementsPourMembreConnecte(
+            @RequestHeader("Authorization") String authHeader) {
 
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        final String jwt = authHeader.substring(7);
+        final String email = jwtUtil.extractEmail(jwt);
+
+        Utilisateur membre = utilisateurService.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+
+        List<PaiementDTO> paiements = paiementService.getPaiementsParMembre(membre.getId());
+
+        return ResponseEntity.ok(paiements);
+    }
     /* ===========================
      *   Espace Membre (SÉCURISÉ)
      * =========================== */
