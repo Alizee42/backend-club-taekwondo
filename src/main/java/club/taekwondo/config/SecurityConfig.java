@@ -32,6 +32,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 🔓 Endpoints publics
                 .requestMatchers(
+                    "/error",
                     "/api/stripe/webhook",
                     "/api/stripe/public-key",
                     "/api/stripe/create-payment-intent",
@@ -40,8 +41,16 @@ public class SecurityConfig {
                     "/api/parametres-paiement/public",
                     "/api/actualites/**",
                     "/api/avis/**",
-                    "/api/debug/**"
+                    "/api/debug/**",
+                    "/api/produits/**"
                 ).permitAll()
+
+                // 👥 Membres : MEMBRE, PARENT, ADMIN
+                .requestMatchers("/api/membres/**").hasAnyRole("MEMBRE", "PARENT", "ADMIN")
+
+                // 👑 Admin uniquement
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                 // 🔒 Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )
@@ -72,9 +81,13 @@ public class SecurityConfig {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowCredentials(true);
         c.setAllowedOriginPatterns(List.of(
-        	    "http://localhost:4200",
-        	    "https://frontend-club-taekwondo.netlify.app"
-        	));
+            "http://localhost:4200",
+            "http://127.0.0.1:4200",
+            "http://localhost:5173",   // si tu utilises Vite
+            "http://127.0.0.1:5173",
+            "https://frontend-club-taekwondo.netlify.app"
+        ));
+
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         c.setAllowedHeaders(List.of("*"));
         c.setExposedHeaders(List.of("Location", "Authorization"));

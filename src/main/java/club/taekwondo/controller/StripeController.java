@@ -11,6 +11,8 @@ import com.stripe.exception.IdempotencyException;
 import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,8 +25,14 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/stripe")
-@CrossOrigin(origins = "*", maxAge = 3600) 
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class StripeController {
+
+    private static final Logger log = LoggerFactory.getLogger(StripeController.class);
+
+    private static final Set<String> CONFIRMABLE_STATUSES = Set.of(
+            "requires_payment_method", "requires_confirmation", "requires_action"
+    );
 
     private final PaiementService paiementService;
     private final UtilisateurService utilisateurService;
@@ -46,7 +54,9 @@ public class StripeController {
 
     @GetMapping("/public-key")
     public ResponseEntity<?> getPublicKey() {
+        log.info("[STRIPE] /public-key");
         if (publishableKey == null || publishableKey.isBlank()) {
+            log.warn("[STRIPE] Clé publique Stripe non configurée");
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(Map.of("publicKey", publishableKey));
@@ -56,116 +66,125 @@ public class StripeController {
     public ResponseEntity<?> createPaymentIntent(@RequestBody Map<String, Object> body,
                                                  @RequestHeader HttpHeaders headers,
                                                  HttpServletRequest request) {
-        System.out.println("=============================");
-        System.out.println("🚀 [StripeController] createPaymentIntent déclenché");
-        System.out.println("Requête brute reçue: " + body);
+        log.info("==================================================");
+        log.info("🚀 [STRIPE] createPaymentIntent déclenché");
+        log.info("[STRIPE] Payload: {}", body);
 
         try {
-            // --------- Auth ---------
+            // --------- Auth (facultative mais utile pour l’autorisation) ---------
             String auth = headers.getFirst(HttpHeaders.AUTHORIZATION);
             String jwt = (auth != null && auth.startsWith("Bearer ")) ? auth.substring(7) : null;
 
             Utilisateur utilisateur = null;
             if (jwt != null) {
                 String email = jwtUtil.extractEmail(jwt);
-                System.out.printf("🔑 JWT décodé -> email: %s%n", email);
+                log.info("[STRIPE] JWT décodé → email={}", email);
                 utilisateur = utilisateurService.findByEmail(email).orElse(null);
             }
 
             Long paiementId = asLong(body.get("paiementId"));
             final Long reqEcheanceId = asLong(body.get("echeanceId"));
             String customerEmail = asString(body.get("customerEmail"));
-            if (paiementId == null) return ResponseEntity.badRequest().body(Map.of("error", "paiementId manquant"));
+
+            if (paiementId == null) {
+                log.warn("[STRIPE] paiementId manquant");
+                return ResponseEntity.badRequest().body(Map.of("error", "paiementId manquant"));
+            }
 
             Optional<Paiement> optPaiement = paiementService.getById(paiementId);
-            if (optPaiement.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Paiement introuvable"));
+            if (optPaiement.isEmpty()) {
+                log.warn("[STRIPE] Paiement introuvable id={}", paiementId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Paiement introuvable"));
+            }
             Paiement p = optPaiement.get();
 
-            // --- Autorisation ---
+            // --------- Autorisation basique ---------
             boolean autorise = false;
             try {
                 autorise = (utilisateur != null) && (
-                        (p.getUtilisateur() != null && Objects.equals(p.getUtilisateur().getId(), utilisateur.getId())) ||
-                        (p.getMembre() != null && p.getMembre().getParent() != null &&
-                         Objects.equals(p.getMembre().getParent().getId(), utilisateur.getId()))
+                        // propriétaire direct du paiement
+                        (p.getUtilisateur() != null && Objects.equals(p.getUtilisateur().getId(), utilisateur.getId()))
+                                // ou parent du membre ciblé
+                                || (p.getMembre() != null && p.getMembre().getParent() != null
+                                && Objects.equals(p.getMembre().getParent().getId(), utilisateur.getId()))
                 );
             } catch (Exception ignored) {}
-            System.out.printf("🔒 Vérif autorisation -> %s%n", autorise ? "OK" : "REFUSÉ");
-            if (!autorise) return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error","Non autorisé pour ce paiement."));
+            log.info("[STRIPE] Vérif autorisation → {}", autorise ? "OK" : "REFUSÉ");
+            if (!autorise) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Non autorisé pour ce paiement."));
+            }
 
-            // ------------ Déterminer l’échéance cible + montant ------------
+            // --------- Déterminer montant à payer (centimes) ---------
             Echeance cible = null;
             Integer echeanceNumero = null;
             long amountInCents;
-            String typeCourant = (p.getType() == null) ? "UNIQUE" : p.getType().toUpperCase(Locale.ROOT);
+            String typeCourant = (p.getType() == null) ? "UNIQUE" : p.getType().trim().toUpperCase(Locale.ROOT);
 
             if ("ECHELONNE".equalsIgnoreCase(typeCourant)) {
                 List<Echeance> echeances = (p.getEcheances() == null) ? List.of() : p.getEcheances();
-                if (echeances.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error","Aucune échéance définie pour ce paiement."));
+                if (echeances.isEmpty()) {
+                    log.warn("[STRIPE] Aucune échéance définie pour le paiement id={}", paiementId);
+                    return ResponseEntity.badRequest().body(Map.of("error", "Aucune échéance définie pour ce paiement."));
+                }
 
                 if (reqEcheanceId != null) {
-                    cible = echeances.stream().filter(e -> Objects.equals(e.getId(), reqEcheanceId)).findFirst().orElse(null);
-                    if (cible == null) return ResponseEntity.badRequest().body(Map.of("error","Échéance spécifiée introuvable."));
+                    cible = echeances.stream()
+                            .filter(e -> Objects.equals(e.getId(), reqEcheanceId))
+                            .findFirst().orElse(null);
+                    if (cible == null) {
+                        log.warn("[STRIPE] Échéance précisée introuvable: {}", reqEcheanceId);
+                        return ResponseEntity.badRequest().body(Map.of("error", "Échéance spécifiée introuvable."));
+                    }
                 } else {
                     Optional<Echeance> firstUnpaid = echeances.stream()
                             .filter(e -> !"payé".equalsIgnoreCase(safe(e.getStatut())))
                             .sorted(Comparator.comparingInt(Echeance::getNumero))
                             .findFirst();
-                    if (firstUnpaid.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error","Aucune échéance à payer."));
+                    if (firstUnpaid.isEmpty()) {
+                        log.info("[STRIPE] Aucune échéance impayée pour paiement id={}", paiementId);
+                        return ResponseEntity.badRequest().body(Map.of("error", "Aucune échéance à payer."));
+                    }
                     cible = firstUnpaid.get();
                 }
+
                 echeanceNumero = cible.getNumero();
                 amountInCents = Math.round(safeDouble(cible.getMontant()) * 100.0);
-                System.out.printf("💰 Montant calculé pour échéance #%d = %d cents%n", echeanceNumero, amountInCents);
+                log.info("[STRIPE] Montant échéance #{} = {} cents", echeanceNumero, amountInCents);
             } else {
-                if (p.getMontantTotal() == null || p.getMontantTotal() <= 0)
-                    return ResponseEntity.badRequest().body(Map.of("error","Montant du paiement invalide."));
+                if (p.getMontantTotal() == null || p.getMontantTotal() <= 0) {
+                    log.warn("[STRIPE] Montant total invalide sur paiement id={}", paiementId);
+                    return ResponseEntity.badRequest().body(Map.of("error", "Montant du paiement invalide."));
+                }
                 amountInCents = Math.round(p.getMontantTotal() * 100.0);
-                System.out.printf("💰 Montant total calculé = %d cents%n", amountInCents);
+                log.info("[STRIPE] Montant total (unique) = {} cents", amountInCents);
             }
 
             final Long finalEcheanceId = ("ECHELONNE".equalsIgnoreCase(typeCourant) && cible != null)
                     ? (reqEcheanceId != null ? reqEcheanceId : cible.getId())
                     : null;
 
-            // ------------ Réutilisation éventuelle d’un PI existant (confirmable) ------------
+            // --------- Réutilisation éventuelle d’un PI confirmable ---------
             PaymentIntent existing = null;
             if (cible != null && cible.getReference() != null && !cible.getReference().isBlank()) {
                 try {
                     existing = PaymentIntent.retrieve(cible.getReference());
                     String status = existing.getStatus();
-                    System.out.printf("ℹ️ PI existant (échéance)=%s, status=%s%n", existing.getId(), status);
-                    boolean confirmable = "requires_payment_method".equals(status)
-                            || "requires_confirmation".equals(status)
-                            || "requires_action".equals(status);
-                    if (confirmable) {
-                        System.out.printf("↩️ Réutilisation du PI confirmable: %s%n", existing.getId());
-                        System.out.printf("==============================%n%n");
+                    log.info("[STRIPE] PI existant pour échéance={}, status={}", cible.getId(), status);
+                    if (status != null && CONFIRMABLE_STATUSES.contains(status)) {
+                        log.info("[STRIPE] Réutilisation du PaymentIntent confirmable: {}", existing.getId());
                         return ResponseEntity.ok(Map.of(
                                 "clientSecret", existing.getClientSecret(),
                                 "paymentIntentId", existing.getId()
                         ));
                     }
                 } catch (Exception ex) {
-                    System.out.println("⚠️ Récupération PI échéance échouée, on ignore. Cause: " + ex.getMessage());
+                    log.warn("[STRIPE] Impossible de récupérer le PI existant (échéance={}) → ignore. Cause: {}",
+                            cible.getId(), ex.getMessage());
                 }
             }
 
-            // ------------ Idempotency key (inclut echeanceId) ------------
-            String idemKeySuffix = "ECHELONNE".equalsIgnoreCase(typeCourant)
-                    ? ("ech-" + echeanceNumero + "-" + (finalEcheanceId != null ? finalEcheanceId : "x") + "-" + amountInCents)
-                    : ("unique-" + amountInCents);
-            String idempotencyKey = "paiement-" + paiementId + "-" + idemKeySuffix;
-
-            if (existing != null) {
-                String status = existing.getStatus();
-                if ("succeeded".equals(status) || "canceled".equals(status) || "requires_capture".equals(status) || "processing".equals(status)) {
-                    idempotencyKey = idempotencyKey + "-v" + System.currentTimeMillis();
-                    System.out.printf("🔁 Ancien PI non réutilisable (status=%s) → nouvelle Idempotency-Key: %s%n", status, idempotencyKey);
-                }
-            }
-
-            // ------------ Email pour reçu Stripe natif ------------
+            // --------- E-mail pour reçu Stripe natif ---------
             if (customerEmail == null || customerEmail.isBlank()) {
                 if (p.getUtilisateur() != null && p.getUtilisateur().getEmail() != null) {
                     String e = p.getUtilisateur().getEmail().trim();
@@ -177,7 +196,7 @@ public class StripeController {
                 }
             }
 
-            // ------------ Construction de la requête Stripe ------------
+            // --------- Metadata (lien fort vers la BDD) ---------
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("paiementId", String.valueOf(paiementId));
             metadata.put("type", typeCourant);
@@ -185,54 +204,71 @@ public class StripeController {
             metadata.put("membreId", p.getMembre() != null ? String.valueOf(p.getMembre().getId()) : "");
             metadata.put("utilisateurId", p.getUtilisateur() != null ? String.valueOf(p.getUtilisateur().getId()) : "");
 
+            // --------- Corps du PaymentIntent ---------
             Map<String, Object> piReq = new HashMap<>();
-            piReq.put("amount", amountInCents);
+            piReq.put("amount", amountInCents);         // ⚠️ toujours en CENTIMES
             piReq.put("currency", "eur");
             piReq.put("metadata", metadata);
             piReq.put("description", "Cotisation / Paiement #" + paiementId);
             piReq.put("automatic_payment_methods", Map.of("enabled", true));
-
             if (customerEmail != null && !customerEmail.isBlank()) {
                 piReq.put("receipt_email", customerEmail);
             }
 
-            System.out.printf("🟢 Envoi création PaymentIntent à Stripe avec: %s%n", piReq);
-            System.out.printf("🔁 Idempotency-Key utilisée: %s%n", idempotencyKey);
+            // --------- Idempotency-Key stable ---------
+            String idemKeySuffix = "ECHELONNE".equalsIgnoreCase(typeCourant)
+                    ? ("ech-" + (echeanceNumero != null ? echeanceNumero : "x") + "-" + (finalEcheanceId != null ? finalEcheanceId : "x") + "-" + amountInCents)
+                    : ("unique-" + amountInCents);
+            String idempotencyKey = "paiement-" + paiementId + "-" + idemKeySuffix;
 
+            if (existing != null) {
+                String status = existing.getStatus();
+                if (status != null && (status.equals("succeeded")
+                        || status.equals("canceled")
+                        || status.equals("requires_capture")
+                        || status.equals("processing"))) {
+                    idempotencyKey = idempotencyKey + "-v" + System.currentTimeMillis();
+                    log.info("[STRIPE] Ancien PI non réutilisable (status={}) → nouvelle Idempotency-Key: {}", status, idempotencyKey);
+                }
+            }
+
+            log.info("[STRIPE] Création/MAJ PaymentIntent → amount={} cents, idemKey={}", amountInCents, idempotencyKey);
+            log.debug("[STRIPE] Payload PI: {}", piReq);
+
+            // --------- Création Stripe (avec idempotence) ---------
             PaymentIntent paymentIntent;
             try {
                 paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq, idempotencyKey);
             } catch (IdempotencyException idemEx) {
-                System.out.println("⚠️ IdempotencyException: " + idemEx.getMessage() + " → retry avec clé versionnée");
+                log.warn("[STRIPE] IdempotencyException: {} → retry avec clé versionnée", idemEx.getMessage());
                 String retryKey = idempotencyKey + "-v" + System.currentTimeMillis();
                 paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq, retryKey);
             }
 
-            // ------------ Persister l’ID du PI ------------
+            // --------- Persister l’ID du PI côté BDD ---------
             try {
                 if ("ECHELONNE".equalsIgnoreCase(typeCourant) && finalEcheanceId != null) {
                     paiementService.saveEcheanceReference(finalEcheanceId, paymentIntent.getId());
-                    System.out.printf("💾 PaymentIntent ID sauvegardé sur l'échéance %d: %s%n", finalEcheanceId, paymentIntent.getId());
+                    log.info("[STRIPE] PaymentIntent ID sauvegardé sur l'échéance {} → {}", finalEcheanceId, paymentIntent.getId());
                 } else {
                     p.setPaymentIntentId(paymentIntent.getId());
                     paiementService.save(p);
-                    System.out.printf("💾 PaymentIntent ID sauvegardé sur le paiement (unique): %s%n", paymentIntent.getId());
+                    log.info("[STRIPE] PaymentIntent ID sauvegardé sur le paiement (unique) → {}", paymentIntent.getId());
                 }
             } catch (Exception ex) {
-                System.out.println("⚠️ Erreur sauvegarde PaymentIntent en BDD: " + ex.getMessage());
+                log.warn("[STRIPE] Erreur de sauvegarde PaymentIntent en BDD: {}", ex.getMessage());
             }
 
-            System.out.println("✅ ClientSecret renvoyé au front");
-            System.out.printf("==============================%n%n");
+            log.info("[STRIPE] ✅ ClientSecret renvoyé au front");
+            log.info("==================================================");
             return ResponseEntity.ok(Map.of(
                     "clientSecret", paymentIntent.getClientSecret(),
                     "paymentIntentId", paymentIntent.getId()
             ));
 
         } catch (Exception e) {
-            System.out.println("❌ Exception attrapée dans createPaymentIntent:");
-            e.printStackTrace();
-            System.out.printf("==============================%n%n");
+            log.error("[STRIPE] ❌ Exception dans createPaymentIntent: {}", e.getMessage(), e);
+            log.info("==================================================");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
@@ -248,7 +284,10 @@ public class StripeController {
 
             PaymentIntent pi = PaymentIntent.retrieve(piId);
             if (!"succeeded".equalsIgnoreCase(pi.getStatus())) {
-                return ResponseEntity.badRequest().body(Map.of("error", "PaymentIntent non succeeded", "status", pi.getStatus()));
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "PaymentIntent non succeeded",
+                        "status", pi.getStatus()
+                ));
             }
 
             Map<String, String> md = pi.getMetadata();
@@ -256,20 +295,25 @@ public class StripeController {
             Long paiementId = asLong(md.get("paiementId"));
             Long echeanceId = asLong(md.get("echeanceId"));
 
-            if (paiementId == null) return ResponseEntity.badRequest().body(Map.of("error","paiementId manquant dans metadata"));
+            if (paiementId == null)
+                return ResponseEntity.badRequest().body(Map.of("error", "paiementId manquant dans metadata"));
 
             Optional<Paiement> opt = paiementService.getById(paiementId);
-            if (opt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Paiement introuvable"));
+            if (opt.isEmpty())
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Paiement introuvable"));
+
             Paiement paiement = opt.get();
 
-            if ("payé".equalsIgnoreCase(paiement.getStatut()) &&
-                (paiement.getMontantRestant() == null || paiement.getMontantRestant() <= 0.0)) {
-                return ResponseEntity.ok(Map.of("status","already-paid"));
+            // 🔁 Idempotence côté BDD : si déjà payé et plus de restant, on ne refait rien
+            if ("payé".equalsIgnoreCase(paiement.getStatut())
+                    && (paiement.getMontantRestant() == null || paiement.getMontantRestant() <= 0.0)) {
+                return ResponseEntity.ok(Map.of("status", "already-paid"));
             }
 
             paiement.setModePaiement("CB");
-            if ("ECHELONNE".equalsIgnoreCase(paiement.getType()) &&
-                paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
+
+            if ("ECHELONNE".equalsIgnoreCase(paiement.getType())
+                    && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
 
                 Echeance cible = null;
                 if (echeanceId != null) {
@@ -308,9 +352,10 @@ public class StripeController {
             }
 
             paiementService.save(paiement);
-            return ResponseEntity.ok(Map.of("status","synced"));
+            return ResponseEntity.ok(Map.of("status", "synced"));
 
         } catch (Exception e) {
+            log.error("[STRIPE] ❌ sync-payment error: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
@@ -350,8 +395,8 @@ public class StripeController {
 
             if ((receiptUrl == null || receiptUrl.isBlank())) {
                 Object latestObj = pi.getLatestChargeObject();
-                if (latestObj instanceof Charge) {
-                    receiptUrl = ((Charge) latestObj).getReceiptUrl();
+                if (latestObj instanceof Charge charge) {
+                    receiptUrl = charge.getReceiptUrl();
                 }
             }
 
@@ -362,6 +407,7 @@ public class StripeController {
             return ResponseEntity.status(302).location(URI.create(receiptUrl)).build();
 
         } catch (Exception e) {
+            log.error("[STRIPE] ❌ receipt error: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }

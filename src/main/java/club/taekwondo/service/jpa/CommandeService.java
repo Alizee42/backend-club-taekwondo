@@ -17,6 +17,8 @@ import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -28,12 +30,20 @@ import java.util.stream.Collectors;
 @Service
 public class CommandeService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CommandeService.class);
+
     @Autowired private CommandeRepository commandeRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private ProduitRepository produitRepository;
     @Autowired private LigneCommandeRepository ligneCommandeRepository;
     @Autowired private MembreRepository membreRepository; // bénéficiaire (enfant) par ligne
 
+    // =========================
+    //         CONFIGURATION
+    // =========================
+    
+    private static final BigDecimal COUT_FLOCAGE = BigDecimal.valueOf(10.0); // 10€ par défaut
+    
     // =========================
     //         Public API
     // =========================
@@ -67,36 +77,11 @@ public class CommandeService {
                 .collect(Collectors.toList());
     }
 
-    // Créer une commande simple (sans lignes)
+    // Créer une commande simple (maintenant avec gestion des lignes)
     @Transactional
     public CommandeDTO createCommande(CommandeDTO commandeDTO) {
-        Commande commande = new Commande();
-        commande.setDateCommande(LocalDate.now());
-        commande.setMontantTotal(BigDecimal.ZERO);
-
-        final String modeNorm = normalizeMode(commandeDTO.getModePaiement());
-        commande.setModePaiement(modeNorm);
-
-        if ("CB".equals(modeNorm)) {
-            commande.setStatut("PAYEE");
-            commande.setDatePaiement(LocalDate.now());
-        } else if ("CLUB".equals(modeNorm) || "ESPECES".equals(modeNorm) || "VIREMENT".equals(modeNorm)) {
-            commande.setStatut("EN_ATTENTE");
-            commande.setDatePaiement(null);
-        } else {
-            commande.setStatut("EN_COURS");
-            commande.setDatePaiement(null);
-        }
-
-        // Associer l'utilisateur si présent
-        if (commandeDTO.getUtilisateurId() != null) {
-            Utilisateur utilisateur = utilisateurRepository.findById(commandeDTO.getUtilisateurId())
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDTO.getUtilisateurId()));
-            commande.setUtilisateur(utilisateur);
-        }
-
-        commande = commandeRepository.save(commande);
-        return convertToDTO(commande);
+        // Déléguer à la méthode complète qui gère les lignes correctement
+        return createCommandeWithLignes(commandeDTO);
     }
 
     // Créer une commande avec lignes (gère aussi le bénéficiaire enfant par ligne)
@@ -138,12 +123,35 @@ public class CommandeService {
                 ligne.setCommande(commande);
                 ligne.setProduit(produit);
                 ligne.setQuantite(ligneDTO.getQuantite());
-                ligne.setPrixUnitaire(ligneDTO.getPrixUnitaire());
 
-                BigDecimal pu = BigDecimal.valueOf(ligneDTO.getPrixUnitaire() != null ? ligneDTO.getPrixUnitaire() : 0.0);
+                // 🔹 Utiliser le prix unitaire fourni (déjà calculé avec flocage si nécessaire)
+                // Ne pas recalculer le flocage ici pour éviter le double comptage
+                BigDecimal prixUnitaireCalcule;
+                
+                if (ligneDTO.getPrixUnitaire() != null && ligneDTO.getPrixUnitaire() > 0) {
+                    // Prix déjà calculé (probablement par PaiementService)
+                    prixUnitaireCalcule = BigDecimal.valueOf(ligneDTO.getPrixUnitaire());
+                    logger.info("💰 Produit '{}' - Prix unitaire fourni: {}€", produit.getNom(), prixUnitaireCalcule);
+                } else {
+                    // Fallback: calcul basique (prix produit + flocage si nécessaire)
+                    BigDecimal prixBase = produit.getPrix();
+                    prixUnitaireCalcule = prixBase;
+                    logger.info("💰 Produit '{}' - Prix base: {}€", produit.getNom(), prixBase);
+                    
+                    if (ligneDTO.getFlocage() != null && !ligneDTO.getFlocage().trim().isEmpty()) {
+                        prixUnitaireCalcule = prixUnitaireCalcule.add(COUT_FLOCAGE);
+                        logger.info("🏷️ Flocage '{}' ajouté - Coût: {}€ - Prix final: {}€", 
+                            ligneDTO.getFlocage(), COUT_FLOCAGE, prixUnitaireCalcule);
+                    }
+                }
+                
+                ligne.setPrixUnitaire(prixUnitaireCalcule.doubleValue());
+
                 BigDecimal qte = BigDecimal.valueOf(ligneDTO.getQuantite() != null ? ligneDTO.getQuantite() : 0);
-                BigDecimal ligneTotal = pu.multiply(qte);
+                BigDecimal ligneTotal = prixUnitaireCalcule.multiply(qte);
                 ligne.setSousTotal(ligneTotal.doubleValue());
+                
+                logger.info("📊 Ligne: {}x {} = {}€", qte, prixUnitaireCalcule, ligneTotal);
 
                 ligne.setTaille(ligneDTO.getTaille());
                 ligne.setCouleur(ligneDTO.getCouleur());
@@ -161,6 +169,7 @@ public class CommandeService {
         }
 
         commande.setMontantTotal(total);
+        logger.info("💳 MONTANT TOTAL COMMANDE: {}€", total);
         commande = commandeRepository.save(commande);
 
         CommandeDTO resultDTO = convertToDTO(commande);

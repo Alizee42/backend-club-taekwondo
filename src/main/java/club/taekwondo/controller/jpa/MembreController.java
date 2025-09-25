@@ -76,6 +76,15 @@ public class MembreController {
                         .body(Map.of("message", "Aucun membre trouvé pour cet utilisateur.")));
     }
 
+    /** Alias pour compatibilité frontend : membre rattaché à un utilisateur adulte */
+    @GetMapping("/by-utilisateur/{utilisateurId}")
+    public ResponseEntity<?> getMembreByUtilisateurIdAlias(@PathVariable Long utilisateurId) {
+        return membreService.getMembreEntityByIdUtilisateur(utilisateurId)
+                .<ResponseEntity<?>>map(m -> ResponseEntity.ok(membreService.toMembreDTO(m)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Aucun membre trouvé pour cet utilisateur.")));
+    }
+
     /** Admin: utile pour sélecteur enfants par parent en BO */
     @GetMapping("/by-parent/{parentId}")
     public ResponseEntity<List<Map<String, Object>>> getByParent(@PathVariable Long parentId) {

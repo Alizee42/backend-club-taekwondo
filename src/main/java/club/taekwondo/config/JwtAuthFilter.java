@@ -88,7 +88,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Récupération du token sans le préfixe
         String token = authHeader.substring(7).trim();
 
         // Cas fréquents : "null" / "undefined"
@@ -100,12 +99,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String tail = token.length() > 8 ? token.substring(token.length() - 8) : token;
-        log.debug("[SEC] Bearer présent (len={}, tail=...{})", token.length(), tail);
+        log.debug("[SEC] Bearer présent (len={})", token.length());
 
         try {
             String email = jwtUtil.extractEmail(token);
+            String roleFromToken = jwtUtil.extractRole(token);
+
             log.debug("[SEC] email extrait du JWT = {}", email);
+            log.debug("[SEC] rôle extrait du JWT = {}", roleFromToken);
 
             if (!StringUtils.hasText(email)) {
                 log.warn("[SEC] Email manquant dans le JWT");
@@ -132,26 +133,35 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             Utilisateur user = opt.get();
-            log.debug("[SEC] Utilisateur trouvé: {}", user.getNom());
+            log.debug("[SEC] Utilisateur trouvé: {} {}", user.getPrenom(), user.getNom());
 
-            // --- Normalisation du rôle ---
-            String rawRole = (user.getRole() == null) ? "PARENT" : user.getRole().toString().trim().toUpperCase();
-            if (rawRole.startsWith("ROLE_")) rawRole = rawRole.substring(5);
-            String role = rawRole.isBlank() ? "PARENT" : rawRole;
+            // --- Normalisation du rôle depuis la BDD ---
+            String rawRole = (user.getRole() == null)
+                    ? "PARENT"
+                    : user.getRole().toString().trim().toUpperCase();
 
-            log.debug("[SEC] Role utilisateur: {}", role);
+            if (rawRole.startsWith("ROLE_")) {
+                rawRole = rawRole.substring(5);
+            }
+            String roleFromDb = rawRole.isBlank() ? "PARENT" : rawRole;
 
-            List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority(role),          // ex: ADMIN
-                new SimpleGrantedAuthority("ROLE_" + role) // ex: ROLE_ADMIN
-            );
+            log.debug("[SEC] rôle BDD normalisé = {}", roleFromDb);
+
+            // 🚨 Comparaison JWT vs BDD
+            if (roleFromToken != null && !roleFromToken.equalsIgnoreCase(roleFromDb)) {
+                log.warn("[SEC] ⚠ Rôle JWT ({}) ≠ rôle BDD ({})", roleFromToken, roleFromDb);
+            }
+
+            // ✅ On ne garde que ROLE_xxx
+            List<SimpleGrantedAuthority> authorities =
+                    List.of(new SimpleGrantedAuthority("ROLE_" + roleFromDb));
 
             UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(email, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug("[SEC] Auth OK: user={} roles={}", email, authorities);
+            log.debug("[SEC] Auth OK: user={} authorities={}", email, authorities);
 
         } catch (Exception ex) {
             SecurityContextHolder.clearContext();

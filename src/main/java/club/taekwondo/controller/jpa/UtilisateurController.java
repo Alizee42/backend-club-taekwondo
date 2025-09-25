@@ -3,7 +3,9 @@ package club.taekwondo.controller.jpa;
 import club.taekwondo.dto.LoginDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.enums.Role;
+import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +27,15 @@ public class UtilisateurController {
 
     private final JwtUtil jwtUtil;
     private final UtilisateurService utilisateurService;
+    private final MembreRepository membreRepository;
 
     @Autowired
-    public UtilisateurController(JwtUtil jwtUtil, UtilisateurService utilisateurService) {
+    public UtilisateurController(JwtUtil jwtUtil,
+                                 UtilisateurService utilisateurService,
+                                 MembreRepository membreRepository) {
         this.jwtUtil = jwtUtil;
         this.utilisateurService = utilisateurService;
+        this.membreRepository = membreRepository;
     }
 
     // -------- Helpers debug --------
@@ -56,23 +62,15 @@ public class UtilisateurController {
 
         System.out.println("[" + now() + "][USR][LIST] params role=" + role + ", q=" + q);
 
-        // ⚙️ Sécurise contre un retour null du service
         List<UtilisateurDTO> all = Optional.ofNullable(utilisateurService.getAllUtilisateurs())
                 .orElse(Collections.emptyList());
-
-        System.out.println("[" + now() + "][USR][LIST] total avant filtres=" + all.size());
 
         if (role != null && !role.isBlank()) {
             String wanted = role.trim().toUpperCase(Locale.ROOT);
             all = all.stream()
-                    .filter(u -> {
-                        Object r = (u != null) ? u.getRole() : null;
-                        if (r == null) return false;
-                        String val = String.valueOf(r);
-                        return val.equalsIgnoreCase(wanted);
-                    })
+                    .filter(u -> u != null && u.getRole() != null
+                            && String.valueOf(u.getRole()).equalsIgnoreCase(wanted))
                     .toList();
-            System.out.println("[" + now() + "][USR][LIST] après filtre role=" + wanted + " => " + all.size());
         }
 
         if (q != null && !q.isBlank()) {
@@ -84,7 +82,6 @@ public class UtilisateurController {
                             (u.getEmail() != null && u.getEmail().toLowerCase(Locale.ROOT).contains(s))
                     ))
                     .toList();
-            System.out.println("[" + now() + "][USR][LIST] après filtre q='" + s + "' => " + all.size());
         }
 
         return ResponseEntity.ok(all);
@@ -134,51 +131,50 @@ public class UtilisateurController {
         }
     }
 
-
-    @PostMapping("/login")
+   @PostMapping("/login")
 public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO) {
     System.out.println("[" + now() + "][USR][LOGIN] ⬅ payload reçu");
     try {
         if (loginDTO == null || loginDTO.getEmail() == null || loginDTO.getEmail().isBlank()
                 || loginDTO.getPassword() == null || loginDTO.getPassword().isBlank()) {
-            System.out.println("[" + now() + "][USR][LOGIN] ❌ email ou mot de passe manquant");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Email et mot de passe sont obligatoires."));
         }
 
-        System.out.println("[" + now() + "][USR][LOGIN] ⬅ email=" + loginDTO.getEmail()
-                + ", password=" + maskPwd(loginDTO.getPassword()));
-
         Optional<UtilisateurDTO> utilisateurOpt = utilisateurService.login(loginDTO.getEmail(), loginDTO.getPassword());
         if (utilisateurOpt.isEmpty()) {
-            System.out.println("[" + now() + "][USR][LOGIN] ❌ échec authentification -> 401");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Email ou mot de passe incorrect."));
         }
 
         UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
-        String roleStr = String.valueOf(utilisateurDTO.getRole());
-        System.out.println("[" + now() + "][USR][LOGIN] ✅ OK email=" + utilisateurDTO.getEmail()
-                + ", role=" + roleStr);
+        String roleStr = utilisateurDTO.getRole() != null ? String.valueOf(utilisateurDTO.getRole()) : "MEMBRE";
 
-        // 🔥 Ajout de l’ID utilisateur dans le token
+        // 🔥 Chercher le membreId associé à cet utilisateur
+        Long membreId = membreRepository.findByCompteUtilisateur_Id(utilisateurDTO.getId())
+                .map(Membre::getId)
+                .orElse(null);
+
+        // Génération du token avec utilisateurId + membreId
         String token = jwtUtil.generateToken(
                 utilisateurDTO.getEmail(),
                 roleStr,
-                utilisateurDTO.getId(),  // utilisateurId
-                null                     // membreId pas encore géré
+                utilisateurDTO.getId(),
+                membreId
         );
 
-        return ResponseEntity.ok(Map.of(
-                "token", token,
-                "role", roleStr,
-                "email", utilisateurDTO.getEmail(),
-                "utilisateurId", utilisateurDTO.getId(), // utile côté front
-                "utilisateur", utilisateurDTO
-        ));
+        // ✅ Utilisation de HashMap au lieu de Map.of pour éviter les NPE
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("token", token);
+        response.put("role", roleStr);
+        response.put("email", utilisateurDTO.getEmail());
+        response.put("utilisateurId", utilisateurDTO.getId());
+        response.put("membreId", membreId); // peut rester null sans problème
+        response.put("utilisateur", utilisateurDTO);
+
+        return ResponseEntity.ok(response);
+
     } catch (Exception e) {
-        System.out.println("[" + now() + "][USR][LOGIN] ❌ Exception: " + e.getClass().getSimpleName()
-                + " -> " + e.getMessage());
         e.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", "Erreur lors de l'authentification."));
@@ -186,23 +182,18 @@ public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO)
 }
 
 
-
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        System.out.println("[" + now() + "][USR][ME] ⬅ Authorization header présent? " + (authHeader != null));
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                System.out.println("[" + now() + "][USR][ME] ❌ token manquant ou invalide");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Token manquant ou invalide."));
             }
 
             String token = authHeader.substring(7);
             String email = jwtUtil.extractEmail(token);
-            System.out.println("[" + now() + "][USR][ME] email extrait du token = " + email);
 
             if (email == null) {
-                System.out.println("[" + now() + "][USR][ME] ❌ email null -> token invalide");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Token invalide."));
             }
@@ -210,21 +201,16 @@ public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO)
             Optional<Utilisateur> utilisateurOpt = utilisateurService.getUtilisateurEntityByEmail(email);
             if (utilisateurOpt.isPresent()) {
                 UtilisateurDTO dto = utilisateurService.convertToDTO(utilisateurOpt.get());
-                System.out.println("[" + now() + "][USR][ME] ✅ utilisateur trouvé id=" + utilisateurOpt.get().getId());
                 return ResponseEntity.ok(dto);
             } else {
-                System.out.println("[" + now() + "][USR][ME] ❌ utilisateur non trouvé pour email=" + email);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "Utilisateur non trouvé."));
             }
 
         } catch (Exception e) {
-            System.out.println("[" + now() + "][USR][ME] ❌ Exception: " + e.getClass().getSimpleName()
-                    + " -> " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Erreur lors de la récupération de l'utilisateur connecté."));
         }
     }
 }
-

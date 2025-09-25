@@ -1015,8 +1015,10 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
             throw new IllegalArgumentException("Panier vide.");
         }
 
-        // 1) Calcul du total
+        // 1) Calcul du total ET stockage des prix unitaires calculés
         double total = 0.0;
+        Map<CartItemDTO, Double> prixUnitairesCalcules = new HashMap<>();
+        
         for (CartItemDTO it : req.getItems()) {
             if (it.getProduitId() == null || it.getQuantite() == null || it.getQuantite() <= 0) {
                 throw new IllegalArgumentException("Ligne panier invalide (produitId/quantite).");
@@ -1024,13 +1026,28 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
             Produit produit = produitService.getProduitEntityById(it.getProduitId())
                     .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
 
-            double unit = (it.getPrixUnitaire() != null)
-                    ? it.getPrixUnitaire()
-                    : (produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0);
+            // 🔹 Calcul automatique du prix unitaire (produit + flocage) - UNE SEULE FOIS
+            double prixBase = produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0;
+            double unit = prixBase;
+            
+            // Ajouter le coût du flocage si activé (10€)
+            if (Boolean.TRUE.equals(it.getFlocageActif())) {
+                unit += 10.0; // Coût fixe du flocage
+                log.info("💰 Produit '{}' - Prix base: {}€ + Flocage: 10€ = {}€", 
+                    produit.getNom(), prixBase, unit);
+            } else {
+                log.info("💰 Produit '{}' - Prix base: {}€ (sans flocage)", 
+                    produit.getNom(), prixBase);
+            }
 
+            // 🔹 STOCKAGE du prix calculé pour réutilisation
+            prixUnitairesCalcules.put(it, unit);
+            
             total += unit * it.getQuantite();
+            log.info("📊 Ligne: {}x {}€ = {}€", it.getQuantite(), unit, unit * it.getQuantite());
         }
         total = round2(total);
+        log.info("💳 TOTAL CALCULÉ PANIER: {}€", total);
         if (total <= 0.0) throw new IllegalArgumentException("Montant total invalide.");
 
         // 2) Commande (LocalDate) + logique mode/statut/date
@@ -1098,9 +1115,9 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
             Produit produit = produitService.getProduitEntityById(it.getProduitId())
                     .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
 
-            double unit = (it.getPrixUnitaire() != null)
-                    ? it.getPrixUnitaire()
-                    : (produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0);
+            // 🔹 Récupération du prix déjà calculé dans la boucle précédente (PLUS DE RECALCUL !)
+            double unit = prixUnitairesCalcules.get(it);
+            log.info("💰 Réutilisation prix calculé pour '{}': {}€", produit.getNom(), unit);
 
             Long lineBenefId = (it.getBeneficiaireId() != null) ? it.getBeneficiaireId()
                     : (req.getMembreId() != null ? req.getMembreId()

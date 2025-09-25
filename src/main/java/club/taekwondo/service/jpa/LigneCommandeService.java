@@ -16,8 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -188,16 +186,12 @@ public LigneCommande creerPourPaiement(Paiement paiement,
 
     LigneCommande saved = ligneCommandeRepository.save(ligne);
 
-    // 🔄 Mise à jour du total de la commande
-    Commande cmd = paiement.getCommande();
-    BigDecimal current = cmd.getMontantTotal() != null ? cmd.getMontantTotal() : BigDecimal.ZERO;
-    BigDecimal newTotal = current.add(BigDecimal.valueOf(sousTotal)).setScale(2, RoundingMode.HALF_UP);
-    cmd.setMontantTotal(newTotal);
-    commandeRepository.save(cmd);
-
+    // ✅ PAS de mise à jour cumulative - le total est déjà correct dans PaiementService
+    // La commande a déjà le bon montant total calculé, pas besoin de l'additionner à nouveau
+    
     log.info("📦 LigneCommande créée: id={} | cmd={} | produit={} | qte={} | prix={} | total={} | benef={}",
             saved.getId(),
-            cmd.getId(),
+            paiement.getCommande().getId(),
             produit.getId(),
             saved.getQuantite(),
             saved.getPrixUnitaire(),
