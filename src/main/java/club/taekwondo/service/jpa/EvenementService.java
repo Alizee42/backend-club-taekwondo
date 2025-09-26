@@ -38,6 +38,7 @@ public class EvenementService {
         evenement.setCapacite(capacite);
         evenement.setDescription(description);
         evenement.setImageFilename(imageFilename);
+        evenement.setActif(true); // Par défaut actif
 
         Evenement saved = evenementRepository.save(evenement);
         return convertToDTO(saved);
@@ -46,6 +47,14 @@ public class EvenementService {
     // 🔹 Récupérer tous les événements
     public List<EvenementDTO> getAllEvenements() {
         return evenementRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // 🔹 Récupérer seulement les événements actifs
+    public List<EvenementDTO> getEvenementsActifs() {
+        return evenementRepository.findAll().stream()
+                .filter(e -> e.getActif() == null || e.getActif()) // Inclure les événements sans statut défini
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -82,11 +91,22 @@ public class EvenementService {
         return convertToDTO(updated);
     }
 
+    // 🔹 Changer le statut actif/inactif d'un événement
+    public EvenementDTO changerStatutEvenement(Long id, Boolean actif) {
+        Evenement existing = evenementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Événement non trouvé avec l'ID : " + id));
+        
+        existing.setActif(actif);
+        Evenement updated = evenementRepository.save(existing);
+        return convertToDTO(updated);
+    }
+
     // 🔹 Supprimer un événement
     public void deleteEvenement(Long id) {
         evenementRepository.deleteById(id);
     }
- // 🔁 Convertisseur : Entity -> DTO
+
+    // 🔁 Convertisseur : Entity -> DTO
     private EvenementDTO convertToDTO(Evenement evenement) {
         EvenementDTO dto = new EvenementDTO();
         dto.setId(evenement.getId());
@@ -97,15 +117,17 @@ public class EvenementService {
         dto.setCapacite(evenement.getCapacite());
         dto.setDescription(evenement.getDescription());
         dto.setImageFilename(evenement.getImageFilename());
+        dto.setActif(evenement.getActif());
 
         if (evenement.getImageFilename() != null) {
-            // 🔄 URL absolue pour que Angular accède à l’image
+            // 🔄 URL absolue pour que Angular accède à l'image
             String baseUrl = "http://localhost:8080"; 
             dto.setImageUrl(baseUrl + "/uploads/evenements/" + evenement.getImageFilename());
         }
 
         return dto;
     }
+
     // 🔁 Convertisseur : DTO -> Entity
     private Evenement convertToEntity(EvenementDTO dto) {
         Evenement evenement = new Evenement();
@@ -116,6 +138,7 @@ public class EvenementService {
         evenement.setCapacite(dto.getCapacite());
         evenement.setDescription(dto.getDescription());
         evenement.setImageFilename(dto.getImageFilename());
+        evenement.setActif(dto.getActif());
         return evenement;
     }
 
@@ -128,9 +151,7 @@ public class EvenementService {
             Files.write(path, file.getBytes());
             return filename;
         } catch (IOException e) {
-            throw new RuntimeException("Erreur lors de l’enregistrement de l’image", e);
+            throw new RuntimeException("Erreur lors de l'enregistrement de l'image", e);
         }
     }
 }
-
-

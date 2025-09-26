@@ -32,6 +32,13 @@ public class EvenementController {
         return evenement.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // 🔹 Récupérer seulement les événements actifs
+    @GetMapping("/actifs")
+    public ResponseEntity<List<EvenementDTO>> getEvenementsActifs() {
+        List<EvenementDTO> evenements = evenementService.getEvenementsActifs();
+        return ResponseEntity.ok(evenements);
+    }
+
     // ✅ Nouvelle méthode conforme au FormData Angular
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EvenementDTO> ajouterEvenement(
@@ -58,6 +65,18 @@ public class EvenementController {
     public ResponseEntity<EvenementDTO> updateEvenement(@PathVariable Long id, @RequestBody EvenementDTO dto) {
         try {
             EvenementDTO updated = evenementService.updateEvenement(id, dto);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // 🔹 Changer le statut actif/inactif d'un événement
+    @PutMapping("/{id}/statut")
+    public ResponseEntity<EvenementDTO> changerStatutEvenement(@PathVariable Long id, @RequestBody java.util.Map<String, Boolean> statutMap) {
+        try {
+            Boolean actif = statutMap.get("actif");
+            EvenementDTO updated = evenementService.changerStatutEvenement(id, actif);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();

@@ -33,6 +33,9 @@ public class Evenement {
     @Column(nullable = true)
     private String imageFilename; // ✅ nouveau nom clair pour l'image
 
+    @Column(nullable = false)
+    private Boolean actif = true; // ✅ Par défaut les événements sont actifs
+
     // Constructeur vide
     public Evenement() {
     }
@@ -100,5 +103,13 @@ public class Evenement {
 
     public void setImageFilename(String imageFilename) {
         this.imageFilename = imageFilename;
+    }
+
+    public Boolean getActif() {
+        return actif;
+    }
+
+    public void setActif(Boolean actif) {
+        this.actif = actif;
     }
 }

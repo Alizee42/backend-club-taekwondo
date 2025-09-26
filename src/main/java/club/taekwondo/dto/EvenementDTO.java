@@ -16,6 +16,7 @@ public class EvenementDTO {
 
     private String imageFilename; // nom du fichier enregistré
     private String imageUrl;      // URL complète pour l'affichage
+    private Boolean actif = true; // statut actif/inactif
 
     private MultipartFile image;  // 📌 nécessaire pour @ModelAttribute
 
@@ -98,6 +99,14 @@ public class EvenementDTO {
 
     public void setImage(MultipartFile image) {
         this.image = image;
+    }
+
+    public Boolean getActif() {
+        return actif;
+    }
+
+    public void setActif(Boolean actif) {
+        this.actif = actif;
     }
 }
 
