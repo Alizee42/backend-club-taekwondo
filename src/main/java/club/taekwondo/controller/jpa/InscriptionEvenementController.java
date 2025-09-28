@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inscriptions")
@@ -21,7 +22,7 @@ public class InscriptionEvenementController {
         return ResponseEntity.ok(inscriptionService.getAllInscriptions());
     }
 
-    // 🔹 Récupérer les inscriptions par événement et statut
+    // 🔹 Récupérer les inscriptions par événement (option : filtre par statut)
     @GetMapping("/evenement/{evenementId}")
     public ResponseEntity<List<InscriptionEvenementDTO>> getInscriptionsByEvenement(
             @PathVariable Long evenementId,
@@ -39,31 +40,44 @@ public class InscriptionEvenementController {
 
     // 🔹 Créer une nouvelle inscription
     @PostMapping
-    public ResponseEntity<InscriptionEvenementDTO> inscrireMembre(@RequestBody InscriptionEvenementDTO dto) {
-        return ResponseEntity.status(201).body(inscriptionService.inscrireMembre(dto));
+    public ResponseEntity<?> inscrireMembre(@RequestBody InscriptionEvenementDTO dto) {
+        try {
+            return ResponseEntity.status(201).body(inscriptionService.inscrireMembre(dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    // 🔹 Mettre à jour une inscription
+    // 🔹 Mettre à jour une inscription complète
     @PutMapping("/{id}")
-    public ResponseEntity<InscriptionEvenementDTO> updateInscription(@PathVariable Long id, @RequestBody InscriptionEvenementDTO dto) {
-        return ResponseEntity.ok(inscriptionService.updateInscription(id, dto));
+    public ResponseEntity<?> updateInscription(@PathVariable Long id, @RequestBody InscriptionEvenementDTO dto) {
+        try {
+            return ResponseEntity.ok(inscriptionService.updateInscription(id, dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    // 🔹 Mettre à jour uniquement le statut d'une inscription
+    // 🔹 Mettre à jour uniquement le statut
     @PatchMapping("/{id}/statut")
-    public ResponseEntity<Void> updateStatutInscription(@PathVariable Long id, @RequestParam String statut) {
+    public ResponseEntity<?> updateStatutInscription(@PathVariable Long id, @RequestParam String statut) {
         try {
             inscriptionService.updateStatutInscription(id, statut);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build(); // Renvoie une erreur 400 en cas de problème
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // 🔹 Supprimer une inscription
+    // 🔹 Annuler une inscription (soft delete)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> annulerInscription(@PathVariable Long id) {
-        inscriptionService.annulerInscription(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> annulerInscription(@PathVariable Long id) {
+        try {
+            inscriptionService.annulerInscription(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }
+

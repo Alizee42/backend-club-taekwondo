@@ -34,6 +34,7 @@ public class SecurityConfig {
                 // 🔓 Endpoints publics
                 .requestMatchers(
                     "/error",
+                    "/uploads/**",   // ✅ accès libre aux images uploadées
                     "/api/stripe/webhook",
                     "/api/stripe/public-key",
                     "/api/stripe/create-payment-intent",
@@ -45,7 +46,7 @@ public class SecurityConfig {
                     "/api/debug/**",
                     "/api/produits/**"
                 ).permitAll()
-                
+
                 // Permettre la création de membres lors de l'inscription (sans auth)
                 .requestMatchers(HttpMethod.POST, "/api/membres").permitAll()
 

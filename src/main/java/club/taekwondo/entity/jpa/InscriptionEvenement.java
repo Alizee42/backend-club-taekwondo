@@ -1,7 +1,7 @@
 package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import club.taekwondo.enums.StatutInscription;
 
 @Entity
@@ -29,7 +29,7 @@ public class InscriptionEvenement {
     private StatutInscription statut = StatutInscription.EN_ATTENTE;
 
     @Column(name = "date_inscription", nullable = false)
-    private LocalDate dateInscription;
+    private LocalDateTime dateInscription;
 
     @Column(nullable = true)
     private Boolean presence;
@@ -39,18 +39,18 @@ public class InscriptionEvenement {
 
     // 🔹 Constructeur sans argument
     public InscriptionEvenement() {
-        this.dateInscription = LocalDate.now();
+        this.dateInscription = LocalDateTime.now();
     }
 
     // 🔹 Constructeur complet
     public InscriptionEvenement(Long id, Utilisateur utilisateur, Evenement evenement,
-                                 StatutInscription statut, LocalDate dateInscription,
+                                 StatutInscription statut, LocalDateTime dateInscription,
                                  Boolean presence, String commentaire) {
         this.id = id;
         this.utilisateur = utilisateur;
         this.evenement = evenement;
         this.statut = statut;
-        this.dateInscription = dateInscription;
+        this.dateInscription = dateInscription != null ? dateInscription : LocalDateTime.now();
         this.presence = presence;
         this.commentaire = commentaire;
     }
@@ -88,11 +88,11 @@ public class InscriptionEvenement {
         this.statut = statut;
     }
 
-    public LocalDate getDateInscription() {
+    public LocalDateTime getDateInscription() {
         return dateInscription;
     }
 
-    public void setDateInscription(LocalDate dateInscription) {
+    public void setDateInscription(LocalDateTime dateInscription) {
         this.dateInscription = dateInscription;
     }
 
@@ -112,4 +112,3 @@ public class InscriptionEvenement {
         this.commentaire = commentaire;
     }
 }
-
