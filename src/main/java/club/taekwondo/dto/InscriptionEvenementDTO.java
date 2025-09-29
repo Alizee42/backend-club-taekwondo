@@ -12,45 +12,41 @@ public class InscriptionEvenementDTO {
     @NotNull(message = "L'ID de l'événement est obligatoire.")
     private Long evenementId;
 
-    @NotNull(message = "L'ID de l'utilisateur est obligatoire.")
-    private Long utilisateurId;
+    @NotNull(message = "L'ID du membre est obligatoire.")
+    private Long membreId;   // ✅ au lieu de utilisateurId
 
-    private LocalDateTime dateInscription;  // ✅ maintenant cohérent avec l’entité
+    private LocalDateTime dateInscription;
     private StatutInscription statut;
     private Boolean presence;
     private String commentaire;
 
     // Champs supplémentaires pour l'affichage
-    private String utilisateurNom;
-    private String utilisateurPrenom;
-    private String utilisateurEmail;
+    private String membreNom;
+    private String membrePrenom;
     private String evenementTitre;
 
-    // Constructeurs
+    // --- Constructeurs ---
     public InscriptionEvenementDTO() {}
 
-    public InscriptionEvenementDTO(Long id, Long evenementId, Long utilisateurId, LocalDateTime dateInscription,
-                                    StatutInscription statut, Boolean presence, String commentaire,
-                                    String utilisateurNom, String utilisateurPrenom, String utilisateurEmail,
-                                    String evenementTitre) {
+    public InscriptionEvenementDTO(Long id, Long evenementId, Long membreId, LocalDateTime dateInscription,
+                                   StatutInscription statut, Boolean presence, String commentaire,
+                                   String membreNom, String membrePrenom, String evenementTitre) {
         this.id = id;
         this.evenementId = evenementId;
-        this.utilisateurId = utilisateurId;
+        this.membreId = membreId;
         this.dateInscription = dateInscription;
         this.statut = statut;
         this.presence = presence;
         this.commentaire = commentaire;
-        this.utilisateurNom = utilisateurNom;
-        this.utilisateurPrenom = utilisateurPrenom;
-        this.utilisateurEmail = utilisateurEmail;
+        this.membreNom = membreNom;
+        this.membrePrenom = membrePrenom;
         this.evenementTitre = evenementTitre;
     }
 
-    // Getters et Setters
+    // --- Getters & Setters ---
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -58,23 +54,20 @@ public class InscriptionEvenementDTO {
     public Long getEvenementId() {
         return evenementId;
     }
-
     public void setEvenementId(Long evenementId) {
         this.evenementId = evenementId;
     }
 
-    public Long getUtilisateurId() {
-        return utilisateurId;
+    public Long getMembreId() {
+        return membreId;
     }
-
-    public void setUtilisateurId(Long utilisateurId) {
-        this.utilisateurId = utilisateurId;
+    public void setMembreId(Long membreId) {
+        this.membreId = membreId;
     }
 
     public LocalDateTime getDateInscription() {
         return dateInscription;
     }
-
     public void setDateInscription(LocalDateTime dateInscription) {
         this.dateInscription = dateInscription;
     }
@@ -82,7 +75,6 @@ public class InscriptionEvenementDTO {
     public StatutInscription getStatut() {
         return statut;
     }
-
     public void setStatut(StatutInscription statut) {
         this.statut = statut;
     }
@@ -90,7 +82,6 @@ public class InscriptionEvenementDTO {
     public Boolean getPresence() {
         return presence;
     }
-
     public void setPresence(Boolean presence) {
         this.presence = presence;
     }
@@ -98,39 +89,27 @@ public class InscriptionEvenementDTO {
     public String getCommentaire() {
         return commentaire;
     }
-
     public void setCommentaire(String commentaire) {
         this.commentaire = commentaire;
     }
 
-    public String getUtilisateurNom() {
-        return utilisateurNom;
+    public String getMembreNom() {
+        return membreNom;
+    }
+    public void setMembreNom(String membreNom) {
+        this.membreNom = membreNom;
     }
 
-    public void setUtilisateurNom(String utilisateurNom) {
-        this.utilisateurNom = utilisateurNom;
+    public String getMembrePrenom() {
+        return membrePrenom;
     }
-
-    public String getUtilisateurPrenom() {
-        return utilisateurPrenom;
-    }
-
-    public void setUtilisateurPrenom(String utilisateurPrenom) {
-        this.utilisateurPrenom = utilisateurPrenom;
-    }
-
-    public String getUtilisateurEmail() {
-        return utilisateurEmail;
-    }
-
-    public void setUtilisateurEmail(String utilisateurEmail) {
-        this.utilisateurEmail = utilisateurEmail;
+    public void setMembrePrenom(String membrePrenom) {
+        this.membrePrenom = membrePrenom;
     }
 
     public String getEvenementTitre() {
         return evenementTitre;
     }
-
     public void setEvenementTitre(String evenementTitre) {
         this.evenementTitre = evenementTitre;
     }

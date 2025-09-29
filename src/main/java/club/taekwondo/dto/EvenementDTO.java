@@ -17,6 +17,9 @@ public class EvenementDTO {
     private String imageFilename; // nom du fichier enregistré
     private String imageUrl;      // URL complète pour l'affichage
     private Boolean actif = true; // statut actif/inactif
+    
+    // 🔹 Nouveau champ pour le nombre d'inscrits
+    private Integer nbInscrits = 0; // Nombre d'inscriptions confirmées
 
     private MultipartFile image;  // 📌 nécessaire pour @ModelAttribute
 
@@ -107,6 +110,15 @@ public class EvenementDTO {
 
     public void setActif(Boolean actif) {
         this.actif = actif;
+    }
+
+    // 🔹 Getter et Setter pour nbInscrits
+    public Integer getNbInscrits() {
+        return nbInscrits;
+    }
+
+    public void setNbInscrits(Integer nbInscrits) {
+        this.nbInscrits = nbInscrits;
     }
 }
 

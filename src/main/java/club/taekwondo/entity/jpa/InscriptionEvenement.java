@@ -8,7 +8,7 @@ import club.taekwondo.enums.StatutInscription;
 @Access(AccessType.FIELD)
 @Table(
     name = "inscription_evenement",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"utilisateur_id", "evenement_id"}) // empêche les doublons
+    uniqueConstraints = @UniqueConstraint(columnNames = {"membre_id", "evenement_id"}) // ✅ empêche les doublons pour un même enfant
 )
 public class InscriptionEvenement {
 
@@ -16,9 +16,10 @@ public class InscriptionEvenement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ✅ On lie maintenant l’inscription à un Membre (et non plus à un Utilisateur)
     @ManyToOne
-    @JoinColumn(name = "utilisateur_id", referencedColumnName = "id", nullable = false)
-    private Utilisateur utilisateur;
+    @JoinColumn(name = "membre_id", referencedColumnName = "id", nullable = false)
+    private Membre membre;
 
     @ManyToOne
     @JoinColumn(name = "evenement_id", referencedColumnName = "id", nullable = false)
@@ -31,10 +32,7 @@ public class InscriptionEvenement {
     @Column(name = "date_inscription", nullable = false)
     private LocalDateTime dateInscription;
 
-    @Column(nullable = true)
     private Boolean presence;
-
-    @Column(nullable = true)
     private String commentaire;
 
     // 🔹 Constructeur sans argument
@@ -43,39 +41,36 @@ public class InscriptionEvenement {
     }
 
     // 🔹 Constructeur complet
-    public InscriptionEvenement(Long id, Utilisateur utilisateur, Evenement evenement,
-                                 StatutInscription statut, LocalDateTime dateInscription,
-                                 Boolean presence, String commentaire) {
+    public InscriptionEvenement(Long id, Membre membre, Evenement evenement,
+                                StatutInscription statut, LocalDateTime dateInscription,
+                                Boolean presence, String commentaire) {
         this.id = id;
-        this.utilisateur = utilisateur;
+        this.membre = membre;
         this.evenement = evenement;
-        this.statut = statut;
+        this.statut = statut != null ? statut : StatutInscription.EN_ATTENTE;
         this.dateInscription = dateInscription != null ? dateInscription : LocalDateTime.now();
         this.presence = presence;
         this.commentaire = commentaire;
     }
 
-    // 🔹 Getters et Setters
+    // --- Getters & Setters ---
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
 
-    public Utilisateur getUtilisateur() {
-        return utilisateur;
+    public Membre getMembre() {
+        return membre;
     }
-
-    public void setUtilisateur(Utilisateur utilisateur) {
-        this.utilisateur = utilisateur;
+    public void setMembre(Membre membre) {
+        this.membre = membre;
     }
 
     public Evenement getEvenement() {
         return evenement;
     }
-
     public void setEvenement(Evenement evenement) {
         this.evenement = evenement;
     }
@@ -83,7 +78,6 @@ public class InscriptionEvenement {
     public StatutInscription getStatut() {
         return statut;
     }
-
     public void setStatut(StatutInscription statut) {
         this.statut = statut;
     }
@@ -91,7 +85,6 @@ public class InscriptionEvenement {
     public LocalDateTime getDateInscription() {
         return dateInscription;
     }
-
     public void setDateInscription(LocalDateTime dateInscription) {
         this.dateInscription = dateInscription;
     }
@@ -99,7 +92,6 @@ public class InscriptionEvenement {
     public Boolean getPresence() {
         return presence;
     }
-
     public void setPresence(Boolean presence) {
         this.presence = presence;
     }
@@ -107,7 +99,6 @@ public class InscriptionEvenement {
     public String getCommentaire() {
         return commentaire;
     }
-
     public void setCommentaire(String commentaire) {
         this.commentaire = commentaire;
     }

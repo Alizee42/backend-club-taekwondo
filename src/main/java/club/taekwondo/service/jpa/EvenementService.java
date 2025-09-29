@@ -2,7 +2,9 @@ package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.EvenementDTO;
 import club.taekwondo.entity.jpa.Evenement;
+import club.taekwondo.entity.jpa.InscriptionEvenement;
 import club.taekwondo.repository.jpa.EvenementRepository;
+import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,9 @@ public class EvenementService {
 
     @Autowired
     private EvenementRepository evenementRepository;
+    
+    @Autowired
+    private InscriptionEvenementRepository inscriptionRepository;
 
     // 🔹 Nouvelle méthode adaptée à l'envoi multipart
     public EvenementDTO ajouterEvenement(String titre, String dateDebut, String dateFin, String lieu,
@@ -101,8 +106,17 @@ public class EvenementService {
         return convertToDTO(updated);
     }
 
-    // 🔹 Supprimer un événement
+    // 🔹 Supprimer un événement avec ses inscriptions
     public void deleteEvenement(Long id) {
+        // ✅ 1. Récupérer toutes les inscriptions de cet événement
+        List<InscriptionEvenement> inscriptions = inscriptionRepository.findByEvenementId(id);
+        
+        // ✅ 2. Supprimer toutes les inscriptions une par une
+        for (InscriptionEvenement inscription : inscriptions) {
+            inscriptionRepository.delete(inscription);
+        }
+        
+        // ✅ 3. Ensuite supprimer l'événement
         evenementRepository.deleteById(id);
     }
 
@@ -118,6 +132,10 @@ public class EvenementService {
         dto.setDescription(evenement.getDescription());
         dto.setImageFilename(evenement.getImageFilename());
         dto.setActif(evenement.getActif());
+
+        // 🔹 Calculer le nombre d'inscrits confirmés
+        long nbInscrits = inscriptionRepository.countByEvenementId(evenement.getId());
+        dto.setNbInscrits((int) nbInscrits);
 
         if (evenement.getImageFilename() != null) {
             // 🔄 URL absolue pour que Angular accède à l'image
