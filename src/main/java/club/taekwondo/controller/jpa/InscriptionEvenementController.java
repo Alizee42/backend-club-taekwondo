@@ -1,6 +1,7 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.InscriptionEvenementDTO;
+import club.taekwondo.dto.InscriptionRequestDTO;
 import club.taekwondo.service.jpa.InscriptionEvenementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -38,11 +39,16 @@ public class InscriptionEvenementController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 🔹 Créer une nouvelle inscription
+    // 🔹 Créer une nouvelle inscription (plusieurs enfants)
     @PostMapping
-    public ResponseEntity<?> inscrireMembre(@RequestBody InscriptionEvenementDTO dto) {
+    public ResponseEntity<?> inscrireMembres(@RequestBody InscriptionRequestDTO request) {
         try {
-            return ResponseEntity.status(201).body(inscriptionService.inscrireMembre(dto));
+            List<InscriptionEvenementDTO> inscriptions = inscriptionService.inscrireMembres(
+                    request.getEvenementId(),
+                    request.getEnfantsIds(),
+                    request.getCommentaire()
+            );
+            return ResponseEntity.status(201).body(inscriptions);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -80,4 +86,3 @@ public class InscriptionEvenementController {
         }
     }
 }
-
