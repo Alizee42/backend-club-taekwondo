@@ -108,16 +108,25 @@ public class EvenementService {
 
     // 🔹 Supprimer un événement avec ses inscriptions
     public void deleteEvenement(Long id) {
-        // ✅ 1. Récupérer toutes les inscriptions de cet événement
-        List<InscriptionEvenement> inscriptions = inscriptionRepository.findByEvenementId(id);
-        
-        // ✅ 2. Supprimer toutes les inscriptions une par une
-        for (InscriptionEvenement inscription : inscriptions) {
-            inscriptionRepository.delete(inscription);
+        // ✅ 0. Vérifier que l'événement existe
+        if (!evenementRepository.existsById(id)) {
+            throw new RuntimeException("Événement avec l'ID " + id + " n'existe pas");
         }
         
-        // ✅ 3. Ensuite supprimer l'événement
-        evenementRepository.deleteById(id);
+        try {
+            // ✅ 1. Supprimer directement toutes les inscriptions par requête SQL
+            // Cela évite de charger les relations et contourne le problème du membre ID 0
+            inscriptionRepository.deleteByEvenementId(id);
+            System.out.println("🔍 Toutes les inscriptions de l'événement " + id + " ont été supprimées");
+            
+            // ✅ 2. Ensuite supprimer l'événement
+            evenementRepository.deleteById(id);
+            System.out.println("✅ Événement " + id + " supprimé avec succès");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de la suppression de l'événement " + id + ": " + e.getMessage());
+            throw new RuntimeException("Impossible de supprimer l'événement: " + e.getMessage(), e);
+        }
     }
 
     // 🔁 Convertisseur : Entity -> DTO

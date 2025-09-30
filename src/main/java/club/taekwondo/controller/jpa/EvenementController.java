@@ -1,7 +1,9 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.EvenementDTO;
+import club.taekwondo.dto.InscriptionEvenementDTO;
 import club.taekwondo.service.jpa.EvenementService;
+import club.taekwondo.service.jpa.InscriptionEvenementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,9 @@ public class EvenementController {
 
     @Autowired
     private EvenementService evenementService;
+
+    @Autowired
+    private InscriptionEvenementService inscriptionService;
 
     // 🔹 Récupérer tous les événements
     @GetMapping
@@ -86,7 +91,27 @@ public class EvenementController {
     // 🔹 Supprimer un événement
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvenement(@PathVariable Long id) {
-        evenementService.deleteEvenement(id);
-        return ResponseEntity.noContent().build();
+        try {
+            evenementService.deleteEvenement(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            // 🚨 Log l'erreur pour debugging
+            System.err.println("Erreur lors de la suppression de l'événement " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // 🔹 Récupérer les inscriptions des enfants du parent connecté
+    @GetMapping("/inscriptions-enfants")
+    public ResponseEntity<List<InscriptionEvenementDTO>> getInscriptionsEnfants(@RequestParam Long parentId) {
+        try {
+            List<InscriptionEvenementDTO> inscriptions = inscriptionService.getInscriptionsByParent(parentId);
+            return ResponseEntity.ok(inscriptions);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération des inscriptions des enfants: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

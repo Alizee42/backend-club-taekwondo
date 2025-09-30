@@ -10,6 +10,8 @@ import club.taekwondo.enums.StatutInscription;
     name = "inscription_evenement",
     uniqueConstraints = @UniqueConstraint(columnNames = {"membre_id", "evenement_id"}) // ✅ empêche les doublons pour un même enfant
 )
+@org.hibernate.annotations.DynamicInsert
+@org.hibernate.annotations.DynamicUpdate
 public class InscriptionEvenement {
 
     @Id

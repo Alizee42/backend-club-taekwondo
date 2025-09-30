@@ -23,6 +23,7 @@ public class InscriptionEvenementDTO {
     // Champs supplémentaires pour l'affichage
     private String membreNom;
     private String membrePrenom;
+    private String membreEmail;
     private String evenementTitre;
 
     // --- Constructeurs ---
@@ -105,6 +106,13 @@ public class InscriptionEvenementDTO {
     }
     public void setMembrePrenom(String membrePrenom) {
         this.membrePrenom = membrePrenom;
+    }
+
+    public String getMembreEmail() {
+        return membreEmail;
+    }
+    public void setMembreEmail(String membreEmail) {
+        this.membreEmail = membreEmail;
     }
 
     public String getEvenementTitre() {

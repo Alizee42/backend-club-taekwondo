@@ -44,6 +44,7 @@ public class SecurityConfig {
                     "/api/actualites/**",
                     "/api/avis/**",
                     "/api/debug/**",
+                    "/api/inscriptions/debug/**",  // ✅ Debug des inscriptions
                     "/api/produits/**"
                 ).permitAll()
 

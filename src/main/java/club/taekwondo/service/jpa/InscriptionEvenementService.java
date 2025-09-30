@@ -39,12 +39,12 @@ public class InscriptionEvenementService {
     // 🔹 Récupérer les inscriptions par événement et statut
     public List<InscriptionEvenementDTO> getInscriptionsByEvenementAndStatut(Long evenementId, String statut) {
         if (statut != null) {
-            return inscriptionRepository.findByEvenementIdAndStatut(evenementId, StatutInscription.valueOf(statut))
+            return inscriptionRepository.findByEvenementIdAndStatutWithMembre(evenementId, StatutInscription.valueOf(statut))
                     .stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
         } else {
-            return inscriptionRepository.findByEvenementId(evenementId)
+            return inscriptionRepository.findByEvenementIdWithMembre(evenementId)
                     .stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
@@ -143,13 +143,53 @@ public class InscriptionEvenementService {
         dto.setPresence(entity.getPresence());
         dto.setCommentaire(entity.getCommentaire());
 
-        // Infos Membre
+        // Debug : Log des informations de l'entité
+        System.out.println("=== DEBUG INSCRIPTION ===");
+        System.out.println("Inscription ID: " + entity.getId());
+        System.out.println("Membre: " + entity.getMembre());
+        
+        // Infos Membre avec gestion des erreurs
         if (entity.getMembre() != null) {
-            dto.setMembreId(entity.getMembre().getId());
-            dto.setMembreNom(entity.getMembre().getNom());
-            dto.setMembrePrenom(entity.getMembre().getPrenom());
+            try {
+                System.out.println("Membre ID: " + entity.getMembre().getId());
+                System.out.println("Membre nom: " + entity.getMembre().getNom());
+                System.out.println("Membre prénom: " + entity.getMembre().getPrenom());
+                
+                dto.setMembreId(entity.getMembre().getId());
+                dto.setMembreNom(entity.getMembre().getNom() != null ? entity.getMembre().getNom() : "Nom non disponible");
+                dto.setMembrePrenom(entity.getMembre().getPrenom() != null ? entity.getMembre().getPrenom() : "Prénom non disponible");
+                
+                // Récupérer l'email depuis compteUtilisateur
+                if (entity.getMembre().getCompteUtilisateur() != null) {
+                    System.out.println("Compte utilisateur trouvé: " + entity.getMembre().getCompteUtilisateur().getEmail());
+                    dto.setMembreEmail(entity.getMembre().getCompteUtilisateur().getEmail() != null ? 
+                        entity.getMembre().getCompteUtilisateur().getEmail() : "Email non disponible");
+                } else {
+                    System.out.println("Aucun compte utilisateur trouvé pour ce membre");
+                    // Essayer de récupérer l'email depuis le parent si c'est un enfant
+                    if (entity.getMembre().getParent() != null && entity.getMembre().getParent().getEmail() != null) {
+                        dto.setMembreEmail(entity.getMembre().getParent().getEmail() + " (parent)");
+                    } else {
+                        dto.setMembreEmail("Email non disponible");
+                    }
+                }
+                
+            } catch (Exception e) {
+                // En cas d'erreur de lazy loading
+                dto.setMembreNom("Nom non disponible");
+                dto.setMembrePrenom("Prénom non disponible");
+                dto.setMembreEmail("Email non disponible");
+                System.err.println("Erreur lors du chargement des données du membre: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("MEMBRE EST NULL !");
+            dto.setMembreNom("Nom non disponible");
+            dto.setMembrePrenom("Prénom non disponible");
+            dto.setMembreEmail("Email non disponible");
         }
 
+        System.out.println("=== FIN DEBUG ===");
         dto.setEvenementTitre(entity.getEvenement().getTitre());
         return dto;
     }
@@ -172,5 +212,13 @@ public class InscriptionEvenementService {
         entity.setEvenement(evenement);
 
         return entity;
+    }
+
+    // 🔹 Récupérer les inscriptions des enfants d'un parent connecté
+    public List<InscriptionEvenementDTO> getInscriptionsByParent(Long parentId) {
+        return inscriptionRepository.findByParentIdWithMembreAndEvenement(parentId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
