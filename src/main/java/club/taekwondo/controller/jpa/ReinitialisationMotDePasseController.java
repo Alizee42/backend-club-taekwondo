@@ -55,5 +55,39 @@ public class ReinitialisationMotDePasseController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @PostMapping("/reinitialiser-mot-de-passe")
+    public ResponseEntity<Map<String, String>> reinitialiserMotDePasse(
+            @RequestParam String token,
+            @RequestParam String newPassword) {
+        
+        System.out.println("🔍 [DEBUG] Réinitialisation demandée");
+        System.out.println("🔍 [DEBUG] Token reçu: " + token);
+        System.out.println("🔍 [DEBUG] Longueur nouveau mot de passe: " + newPassword.length());
+        
+        try {
+            boolean succes = service.reinitialiserMotDePasse(token, newPassword);
+            Map<String, String> response = new HashMap<>();
+            if (succes) {
+                System.out.println("✅ [DEBUG] Réinitialisation réussie");
+                response.put("message", "Mot de passe réinitialisé avec succès.");
+                return ResponseEntity.ok(response);
+            } else {
+                System.out.println("❌ [DEBUG] Token invalide ou expiré");
+                response.put("message", "Token invalide ou expiré.");
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println("❌ [DEBUG] Erreur argument: " + e.getMessage());
+            Map<String, String> response = new HashMap<>();
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            System.out.println("❌ [DEBUG] Erreur interne: " + e.getMessage());
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Erreur lors de la réinitialisation du mot de passe.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }
 

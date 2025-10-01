@@ -11,7 +11,11 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String titre;
+    
     private String message;
+    
+    private String type = "general"; // cours, evenement, paiement, examen, general
 
     private boolean lu = false;
 
@@ -36,6 +40,22 @@ public class Notification {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+    
+    public String getTitre() {
+        return titre;
+    }
+
+    public void setTitre(String titre) {
+        this.titre = titre;
+    }
+    
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public boolean isLu() {

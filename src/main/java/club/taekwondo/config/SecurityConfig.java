@@ -45,7 +45,8 @@ public class SecurityConfig {
                     "/api/avis/**",
                     "/api/debug/**",
                     "/api/inscriptions/debug/**",  // ✅ Debug des inscriptions
-                    "/api/produits/**"
+                    "/api/produits/**",
+                    "/api/reinitialisation/**"     // ✅ Réinitialisation mot de passe
                 ).permitAll()
 
                 // Permettre la création de membres lors de l'inscription (sans auth)

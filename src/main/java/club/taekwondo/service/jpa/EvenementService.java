@@ -3,8 +3,10 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.EvenementDTO;
 import club.taekwondo.entity.jpa.Evenement;
 import club.taekwondo.entity.jpa.InscriptionEvenement;
+import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.EvenementRepository;
 import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
+import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +29,12 @@ public class EvenementService {
     
     @Autowired
     private InscriptionEvenementRepository inscriptionRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
+    
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
 
     // 🔹 Nouvelle méthode adaptée à l'envoi multipart
     public EvenementDTO ajouterEvenement(String titre, String dateDebut, String dateFin, String lieu,
@@ -46,6 +54,11 @@ public class EvenementService {
         evenement.setActif(true); // Par défaut actif
 
         Evenement saved = evenementRepository.save(evenement);
+        
+        // 🔔 Envoyer notification à tous les utilisateurs
+        System.out.println("🚀 Événement créé, envoi des notifications...");
+        envoyerNotificationNouvelEvenement(saved);
+        
         return convertToDTO(saved);
     }
 
@@ -103,6 +116,12 @@ public class EvenementService {
         
         existing.setActif(actif);
         Evenement updated = evenementRepository.save(existing);
+        
+        // 🔔 Envoyer notification si événement annulé
+        if (!actif) {
+            envoyerNotificationAnnulationEvenement(updated);
+        }
+        
         return convertToDTO(updated);
     }
 
@@ -179,6 +198,77 @@ public class EvenementService {
             return filename;
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors de l'enregistrement de l'image", e);
+        }
+    }
+    
+    // ========== MÉTHODES DE NOTIFICATION ==========
+    
+    // 🔔 Notification : Nouvel événement créé
+    private void envoyerNotificationNouvelEvenement(Evenement evenement) {
+        try {
+            List<Utilisateur> tousUtilisateurs = utilisateurRepository.findAll();
+            String titre = "Nouvel événement disponible";
+            String message = "Un nouvel événement '" + evenement.getTitre() + "' a été créé. Inscriptions ouvertes !";
+            
+            for (Utilisateur utilisateur : tousUtilisateurs) {
+                notificationService.envoyerNotification(
+                    utilisateur.getId(), 
+                    titre, 
+                    message, 
+                    "EVENEMENT"
+                );
+            }
+            System.out.println("🔔 Notifications envoyées pour le nouvel événement : " + evenement.getTitre());
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de l'envoi des notifications : " + e.getMessage());
+        }
+    }
+    
+    // 🔔 Notification : Événement modifié
+    private void envoyerNotificationModificationEvenement(Evenement evenement) {
+        try {
+            // Notifier uniquement les personnes inscrites
+            List<InscriptionEvenement> inscriptions = inscriptionRepository.findByEvenementId(evenement.getId());
+            String titre = "Événement modifié";
+            String message = "L'événement '" + evenement.getTitre() + "' a été modifié. Vérifiez les détails.";
+            
+            for (InscriptionEvenement inscription : inscriptions) {
+                if (inscription.getMembre() != null && inscription.getMembre().getCompteUtilisateur() != null) {
+                    notificationService.envoyerNotification(
+                        inscription.getMembre().getCompteUtilisateur().getId(),
+                        titre,
+                        message,
+                        "EVENEMENT"
+                    );
+                }
+            }
+            System.out.println("🔔 Notifications de modification envoyées pour : " + evenement.getTitre());
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de l'envoi des notifications de modification : " + e.getMessage());
+        }
+    }
+    
+    // 🔔 Notification : Événement annulé
+    private void envoyerNotificationAnnulationEvenement(Evenement evenement) {
+        try {
+            // Notifier uniquement les personnes inscrites
+            List<InscriptionEvenement> inscriptions = inscriptionRepository.findByEvenementId(evenement.getId());
+            String titre = "Événement annulé";
+            String message = "L'événement '" + evenement.getTitre() + "' a été annulé. Nous nous excusons pour la gêne occasionnée.";
+            
+            for (InscriptionEvenement inscription : inscriptions) {
+                if (inscription.getMembre() != null && inscription.getMembre().getCompteUtilisateur() != null) {
+                    notificationService.envoyerNotification(
+                        inscription.getMembre().getCompteUtilisateur().getId(),
+                        titre,
+                        message,
+                        "EVENEMENT"
+                    );
+                }
+            }
+            System.out.println("🔔 Notifications d'annulation envoyées pour : " + evenement.getTitre());
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de l'envoi des notifications d'annulation : " + e.getMessage());
         }
     }
 }

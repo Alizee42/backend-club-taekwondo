@@ -11,4 +11,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByUtilisateur(Utilisateur utilisateur);
 
     List<Notification> findByUtilisateurIdAndLuFalse(Long utilisateurId);
+    
+    // 🔹 Récupérer toutes les notifications d'un utilisateur triées par date (plus récentes en premier)
+    List<Notification> findByUtilisateurIdOrderByDateEnvoiDesc(Long utilisateurId);
 }

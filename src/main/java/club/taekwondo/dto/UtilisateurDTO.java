@@ -15,6 +15,10 @@ public class UtilisateurDTO {
     private String email;
     private String telephone;
     private Role role;
+    
+    // Informations supplémentaires pour les parents
+    private String nomParent;
+    private String prenomParent;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
@@ -79,5 +83,21 @@ public class UtilisateurDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+    
+    public String getNomParent() {
+        return nomParent;
+    }
+    
+    public void setNomParent(String nomParent) {
+        this.nomParent = nomParent;
+    }
+    
+    public String getPrenomParent() {
+        return prenomParent;
+    }
+    
+    public void setPrenomParent(String prenomParent) {
+        this.prenomParent = prenomParent;
     }
 }

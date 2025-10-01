@@ -14,14 +14,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class ReinitialisationMotDePasseService {
+public class ReinitialisationMotDePasseServiceNew {
 
     private final ReinitialisationMotDePasseRepository repository;
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
-    public ReinitialisationMotDePasseService(ReinitialisationMotDePasseRepository repository,
+    public ReinitialisationMotDePasseServiceNew(ReinitialisationMotDePasseRepository repository,
                                              UtilisateurRepository utilisateurRepository,
                                              PasswordEncoder passwordEncoder,
                                              EmailService emailService) {
@@ -131,32 +131,20 @@ public class ReinitialisationMotDePasseService {
      */
     @Transactional
     public boolean reinitialiserMotDePasse(String token, String newPassword) {
-        System.out.println("🔍 [SERVICE] Début réinitialisation");
-        System.out.println("🔍 [SERVICE] Token: " + token);
-        
         if (token == null || token.trim().isEmpty()) {
-            System.out.println("❌ [SERVICE] Token manquant");
             throw new IllegalArgumentException("Token manquant.");
         }
         
         if (newPassword == null || newPassword.trim().isEmpty()) {
-            System.out.println("❌ [SERVICE] Mot de passe manquant");
             throw new IllegalArgumentException("Nouveau mot de passe manquant.");
         }
 
         Optional<ReinitialisationMotDePasse> opt = repository.findByToken(token);
-        System.out.println("🔍 [SERVICE] Token trouvé en BDD: " + opt.isPresent());
-        
         if (opt.isPresent()) {
             ReinitialisationMotDePasse demande = opt.get();
-            System.out.println("🔍 [SERVICE] Token utilisé: " + demande.isUtilise());
-            System.out.println("🔍 [SERVICE] Date expiration: " + demande.getDateExpiration());
-            System.out.println("🔍 [SERVICE] Date actuelle: " + LocalDateTime.now());
-            System.out.println("🔍 [SERVICE] Token expiré: " + demande.getDateExpiration().isBefore(LocalDateTime.now()));
             
             // Vérifier que le token n'est pas expiré et n'a pas été utilisé
             if (!demande.isUtilise() && demande.getDateExpiration().isAfter(LocalDateTime.now())) {
-                System.out.println("✅ [SERVICE] Token valide, mise à jour mot de passe");
                 // Récupérer l'utilisateur et mettre à jour son mot de passe
                 Utilisateur utilisateur = demande.getUtilisateur();
                 utilisateur.setPassword(passwordEncoder.encode(newPassword));

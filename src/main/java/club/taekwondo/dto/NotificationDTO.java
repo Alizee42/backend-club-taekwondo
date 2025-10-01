@@ -5,9 +5,11 @@ import java.time.LocalDateTime;
 public class NotificationDTO {
 
     private Long id;
+    private String titre;
     private String message;
+    private String type;
     private boolean lu;
-    private LocalDateTime dateEnvoi;
+    private LocalDateTime date; // Renommer pour correspondre au frontend
     private Long utilisateurId;
 
     // Getters et Setters
@@ -26,6 +28,22 @@ public class NotificationDTO {
     public void setMessage(String message) {
         this.message = message;
     }
+    
+    public String getTitre() {
+        return titre;
+    }
+
+    public void setTitre(String titre) {
+        this.titre = titre;
+    }
+    
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public boolean isLu() {
         return lu;
@@ -35,12 +53,12 @@ public class NotificationDTO {
         this.lu = lu;
     }
 
-    public LocalDateTime getDateEnvoi() {
-        return dateEnvoi;
+    public LocalDateTime getDate() {
+        return date;
     }
 
-    public void setDateEnvoi(LocalDateTime dateEnvoi) {
-        this.dateEnvoi = dateEnvoi;
+    public void setDate(LocalDateTime date) {
+        this.date = date;
     }
 
     public Long getUtilisateurId() {

@@ -3,8 +3,10 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
+import club.taekwondo.repository.jpa.MembreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,15 @@ public class UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MembreRepository membreRepository;
 
     @Autowired
-    public UtilisateurService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder) {
+    public UtilisateurService(UtilisateurRepository utilisateurRepository, 
+                              PasswordEncoder passwordEncoder,
+                              MembreRepository membreRepository) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
+        this.membreRepository = membreRepository;
     }
 
     // ===== Helpers debug =====
@@ -74,15 +80,44 @@ public class UtilisateurService {
     public UtilisateurDTO convertToDTO(Utilisateur utilisateur) {
         System.out.println("[" + now() + "][USR-SVC][convertToDTO] in: " + safeEntity(utilisateur));
         if (utilisateur == null) return null;
+        
         UtilisateurDTO dto = new UtilisateurDTO();
         dto.setId(utilisateur.getId());
-        dto.setNom(utilisateur.getNom());
-        dto.setPrenom(utilisateur.getPrenom());
         dto.setDateNaissance(utilisateur.getDateNaissance());
         dto.setAdresse(utilisateur.getAdresse());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
-        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null); 
+        dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null);
+        
+        // 🔧 Pour un parent, récupérer les vraies informations depuis le premier enfant
+        if (utilisateur.getRole() == Role.PARENT) {
+            // Récupérer le premier membre enfant de ce parent pour avoir le vrai nom
+            List<Membre> enfants = membreRepository.findByParentId(utilisateur.getId());
+            
+            if (!enfants.isEmpty()) {
+                Membre premierEnfant = enfants.get(0);
+                // Les vraies informations du parent sont stockées dans l'enfant
+                dto.setNomParent(premierEnfant.getNom());
+                dto.setPrenomParent(premierEnfant.getPrenom());
+                
+                // Garder les valeurs par défaut pour compatibilité
+                dto.setNom(utilisateur.getNom());
+                dto.setPrenom(utilisateur.getPrenom());
+                
+                System.out.println("[USR-SVC] Parent enrichi: " + premierEnfant.getPrenom() + " " + premierEnfant.getNom());
+            } else {
+                // Pas d'enfant trouvé, utiliser les données de base
+                dto.setNom(utilisateur.getNom());
+                dto.setPrenom(utilisateur.getPrenom());
+                dto.setNomParent(utilisateur.getNom());
+                dto.setPrenomParent(utilisateur.getPrenom());
+            }
+        } else {
+            // Pour les autres rôles, utiliser les données normales
+            dto.setNom(utilisateur.getNom());
+            dto.setPrenom(utilisateur.getPrenom());
+        }
+        
         System.out.println("[" + now() + "][USR-SVC][convertToDTO] out: " + safeDto(dto));
         return dto;
     }
