@@ -93,6 +93,14 @@ public class EvenementService {
     public EvenementDTO updateEvenement(Long id, EvenementDTO dto) {
         Evenement existing = evenementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Événement non trouvé avec l'ID : " + id));
+        // Sauvegarder l'état avant modification pour détecter un vrai changement
+        String oldTitre = existing.getTitre();
+        var oldDateDebut = existing.getDateDebut();
+        var oldDateFin = existing.getDateFin();
+        String oldLieu = existing.getLieu();
+        Integer oldCapacite = existing.getCapacite();
+        String oldDescription = existing.getDescription();
+        String oldImage = existing.getImageFilename();
 
         existing.setTitre(dto.getTitre());
         existing.setDateDebut(dto.getDateDebut());
@@ -105,7 +113,21 @@ public class EvenementService {
             existing.setImageFilename(dto.getImageFilename());
         }
 
+        boolean modifie = !equalsObj(oldTitre, dto.getTitre())
+                || !equalsObj(oldDateDebut, dto.getDateDebut())
+                || !equalsObj(oldDateFin, dto.getDateFin())
+                || !equalsObj(oldLieu, dto.getLieu())
+                || !equalsObj(oldCapacite, dto.getCapacite())
+                || !equalsObj(oldDescription, dto.getDescription())
+                || (dto.getImageFilename() != null && !equalsObj(oldImage, dto.getImageFilename()));
+
         Evenement updated = evenementRepository.save(existing);
+
+        // 🔔 Notifier uniquement si au moins un champ a vraiment changé
+        if (modifie) {
+            envoyerNotificationModificationEvenement(updated);
+        }
+
         return convertToDTO(updated);
     }
 
@@ -270,5 +292,10 @@ public class EvenementService {
         } catch (Exception e) {
             System.err.println("❌ Erreur lors de l'envoi des notifications d'annulation : " + e.getMessage());
         }
+    }
+
+    // ✅ Helper null-safe pour comparer des objets
+    private static boolean equalsObj(Object a, Object b) {
+        return a == b || (a != null && a.equals(b));
     }
 }

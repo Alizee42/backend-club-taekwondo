@@ -21,6 +21,9 @@ public class EmailService {
     @Value("${app.mail.frontend-url}")
     private String frontendUrl;
 
+    @Value("${app.mail.contact-to:${app.mail.from}}")
+    private String contactTo;
+
     /**
      * Envoie un email de réinitialisation de mot de passe avec template HTML
      */
@@ -251,5 +254,46 @@ public class EmailService {
             System.err.println("❌ Erreur envoi email HTML à " + destinataire + " : " + e.getMessage());
             throw new RuntimeException("Erreur lors de l'envoi de l'email", e);
         }
+    }
+
+    /**
+     * Envoi d'un message de contact vers l'adresse du club
+     */
+    public void envoyerMessageContact(String nom, String email, String objet, String contenu) {
+        String sujet = "[Contact Site] " + objet;
+        String html = """
+            <html><body style='font-family:Arial,sans-serif;'>
+            <h2>Nouveau message de contact</h2>
+            <p><strong>Nom :</strong> %s</p>
+            <p><strong>Email :</strong> %s</p>
+            <p><strong>Objet :</strong> %s</p>
+            <hr/>
+            <p style='white-space:pre-line;'>%s</p>
+            <hr/>
+            <p style='font-size:12px;color:#666'>Message généré automatiquement depuis le site.</p>
+            </body></html>
+        """.formatted(escape(nom), escape(email), escape(objet), escape(contenu));
+
+    // Envoi au destinataire du club (contactTo prioritaire sinon fromEmail)
+    envoyerEmailHtml(contactTo != null && !contactTo.isBlank() ? contactTo : fromEmail, sujet, html);
+
+        // Accusé de réception simple côté utilisateur
+        try {
+            String ackSujet = "Votre message au Club de Taekwondo";
+            String ackHtml = """
+                <html><body style='font-family:Arial,sans-serif;'>
+                <p>Bonjour %s,</p>
+                <p>Nous avons bien reçu votre message et vous répondrons rapidement.</p>
+                <p><strong>Rappel de votre objet :</strong> %s</p>
+                <p style='font-size:12px;color:#666'>Ceci est un accusé de réception automatique.</p>
+                </body></html>
+            """.formatted(escape(nom), escape(objet));
+            envoyerEmailHtml(email, ackSujet, ackHtml);
+        } catch (Exception ignored) {}
+    }
+
+    private String escape(String v) {
+        if (v == null) return "";
+        return v.replace("<", "&lt;").replace(">", "&gt;");
     }
 }
