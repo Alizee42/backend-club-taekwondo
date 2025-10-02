@@ -93,7 +93,9 @@ public class SecurityConfig {
             "http://127.0.0.1:4200",
             "http://localhost:5173",   // si tu utilises Vite
             "http://127.0.0.1:5173",
-            "https://frontend-club-taekwondo.netlify.app"
+            "https://frontend-club-taekwondo.netlify.app",
+            "https://club-taekwondo-*.netlify.app",  // Pour les deploy previews
+            "https://*.netlify.app"  // Wildcard pour tous les sous-domaines Netlify
         ));
 
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

@@ -100,6 +100,30 @@ public class MembreController {
         return out.isEmpty() ? ResponseEntity.status(HttpStatus.NO_CONTENT).build() : ResponseEntity.ok(out);
     }
 
+    /** Endpoint de debug pour tester la récupération des enfants */
+    @GetMapping("/debug/parent-enfants")
+    public ResponseEntity<?> debugParentEnfants(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            System.out.println("[DEBUG] Email du parent connecté: " + email);
+            
+            List<MembreDTO> enfants = membreService.getMembresByParentEmail(email);
+            
+            Map<String, Object> debugInfo = new HashMap<>();
+            debugInfo.put("email", email);
+            debugInfo.put("nombreEnfants", enfants.size());
+            debugInfo.put("enfants", enfants);
+            debugInfo.put("timestamp", new java.util.Date());
+            
+            return ResponseEntity.ok(debugInfo);
+        } catch (Exception e) {
+            System.err.println("[ERROR] Erreur debug parent-enfants: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ------------------ CREATE / UPDATE / DELETE ------------------
 
     @PostMapping

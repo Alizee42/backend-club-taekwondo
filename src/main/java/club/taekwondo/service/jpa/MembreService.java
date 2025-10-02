@@ -134,12 +134,17 @@ public class MembreService {
 
     // ✅ NOUVEAU : récupérer les enfants du parent via l'email (extrait du JWT)
     public List<MembreDTO> getMembresByParentEmail(String email) {
+        System.out.println("[DEBUG] Recherche parent avec email: " + email);
         Optional<Utilisateur> parentOpt = utilisateurRepository.findByEmailIgnoreCase(email);
         if (parentOpt.isEmpty()) {
+            System.out.println("[DEBUG] Aucun parent trouvé avec l'email: " + email);
             return List.of();
         }
         Long parentId = parentOpt.get().getId();
-        return getMembresByUtilisateurId(parentId);
+        System.out.println("[DEBUG] Parent trouvé avec ID: " + parentId);
+        List<MembreDTO> enfants = getMembresByUtilisateurId(parentId);
+        System.out.println("[DEBUG] Nombre d'enfants trouvés: " + enfants.size());
+        return enfants;
     }
 
     // ✅ Utilitaire simple : utilisé par d'autres services
