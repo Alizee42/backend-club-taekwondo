@@ -99,6 +99,11 @@ public class ActualiteService {
         });
     }
 
+    /** Compte le nombre d'actualités (pour debug) */
+    public long countActualites() {
+        return actualiteRepository.count();
+    }
+
     /** Désactive toutes les actualités mises à la une sauf celle en cours */
     private void unsetAllFeaturedExcept(String excludeId) {
         actualiteRepository.findByIsFeaturedTrue().forEach(a -> {

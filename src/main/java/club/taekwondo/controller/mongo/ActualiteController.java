@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api/actualites", produces = MediaType.APPLICATION_JSON_VALUE) // ✅ garantit JSON
@@ -32,7 +33,14 @@ public class ActualiteController {
     @GetMapping
     public ResponseEntity<List<ActualiteDTO>> getAll() {
         log.debug("[CTRL] GET /api/actualites");
-        return ResponseEntity.ok(actualiteService.getAll());
+        try {
+            List<ActualiteDTO> actualites = actualiteService.getAll();
+            log.info("[CTRL] Actualités récupérées: {}", actualites.size());
+            return ResponseEntity.ok(actualites);
+        } catch (Exception e) {
+            log.error("[CTRL] Erreur lors de la récupération des actualités", e);
+            return ResponseEntity.status(500).body(List.of());
+        }
     }
 
     @GetMapping("/featured")
@@ -111,6 +119,26 @@ public class ActualiteController {
         log.debug("[CTRL] DELETE /api/actualites/{}", id);
         actualiteService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ✅ Endpoint de debug pour vérifier MongoDB
+    @GetMapping("/debug/connection")
+    public ResponseEntity<?> debugConnection() {
+        try {
+            long count = actualiteService.countActualites();
+            return ResponseEntity.ok(Map.of(
+                "mongoConnected", true,
+                "actualitesCount", count,
+                "message", "MongoDB accessible"
+            ));
+        } catch (Exception e) {
+            log.error("[DEBUG] Erreur connexion MongoDB", e);
+            return ResponseEntity.status(500).body(Map.of(
+                "mongoConnected", false,
+                "error", e.getMessage(),
+                "message", "MongoDB inaccessible"
+            ));
+        }
     }
 
     // ✅ classe utilitaire pour renvoyer des erreurs en JSON
