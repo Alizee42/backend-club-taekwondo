@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/error",
                     "/uploads/**",   // ✅ accès libre aux images uploadées
+                    "/api/uploads/**", // ✅ accès libre aux documents/images via API
                     "/api/stripe/webhook",
                     "/api/stripe/public-key",
                     "/api/stripe/create-payment-intent",
@@ -49,7 +50,6 @@ public class SecurityConfig {
                     "/api/produits/**",
                     "/api/reinitialisation/**"     // ✅ Réinitialisation mot de passe
                 ).permitAll()
-
                 // Permettre la création de membres lors de l'inscription (sans auth)
                 .requestMatchers(HttpMethod.POST, "/api/membres").permitAll()
 
