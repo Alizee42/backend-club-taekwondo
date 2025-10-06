@@ -8,6 +8,8 @@ import club.taekwondo.entity.jpa.Commande;
 import club.taekwondo.entity.jpa.LigneCommande;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Produit;
+import club.taekwondo.entity.jpa.Club;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.CommandeRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
@@ -37,6 +39,7 @@ public class CommandeService {
     @Autowired private ProduitRepository produitRepository;
     @Autowired private LigneCommandeRepository ligneCommandeRepository;
     @Autowired private MembreRepository membreRepository; // bénéficiaire (enfant) par ligne
+    @Autowired private ClubRepository clubRepository;
 
     // =========================
     //         CONFIGURATION
@@ -48,9 +51,17 @@ public class CommandeService {
     //         Public API
     // =========================
 
-    // Récupérer toutes les commandes
+    // Récupérer toutes les commandes (non filtré par club)
     public List<CommandeDTO> getAllCommandes() {
         return commandeRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Récupérer toutes les commandes
+    public List<CommandeDTO> getAllCommandesByClubId(Long clubId) {
+        return commandeRepository.findByClub_Id(clubId)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -107,6 +118,11 @@ public class CommandeService {
             Utilisateur utilisateur = utilisateurRepository.findById(commandeDTO.getUtilisateurId())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + commandeDTO.getUtilisateurId()));
             commande.setUtilisateur(utilisateur);
+        }
+        // Associer le club
+        if (commandeDTO.getClubId() != null) {
+            Club club = clubRepository.findById(commandeDTO.getClubId()).orElse(null);
+            commande.setClub(club);
         }
 
         commande = commandeRepository.save(commande);
@@ -273,6 +289,10 @@ public class CommandeService {
         dto.setModePaiement(commande.getModePaiement());
         dto.setDatePaiement(commande.getDatePaiement());
         dto.setStatut(commande.getStatut());
+
+        if (commande.getClub() != null) {
+            dto.setClubId(commande.getClub().getId());
+        }
 
         if (commande.getUtilisateur() != null) {
             dto.setUtilisateurId(commande.getUtilisateur().getId());

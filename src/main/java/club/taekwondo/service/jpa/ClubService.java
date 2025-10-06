@@ -1,0 +1,72 @@
+package club.taekwondo.service.jpa;
+
+import club.taekwondo.dto.ClubDto;
+import club.taekwondo.entity.jpa.Club;
+import club.taekwondo.repository.jpa.ClubRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class ClubService {
+    @Autowired
+    private ClubRepository clubRepository;
+
+    public List<ClubDto> getAllClubs() {
+        return clubRepository.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public ClubDto getClubById(Long id) {
+        Optional<Club> club = clubRepository.findById(id);
+        return club.map(this::toDto).orElse(null);
+    }
+
+    public ClubDto createClub(ClubDto dto) {
+        Club club = toEntity(dto);
+        Club saved = clubRepository.save(club);
+        return toDto(saved);
+    }
+
+    public ClubDto updateClub(Long id, ClubDto dto) {
+        Optional<Club> clubOpt = clubRepository.findById(id);
+        if (clubOpt.isEmpty()) return null;
+        Club club = clubOpt.get();
+        club.setName(dto.getName());
+        club.setAdresse(dto.getAdresse());
+        club.setTelephone(dto.getTelephone());
+        club.setEmail(dto.getEmail());
+        club.setLogo(dto.getLogo());
+        Club saved = clubRepository.save(club);
+        return toDto(saved);
+    }
+
+    public void deleteClub(Long id) {
+        clubRepository.deleteById(id);
+    }
+
+    private ClubDto toDto(Club club) {
+        ClubDto dto = new ClubDto();
+        dto.setId(club.getId());
+        dto.setName(club.getName());
+        dto.setAdresse(club.getAdresse());
+        dto.setTelephone(club.getTelephone());
+        dto.setEmail(club.getEmail());
+        dto.setLogo(club.getLogo());
+        return dto;
+    }
+
+    private Club toEntity(ClubDto dto) {
+        Club club = new Club();
+        club.setId(dto.getId());
+        club.setName(dto.getName());
+        club.setAdresse(dto.getAdresse());
+        club.setTelephone(dto.getTelephone());
+        club.setEmail(dto.getEmail());
+        club.setLogo(dto.getLogo());
+        return club;
+    }
+}

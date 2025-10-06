@@ -12,6 +12,13 @@ public class MembreDTO {
     private String numeroLicence;
     private Long utilisateurId;
     private boolean estAdulte;
+    private Long clubId;
+    public Long getClubId() {
+        return clubId;
+    }
+    public void setClubId(Long clubId) {
+        this.clubId = clubId;
+    }
 
     // --- Getters & Setters ---
 

@@ -1,3 +1,11 @@
+// ...existing code...
+
+    /**
+     * Pour compatibilité avec les anciens contrôleurs :
+     * Retourne tous les utilisateurs (tous clubs confondus).
+     * À utiliser uniquement pour l’admin global !
+     */
+
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.UtilisateurDTO;
@@ -7,6 +15,8 @@ import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.entity.jpa.Club;
+import club.taekwondo.repository.jpa.ClubRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,14 +33,30 @@ public class UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final MembreRepository membreRepository;
+    private final ClubRepository clubRepository;
 
     @Autowired
     public UtilisateurService(UtilisateurRepository utilisateurRepository, 
                               PasswordEncoder passwordEncoder,
-                              MembreRepository membreRepository) {
+                              MembreRepository membreRepository,
+                              ClubRepository clubRepository) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
         this.membreRepository = membreRepository;
+        this.clubRepository = clubRepository;
+    }
+
+    /**
+     * Pour compatibilité avec les anciens contrôleurs :
+     * Retourne tous les utilisateurs (tous clubs confondus).
+     * À utiliser uniquement pour l’admin global !
+     */
+    public List<UtilisateurDTO> getAllUtilisateurs() {
+        List<UtilisateurDTO> result = new ArrayList<>();
+        for (Utilisateur u : utilisateurRepository.findAll()) {
+            result.add(convertToDTO(u));
+        }
+        return result;
     }
 
     // ===== Helpers debug =====
@@ -88,6 +114,9 @@ public class UtilisateurService {
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
         dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null);
+        if (utilisateur.getClub() != null) {
+            dto.setClubId(utilisateur.getClub().getId());
+        }
         
         // 🔧 Pour un parent, récupérer les vraies informations depuis le premier enfant
         if (utilisateur.getRole() == Role.PARENT) {
@@ -134,6 +163,10 @@ public class UtilisateurService {
         Role parsed = parseRoleOrDefault(dto.getRole()); // ✅ convertit String -> Role
         utilisateur.setRole(parsed);
         utilisateur.setPassword(dto.getPassword()); // déjà encodé si createUtilisateur()
+        if (dto.getClubId() != null) {
+            Club club = clubRepository.findById(dto.getClubId()).orElse(null);
+            utilisateur.setClub(club);
+        }
         System.out.println("[" + now() + "][USR-SVC][toEntity] out: " + safeEntity(utilisateur));
         return utilisateur;
     }
@@ -142,13 +175,13 @@ public class UtilisateurService {
      *   Lecture
      * ======================= */
 
-    public List<UtilisateurDTO> getAllUtilisateurs() {
-        System.out.println("[" + now() + "][USR-SVC][getAllUtilisateurs] start");
+    public List<UtilisateurDTO> getAllUtilisateursByClubId(Long clubId) {
+        System.out.println("[" + now() + "][USR-SVC][getAllUtilisateursByClubId] clubId=" + clubId);
         List<UtilisateurDTO> result = new ArrayList<>();
-        for (Utilisateur u : utilisateurRepository.findAll()) {
+        for (Utilisateur u : utilisateurRepository.findByClub_Id(clubId)) {
             result.add(convertToDTO(u));
         }
-        System.out.println("[" + now() + "][USR-SVC][getAllUtilisateurs] size=" + result.size());
+        System.out.println("[" + now() + "][USR-SVC][getAllUtilisateursByClubId] size=" + result.size());
         return result;
     }
 
@@ -265,10 +298,10 @@ public class UtilisateurService {
             System.out.println("[" + now() + "][USR-SVC][createUtilisateur] role reçu='" + dto.getRole() + "'");
         }
 
-        Utilisateur utilisateur = toUtilisateurEntity(dto);
-        Utilisateur saved = utilisateurRepository.save(utilisateur);
-        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
-        return saved;
+    Utilisateur utilisateur = toUtilisateurEntity(dto);
+    Utilisateur saved = utilisateurRepository.save(utilisateur);
+    System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
+    return saved;
     }
 
 
@@ -286,6 +319,11 @@ public class UtilisateurService {
             if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
                 System.out.println("[" + now() + "][USR-SVC][updateUtilisateurFromDTO] encodage nouveau mot de passe...");
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            }
+
+            if (dto.getClubId() != null) {
+                Club club = clubRepository.findById(dto.getClubId()).orElse(null);
+                user.setClub(club);
             }
 
             utilisateurRepository.save(user);

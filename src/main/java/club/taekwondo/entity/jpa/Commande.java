@@ -10,6 +10,9 @@ import java.util.List;
 @Table(name = "commande")
 public class Commande {
 
+    @ManyToOne
+    private Club club;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -53,6 +56,14 @@ public class Commande {
     // Getters et Setters
     public Long getId() {
         return id;
+    }
+
+    public Club getClub() {
+        return club;
+    }
+
+    public void setClub(Club club) {
+        this.club = club;
     }
 
     public void setId(Long id) {

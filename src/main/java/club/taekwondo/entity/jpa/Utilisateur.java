@@ -11,6 +11,9 @@ import java.util.List;
 @Access(AccessType.FIELD)
 public class Utilisateur {
 
+    @ManyToOne
+    private Club club;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -48,6 +51,14 @@ public class Utilisateur {
 
     @OneToOne(mappedBy = "compteUtilisateur", cascade = CascadeType.ALL)
     private Membre membre;
+
+    public Club getClub() {
+        return club;
+    }
+
+    public void setClub(Club club) {
+        this.club = club;
+    }
 
     public Utilisateur() {}
 

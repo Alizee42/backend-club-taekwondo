@@ -3,8 +3,10 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
+import club.taekwondo.repository.jpa.ClubRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,10 +18,12 @@ public class MembreService {
 
     private final MembreRepository membreRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final ClubRepository clubRepository;
 
-    public MembreService(MembreRepository membreRepository, UtilisateurRepository utilisateurRepository) {
+    public MembreService(MembreRepository membreRepository, UtilisateurRepository utilisateurRepository, ClubRepository clubRepository) {
         this.membreRepository = membreRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.clubRepository = clubRepository;
     }
 
     // 🔹 Récupérer tous les membres (DTO)
@@ -51,10 +55,19 @@ public class MembreService {
         return membreRepository.findByCompteUtilisateur_Email(email)
                 .map(this::toMembreDTO);
     }
-    
+
     public Optional<MembreDTO> getMembreByUtilisateurEmail(String email) {
         return getMembreByEmail(email);
     }
+
+    // 🔹 Récupérer tous les membres d'un club (DTO)
+    public List<MembreDTO> getMembresByClubId(Long clubId) {
+        return membreRepository.findByClub_Id(clubId)
+                .stream()
+                .map(this::toMembreDTO)
+                .collect(Collectors.toList());
+    }
+
     // 🔹 Créer un membre sans rattachement explicite
     public MembreDTO createMembre(MembreDTO membreDTO) {
         return createMembre(membreDTO, membreDTO.getUtilisateurId());
@@ -84,6 +97,13 @@ public class MembreService {
             }
         }
 
+        // 🔹 Rattacher le club si clubId présent dans le DTO
+        if (membreDTO.getClubId() != null) {
+            Club club = clubRepository.findById(membreDTO.getClubId())
+                    .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
+            membre.setClub(club);
+        }
+
         return toMembreDTO(membreRepository.save(membre));
     }
 
@@ -111,6 +131,12 @@ public class MembreService {
             membre.setNumeroLicence(membreDTO.getNumeroLicence());
             membre.setCeinture(membreDTO.getCeinture());
             membre.setEstAdulte(membreDTO.isEstAdulte());
+            // MAJ du club si besoin
+            if (membreDTO.getClubId() != null) {
+                Club club = clubRepository.findById(membreDTO.getClubId())
+                        .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
+                membre.setClub(club);
+            }
             return toMembreDTO(membreRepository.save(membre));
         }).orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID : " + id));
     }
@@ -126,7 +152,6 @@ public class MembreService {
     // 🔹 Récupérer les membres liés à un utilisateur (parent) — DTO
     public List<MembreDTO> getMembresByUtilisateurId(Long utilisateurId) {
         List<Membre> membres = membreRepository.findByParentId(utilisateurId);
-        System.out.println("[✅] Membres trouvés dans la base de données : " + membres);
         return membres.stream()
                 .map(this::toMembreDTO)
                 .collect(Collectors.toList());
@@ -134,17 +159,12 @@ public class MembreService {
 
     // ✅ NOUVEAU : récupérer les enfants du parent via l'email (extrait du JWT)
     public List<MembreDTO> getMembresByParentEmail(String email) {
-        System.out.println("[DEBUG] Recherche parent avec email: " + email);
         Optional<Utilisateur> parentOpt = utilisateurRepository.findByEmailIgnoreCase(email);
         if (parentOpt.isEmpty()) {
-            System.out.println("[DEBUG] Aucun parent trouvé avec l'email: " + email);
             return List.of();
         }
         Long parentId = parentOpt.get().getId();
-        System.out.println("[DEBUG] Parent trouvé avec ID: " + parentId);
-        List<MembreDTO> enfants = getMembresByUtilisateurId(parentId);
-        System.out.println("[DEBUG] Nombre d'enfants trouvés: " + enfants.size());
-        return enfants;
+        return getMembresByUtilisateurId(parentId);
     }
 
     // ✅ Utilitaire simple : utilisé par d'autres services
@@ -168,6 +188,9 @@ public class MembreService {
         } else if (membre.getParent() != null) {
             dto.setUtilisateurId(membre.getParent().getId());
         }
+        if (membre.getClub() != null) {
+            dto.setClubId(membre.getClub().getId());
+        }
         return dto;
     }
 
@@ -180,8 +203,12 @@ public class MembreService {
         membre.setNumeroLicence(dto.getNumeroLicence());
         membre.setCeinture(dto.getCeinture());
         membre.setEstAdulte(dto.isEstAdulte());
+        // Ajout du club si présent dans le DTO
+        if (dto.getClubId() != null) {
+            Club club = clubRepository.findById(dto.getClubId())
+                    .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + dto.getClubId()));
+            membre.setClub(club);
+        }
         return membre;
     }
 }
-
-

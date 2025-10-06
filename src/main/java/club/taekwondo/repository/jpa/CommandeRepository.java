@@ -8,8 +8,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+
 @Repository
 public interface CommandeRepository extends JpaRepository<Commande, Long> {
+    List<Commande> findByClub_Id(Long clubId);
 
     // 🔹 Trouver les commandes par statut et mode de paiement
     List<Commande> findByStatutAndModePaiement(String statut, String modePaiement);

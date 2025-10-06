@@ -15,6 +15,7 @@ public class UtilisateurDTO {
     private String email;
     private String telephone;
     private Role role;
+    private Long clubId;
     
     // Informations supplémentaires pour les parents
     private String nomParent;
@@ -66,6 +67,12 @@ public class UtilisateurDTO {
     }
     public void setTelephone(String telephone) {
         this.telephone = telephone;
+    }
+    public Long getClubId() {
+        return clubId;
+    }
+    public void setClubId(Long clubId) {
+        this.clubId = clubId;
     }
     public Role getRole() {
         return role;

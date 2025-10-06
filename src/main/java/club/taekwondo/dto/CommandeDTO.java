@@ -9,6 +9,8 @@ public class CommandeDTO {
 
     private Long id;
 
+    private Long clubId;
+
     private LocalDate dateCommande;
 
     @NotNull(message = "Le montant total est obligatoire")
@@ -40,6 +42,14 @@ public class CommandeDTO {
     // --- Getters & Setters ---
     public Long getId() {
         return id;
+    }
+
+    public Long getClubId() {
+        return clubId;
+    }
+
+    public void setClubId(Long clubId) {
+        this.clubId = clubId;
     }
 
     public void setId(Long id) {

@@ -38,6 +38,11 @@ public class Membre {
     @JoinColumn(name = "compte_utilisateur_id", unique = true)
     private Utilisateur compteUtilisateur;
 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id")
+    private Club club;
+
     public Membre() {}
 
     public Membre(String nom, String prenom, LocalDate dateNaissance, String ceinture, String numeroLicence,
@@ -70,6 +75,8 @@ public class Membre {
     }
 
     // --- Getters & Setters ---
+    public Club getClub() { return club; }
+    public void setClub(Club club) { this.club = club; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
