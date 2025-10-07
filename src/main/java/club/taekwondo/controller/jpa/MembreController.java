@@ -1,9 +1,8 @@
-
 package club.taekwondo.controller.jpa;
-
+import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.service.jpa.UtilisateurService;
 import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.service.jpa.MembreService;
-import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,9 +16,11 @@ import java.util.*;
 public class MembreController {
 
     private final MembreService membreService;
+    private final UtilisateurService utilisateurService;
 
     public MembreController(MembreService membreService, UtilisateurService utilisateurService) {
         this.membreService = membreService;
+        this.utilisateurService = utilisateurService;
     }
 
     // ------------------ READ ------------------
@@ -29,28 +30,41 @@ public class MembreController {
      * - Sinon, si ?parentId=... est fourni => enfants de ce parent (usage admin).
      * - Sinon => tous les membres (ex: admin).
      */
-    @GetMapping
-    public ResponseEntity<?> getMembres(
-            @RequestParam(value = "parentId", required = false) Long parentId,
-            Authentication authentication
-    ) {
-        boolean isParent = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
+        @GetMapping
+        public ResponseEntity<?> getMembres(
+                @RequestParam(value = "parentId", required = false) Long parentId,
+                @RequestParam(value = "clubId", required = false) Long clubId,
+                Authentication authentication
+        ) {
+            boolean isParent = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
 
-        if (isParent) {
-            String email = authentication.getName();
-            List<MembreDTO> mine = membreService.getMembresByParentEmail(email);
-            return mine.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(mine);
+            if (isParent) {
+                String email = authentication.getName();
+                List<MembreDTO> mine = membreService.getMembresByParentEmail(email);
+                return mine.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(mine);
+            }
+
+            if (parentId != null) {
+                List<MembreDTO> children = membreService.getMembresByUtilisateurId(parentId);
+                return children.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(children);
+            }
+
+            if (clubId != null) {
+                Utilisateur utilisateur = utilisateurService.findByEmail(authentication.getName()).orElse(null);
+                boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+                if (!isAdmin && (utilisateur == null || utilisateur.getClub() == null || !utilisateur.getClub().getId().equals(clubId))) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Accès refusé à ce club."));
+                }
+                List<MembreDTO> membres = membreService.getMembresByClubId(clubId);
+                return membres.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(membres);
+            }
+
+            List<MembreDTO> all = membreService.getAllMembres();
+            return all.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(all);
         }
-
-        if (parentId != null) {
-            List<MembreDTO> children = membreService.getMembresByUtilisateurId(parentId);
-            return children.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(children);
-        }
-
-        List<MembreDTO> all = membreService.getAllMembres();
-        return all.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(all);
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getMembreById(@PathVariable Long id) {

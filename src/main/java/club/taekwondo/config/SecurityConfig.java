@@ -45,6 +45,7 @@ public class SecurityConfig {
                     "/api/public/**", // ✅ zone publique générique (contact, etc.)
                     "/api/actualites/**",
                     "/api/avis/**",
+                    "/api/clubs/**", // ✅ accès libre à la liste des clubs
                     "/api/debug/**",
                     "/api/inscriptions/debug/**",  // ✅ Debug des inscriptions
                     "/api/produits/**",
