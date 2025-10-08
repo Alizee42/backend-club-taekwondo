@@ -11,4 +11,8 @@ import org.springframework.stereotype.Repository;
 public interface LigneCommandeRepository extends JpaRepository<LigneCommande, Long> {
 	List<LigneCommande> findByCommandeId(Long commandeId);
 
+	// Filtrage par club
+	@org.springframework.data.jpa.repository.Query("SELECT lc FROM LigneCommande lc WHERE lc.commande.club.id = :clubId")
+	List<LigneCommande> findByClubId(Long clubId);
+
 }

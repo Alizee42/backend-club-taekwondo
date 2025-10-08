@@ -20,6 +20,15 @@ import java.util.stream.Collectors;
 
 @Service
 public class PaiementService {
+    /**
+     * Récupérer tous les paiements d'un club
+     */
+    public List<PaiementDTO> getPaiementsByClubId(Long clubId) {
+        return paiementRepository.findByClubId(clubId)
+                .stream()
+                .map(this::toPaiementDTO)
+                .collect(Collectors.toList());
+    }
 
     private static final Logger log = LoggerFactory.getLogger(PaiementService.class);
 

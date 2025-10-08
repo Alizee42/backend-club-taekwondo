@@ -24,38 +24,35 @@ public class ParametresPaiementController {
     }
 
     /** 🔓 Lecture publique (pas besoin d’authentification) */
-    @GetMapping("/public")
-    public ResponseEntity<ParametresPaiementDTO> getParametresPaiementPublic() {
-        log.debug("[CTRL] GET /api/parametres-paiement/public");
-        ParametresPaiementDTO dto = parametresPaiementService.getParametresPaiement();
+    @GetMapping("/public/club/{clubId}")
+    public ResponseEntity<ParametresPaiementDTO> getParametresPaiementPublic(@PathVariable Long clubId) {
+        log.debug("[CTRL] GET /api/parametres-paiement/public/club/{}", clubId);
+        ParametresPaiementDTO dto = parametresPaiementService.getParametresPaiementByClub(clubId);
         return ResponseEntity.ok(dto);
     }
 
-    /** 🔒 Lecture réservée ADMIN */
+    /** 🔒 Lecture réservée ADMIN par club */
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ResponseEntity<ParametresPaiementDTO> getParametresPaiement(Authentication auth) {
-        log.debug("[CTRL] GET /api/parametres-paiement by user={} roles={}",
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<ParametresPaiementDTO> getParametresPaiementByClub(@PathVariable Long clubId, Authentication auth) {
+        log.debug("[CTRL] GET /api/parametres-paiement/club/{} by user={} roles={}",
+                clubId,
                 auth != null ? auth.getName() : "anonymous",
                 auth != null ? auth.getAuthorities() : "[]");
-
-        ParametresPaiementDTO dto = parametresPaiementService.getParametresPaiement();
+        ParametresPaiementDTO dto = parametresPaiementService.getParametresPaiementByClub(clubId);
         return ResponseEntity.ok(dto);
     }
 
-    /** 🔒 Mise à jour réservée ADMIN */
+    /** 🔒 Mise à jour réservée ADMIN par club */
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    public ResponseEntity<ParametresPaiementDTO> updateParametresPaiement(
-            Authentication auth,
-            @RequestBody ParametresPaiementDTO parametres) {
-
-        log.debug("[CTRL] POST /api/parametres-paiement by user={} roles={} payload={}",
+    @PostMapping("/club/{clubId}")
+    public ResponseEntity<ParametresPaiementDTO> updateParametresPaiementByClub(@PathVariable Long clubId, Authentication auth, @RequestBody ParametresPaiementDTO parametres) {
+        log.debug("[CTRL] POST /api/parametres-paiement/club/{} by user={} roles={} payload={}",
+                clubId,
                 auth != null ? auth.getName() : "anonymous",
                 auth != null ? auth.getAuthorities() : "[]",
                 parametres);
-
-        parametresPaiementService.updateParametresPaiement(parametres);
+        parametresPaiementService.updateParametresPaiement(clubId, parametres);
         return ResponseEntity.ok(parametres);
     }
 }

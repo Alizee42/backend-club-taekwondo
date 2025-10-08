@@ -56,4 +56,8 @@ public interface InscriptionEvenementRepository extends JpaRepository<Inscriptio
            "JOIN FETCH i.evenement e " +
            "WHERE m.parent.id = :parentId AND i.statut != 'ANNULEE'")
     List<InscriptionEvenement> findByParentIdWithMembreAndEvenement(@Param("parentId") Long parentId);
+
+    // 🔹 Récupérer toutes les inscriptions d'un club
+    @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre m WHERE m.club.id = :clubId")
+    List<InscriptionEvenement> findByMembre_Club_Id(@Param("clubId") Long clubId);
 }

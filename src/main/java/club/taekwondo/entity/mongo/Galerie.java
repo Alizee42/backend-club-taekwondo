@@ -12,6 +12,15 @@ import java.time.LocalDateTime;
 @Access(AccessType.FIELD)
 @Document(collection = "galerie")
 public class Galerie {
+    @Field("club_id")
+    private Long clubId;
+
+    public Long getClubId() {
+        return clubId;
+    }
+    public void setClubId(Long clubId) {
+        this.clubId = clubId;
+    }
 
     @Id
     private String id;

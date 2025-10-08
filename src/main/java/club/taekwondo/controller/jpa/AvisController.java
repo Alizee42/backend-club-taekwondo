@@ -17,6 +17,12 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/api/avis", produces = MediaType.APPLICATION_JSON_VALUE)
 
 public class AvisController {
+    /** Avis filtrés par club */
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<AvisDTO>> getAvisByClub(@PathVariable Long clubId) {
+        List<AvisDTO> avis = avisService.getAvisByClubId(clubId);
+        return avis.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(avis);
+    }
 
     @Autowired
     private AvisService avisService;

@@ -19,6 +19,13 @@ import java.util.Map;
 @RequestMapping(value = "/api/actualites", produces = MediaType.APPLICATION_JSON_VALUE) // ✅ garantit JSON
 
 public class ActualiteController {
+    /** Actualités filtrées par club */
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<ActualiteDTO>> getByClub(@PathVariable String clubId) {
+        log.debug("[CTRL] GET /api/actualites/club/{}", clubId);
+        List<ActualiteDTO> actualites = actualiteService.getByClubId(clubId);
+        return actualites.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(actualites);
+    }
 
     private static final Logger log = LoggerFactory.getLogger(ActualiteController.class);
 

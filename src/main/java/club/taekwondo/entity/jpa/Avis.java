@@ -38,6 +38,12 @@ public class Avis {
     @JoinColumn(name = "utilisateur_id", nullable = true)
     private Utilisateur utilisateur;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id")
+    private Club club;
+    public Club getClub() { return club; }
+    public void setClub(Club club) { this.club = club; }
+
     // Constructeurs
     public Avis() {}
 

@@ -8,4 +8,5 @@ import club.taekwondo.entity.jpa.ParametresPaiement;
 
 @Repository
 public interface ParametresPaiementRepository extends JpaRepository<ParametresPaiement, Long> {
+	ParametresPaiement findByClub_Id(Long clubId);
 }

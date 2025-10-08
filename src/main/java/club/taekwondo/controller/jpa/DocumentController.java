@@ -4,6 +4,9 @@ import club.taekwondo.dto.DocumentDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.service.common.FileUploadService;
 import club.taekwondo.service.jpa.DocumentService;
+import club.taekwondo.service.jpa.UtilisateurService;
+import club.taekwondo.entity.jpa.Utilisateur;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,19 +26,21 @@ public class DocumentController {
     private DocumentService documentService;
 
     @Autowired
+    private UtilisateurService utilisateurService;
+
+    @Autowired
     private FileUploadService fileUploadService;
 
     // ================== READ ==================
 
     @GetMapping
-    public ResponseEntity<List<DocumentDTO>> getAllDocuments() {
-        System.out.println("Récupération de tous les documents...");
-        List<DocumentDTO> documents = documentService.getAllDocumentsWithUtilisateur();
+    public ResponseEntity<List<DocumentDTO>> getAllDocuments(Authentication authentication) {
+        Utilisateur user = utilisateurService.findByEmail(authentication.getName()).orElseThrow();
+        Long clubId = user.getClub().getId();
+        List<DocumentDTO> documents = documentService.getDocumentsByClubId(clubId);
         if (documents.isEmpty()) {
-            System.out.println("Aucun document trouvé.");
             return ResponseEntity.noContent().build();
         }
-        System.out.println("Documents récupérés: " + documents.size());
         return ResponseEntity.ok(documents);
     }
 

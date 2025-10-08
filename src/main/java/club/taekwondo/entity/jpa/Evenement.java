@@ -36,6 +36,11 @@ public class Evenement {
     @Column(nullable = false)
     private Boolean actif = true; // ✅ Par défaut les événements sont actifs
 
+    // 🔹 Ajout de la relation vers Club
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id", nullable = false)
+    private Club club;
+
     // Constructeur vide
     public Evenement() {
     }
@@ -111,5 +116,13 @@ public class Evenement {
 
     public void setActif(Boolean actif) {
         this.actif = actif;
+    }
+
+    public Club getClub() {
+        return club;
+    }
+
+    public void setClub(Club club) {
+        this.club = club;
     }
 }

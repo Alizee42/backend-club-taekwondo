@@ -37,6 +37,16 @@ public class LigneCommandeService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Récupérer toutes les lignes de commande d'un club
+     */
+    public List<LigneCommandeDTO> getLignesCommandeByClubId(Long clubId) {
+        return ligneCommandeRepository.findByClubId(clubId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public Optional<LigneCommandeDTO> getLigneCommandeById(Long id) {
         return ligneCommandeRepository.findById(id).map(this::convertToDTO);
     }

@@ -10,6 +10,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/galeries")
 public class GalerieController {
+    // 🔒 Récupérer toutes les galeries d'un club
+    @GetMapping("/club/{clubId}")
+    public List<GalerieDTO> getByClubId(@PathVariable Long clubId) {
+        return galerieService.getByClubId(clubId);
+    }
 
     private final GalerieService galerieService;
 

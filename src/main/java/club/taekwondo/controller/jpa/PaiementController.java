@@ -29,6 +29,12 @@ import java.util.Locale;
 @RequestMapping("/api/paiements")
 @CrossOrigin(origins = "*")
 public class PaiementController {
+    // 🔹 Récupérer tous les paiements d'un club
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<PaiementDTO>> getPaiementsByClub(@PathVariable Long clubId) {
+        List<PaiementDTO> paiements = paiementService.getPaiementsByClubId(clubId);
+        return ResponseEntity.ok(paiements);
+    }
 
     private final PaiementService paiementService;
     private final UtilisateurService utilisateurService;

@@ -114,4 +114,11 @@ public class EvenementController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    // 🔹 Récupérer tous les événements d'un club
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<EvenementDTO>> getEvenementsByClub(@PathVariable Long clubId) {
+        List<EvenementDTO> evenements = evenementService.getEvenementsByClubId(clubId);
+        return ResponseEntity.ok(evenements);
+    }
 }

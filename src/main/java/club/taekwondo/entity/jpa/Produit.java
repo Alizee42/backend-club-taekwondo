@@ -7,6 +7,16 @@ import java.math.BigDecimal;
 @Access(AccessType.FIELD)
 @Table(name = "produit")
 public class Produit {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id")
+    private Club club;
+
+    public Club getClub() {
+        return club;
+    }
+    public void setClub(Club club) {
+        this.club = club;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

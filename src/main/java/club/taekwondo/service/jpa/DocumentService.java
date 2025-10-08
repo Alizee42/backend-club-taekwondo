@@ -89,6 +89,19 @@ public class DocumentService {
         return documents;
     }
 
+    /** Par club (admin ou staff) */
+    public List<DocumentDTO> getDocumentsByClubId(Long clubId) {
+        System.out.println("Récupération des documents pour le club ID: " + clubId);
+        validatePositiveId(clubId, "L'ID du club doit être valide et supérieur à 0.");
+        List<DocumentDTO> documents = documentRepository.findAllWithUtilisateurAndMembre()
+                .stream()
+                .filter(doc -> doc.getUtilisateur() != null && doc.getUtilisateur().getClub() != null && doc.getUtilisateur().getClub().getId().equals(clubId))
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        System.out.println("Documents trouvés pour le club: " + documents.size());
+        return documents;
+    }
+
     // ====================== WRITE ======================
 
     /** Création depuis un DTO (le contrôleur a déjà stocké le fichier et rempli cheminFichier) */

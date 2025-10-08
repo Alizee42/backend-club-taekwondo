@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface AvisRepository extends JpaRepository<Avis, Integer> {
+    List<Avis> findByClub_Id(Long clubId); // Avis par club
 
     /* ======= LISTES ======= */
     List<Avis> findByApprouve(Boolean approuve);

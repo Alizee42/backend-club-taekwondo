@@ -13,6 +13,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/produits")
 public class ProduitController {
+    // 🔒 Récupérer tous les produits d'un club
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<ProduitDTO>> getProduitsByClub(@PathVariable Long clubId) {
+        return ResponseEntity.ok(produitService.getProduitsByClubId(clubId));
+    }
 
     @Autowired
     private ProduitService produitService;

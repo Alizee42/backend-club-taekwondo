@@ -14,6 +14,12 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/echeances")
 public class EcheanceController {
+    /** Échéances filtrées par club */
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<EcheanceDTO>> getEcheancesByClub(@PathVariable Long clubId) {
+        List<EcheanceDTO> echeances = echeanceService.getEcheancesByClubId(clubId);
+        return echeances.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(echeances);
+    }
 
     @Autowired
     private EcheanceService echeanceService;

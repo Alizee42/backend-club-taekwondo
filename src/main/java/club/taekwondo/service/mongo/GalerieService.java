@@ -11,6 +11,13 @@ import java.util.stream.Collectors;
 
 @Service
 public class GalerieService {
+    // 🔒 Récupérer toutes les galeries d'un club
+    public List<GalerieDTO> getByClubId(Long clubId) {
+        return galerieRepository.findByClubId(clubId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     private final GalerieRepository galerieRepository;
 

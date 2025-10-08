@@ -16,6 +16,13 @@ import java.util.stream.Collectors;
 
 @Service
 public class EcheanceService {
+    // Échéances filtrées par club
+    public List<EcheanceDTO> getEcheancesByClubId(Long clubId) {
+        return echeanceRepository.findByPaiement_Membre_Club_Id(clubId)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
 
     @Autowired
     private EcheanceRepository echeanceRepository;

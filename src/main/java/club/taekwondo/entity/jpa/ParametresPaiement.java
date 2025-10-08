@@ -1,16 +1,24 @@
+
 package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 
 @Entity
 @Table(name = "parametres_paiement")
 public class ParametresPaiement {
 
     @Id
-    private Long id; // Identifiant fixe pour les paramètres globaux (ex : 1)
+    private Long id; // Identifiant unique
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id", nullable = false)
+    private Club club;
 
     @Column(nullable = false)
     private double montantCotisation;
@@ -19,6 +27,12 @@ public class ParametresPaiement {
     private boolean virement;
 
     @Column(nullable = false)
+    public Club getClub() {
+        return club;
+    }
+    public void setClub(Club club) {
+        this.club = club;
+    }
     private boolean especes;
 
     @Column(nullable = false)

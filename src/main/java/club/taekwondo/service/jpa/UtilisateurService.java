@@ -252,13 +252,37 @@ public class UtilisateurService {
     public Optional<UtilisateurDTO> login(String email, String password) {
         String e = lowerOrNull(email);
         System.out.println("[" + now() + "][USR-SVC][login] email=" + email + " -> normalized=" + e + ", password=" + maskPwd(password));
-        Optional<UtilisateurDTO> out = utilisateurRepository.findByEmailIgnoreCase(e)
+        Optional<Utilisateur> userOpt = utilisateurRepository.findByEmailIgnoreCase(e);
+        Optional<UtilisateurDTO> out = userOpt
                 .filter(u -> {
                     boolean match = passwordEncoder.matches(password, u.getPassword());
                     System.out.println("[" + now() + "][USR-SVC][login] password matches? " + match + " for userId=" + u.getId());
                     return match;
                 })
                 .map(this::convertToDTO);
+        // Refuser la connexion si l'utilisateur est ADMIN et n'a pas de club
+        // Contrôle clubId pour tous les utilisateurs
+        Long clubIdDemande = null;
+        if (email != null && email.contains("|")) {
+            // Convention : email|clubId transmis pour login multi-club
+            String[] parts = email.split("\\|");
+            if (parts.length == 2) {
+                try {
+                    clubIdDemande = Long.parseLong(parts[1]);
+                    email = parts[0];
+                } catch (NumberFormatException ignore) {}
+            }
+        }
+        if (out.isPresent()) {
+            if (clubIdDemande != null && !clubIdDemande.equals(out.get().getClubId())) {
+                System.out.println("[" + now() + "][USR-SVC][login] ❌ clubId mismatch, connexion refusée");
+                return Optional.empty();
+            }
+            if (out.get().getClubId() == null) {
+                System.out.println("[" + now() + "][USR-SVC][login] ❌ utilisateur sans club, connexion refusée");
+                return Optional.empty();
+            }
+        }
         System.out.println("[" + now() + "][USR-SVC][login] success? " + out.isPresent());
         return out;
     }

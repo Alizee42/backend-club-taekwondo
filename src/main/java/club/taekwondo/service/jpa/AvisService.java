@@ -12,6 +12,13 @@ import java.util.stream.Collectors;
 
 @Service
 public class AvisService {
+    // Avis filtrés par club
+    public List<AvisDTO> getAvisByClubId(Long clubId) {
+        return avisRepository.findByClub_Id(clubId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     @Autowired
     private AvisRepository avisRepository;
@@ -142,6 +149,9 @@ public class AvisService {
         dto.setPhoto(avis.getPhoto());
         if (avis.getUtilisateur() != null) {
             dto.setUtilisateurId(avis.getUtilisateur().getId());
+        }
+        if (avis.getClub() != null) {
+            dto.setClubId(avis.getClub().getId());
         }
         return dto;
     }

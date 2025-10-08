@@ -105,4 +105,10 @@ public class InscriptionEvenementController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    // 🔹 Récupérer toutes les inscriptions d’un club
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<InscriptionEvenementDTO>> getInscriptionsByClub(@PathVariable Long clubId) {
+        return ResponseEntity.ok(inscriptionService.getInscriptionsByClubId(clubId));
+    }
 }

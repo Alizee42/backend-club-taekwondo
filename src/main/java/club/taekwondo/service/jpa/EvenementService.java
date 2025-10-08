@@ -294,6 +294,14 @@ public class EvenementService {
         }
     }
 
+    // 🔹 Récupérer tous les événements d'un club
+    public List<EvenementDTO> getEvenementsByClubId(Long clubId) {
+        return evenementRepository.findByClub_Id(clubId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     // ✅ Helper null-safe pour comparer des objets
     private static boolean equalsObj(Object a, Object b) {
         return a == b || (a != null && a.equals(b));

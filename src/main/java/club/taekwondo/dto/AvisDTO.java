@@ -12,6 +12,9 @@ public class AvisDTO {
     private String typeAvis;
     private String photo;
     private Long utilisateurId; // Expose juste l'ID utilisateur pour garder la structure légère
+    private Long clubId; // Ajout clubId pour filtrage par club
+    public Long getClubId() { return clubId; }
+    public void setClubId(Long clubId) { this.clubId = clubId; }
 
     // Getters & Setters
 

@@ -3,6 +3,9 @@ package club.taekwondo.controller.jpa;
 import club.taekwondo.dto.CommandeDTO;
 import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.service.jpa.CommandeService;
+import club.taekwondo.service.jpa.UtilisateurService;
+import club.taekwondo.entity.jpa.Utilisateur;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,14 +26,20 @@ public class CommandeController {
     @Autowired
     private CommandeService commandeService;
 
+    @Autowired
+    private UtilisateurService utilisateurService;
+
     // =========================
     //      ADMIN / GLOBAL
     // =========================
 
     @GetMapping
-    public ResponseEntity<List<CommandeDTO>> getAllCommandes() {
-        logger.info("📦 Récupération de toutes les commandes (admin)");
-        return ResponseEntity.ok(commandeService.getAllCommandes());
+    public ResponseEntity<List<CommandeDTO>> getAllCommandes(Authentication authentication) {
+        logger.info("📦 Récupération des commandes du club de l'admin connecté");
+        Utilisateur user = utilisateurService.findByEmail(authentication.getName()).orElseThrow();
+        Long clubId = user.getClub().getId();
+        List<CommandeDTO> commandes = commandeService.getAllCommandesByClubId(clubId);
+        return ResponseEntity.ok(commandes);
     }
 
     @GetMapping("/{id}")

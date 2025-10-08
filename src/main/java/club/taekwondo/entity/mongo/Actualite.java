@@ -17,6 +17,8 @@ public class Actualite {
     private LocalDateTime datePublication;
     private String typeActu;
 
+    private String clubId; // Ajout clubId pour filtrage par club
+
     @JsonProperty("isFeatured") // Mappe "isFeatured" dans le JSON au champ Java
     private boolean isFeatured;
 
@@ -24,13 +26,21 @@ public class Actualite {
 
     public Actualite() {}
 
-    public Actualite(String titre, String contenu, LocalDateTime datePublication, String typeActu, boolean isFeatured, String imageUrl) {
+    public Actualite(String titre, String contenu, LocalDateTime datePublication, String typeActu, String clubId, boolean isFeatured, String imageUrl) {
         this.titre = titre;
         this.contenu = contenu;
         this.datePublication = datePublication;
         this.typeActu = typeActu;
+        this.clubId = clubId;
         this.isFeatured = isFeatured;
         this.imageUrl = imageUrl;
+    }
+    public String getClubId() {
+        return clubId;
+    }
+
+    public void setClubId(String clubId) {
+        this.clubId = clubId;
     }
 
     // Getters et setters

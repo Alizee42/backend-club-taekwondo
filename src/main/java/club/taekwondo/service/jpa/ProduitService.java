@@ -13,6 +13,13 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProduitService {
+    // 🔒 Récupérer tous les produits d'un club
+    public List<ProduitDTO> getProduitsByClubId(Long clubId) {
+        return produitRepository.findByClub_Id(clubId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     @Autowired
     private ProduitRepository produitRepository;

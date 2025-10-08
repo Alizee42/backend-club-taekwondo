@@ -24,6 +24,13 @@ public class LigneCommandeController {
         return ResponseEntity.ok(lignes);
     }
 
+    // 🔹 Récupérer toutes les lignes de commande d'un club
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<LigneCommandeDTO>> getLignesCommandeByClub(@PathVariable Long clubId) {
+        List<LigneCommandeDTO> lignes = ligneCommandeService.getLignesCommandeByClubId(clubId);
+        return ResponseEntity.ok(lignes);
+    }
+
     // ✅ Récupérer une ligne par ID
     @GetMapping("/{id}")
     public ResponseEntity<LigneCommandeDTO> getLigneCommandeById(@PathVariable Long id) {

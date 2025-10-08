@@ -13,6 +13,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class ActualiteService {
+    /** Actualités par club */
+    public List<ActualiteDTO> getByClubId(String clubId) {
+        log.info("Récupération des actualités pour le club : {}", clubId);
+        return actualiteRepository.findByClubId(clubId)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
     private static final Logger log = LoggerFactory.getLogger(ActualiteService.class);
     private final ActualiteRepository actualiteRepository;
@@ -115,27 +123,29 @@ public class ActualiteService {
     }
 
     private ActualiteDTO toDTO(Actualite actualite) {
-        return new ActualiteDTO(
-                actualite.getId(),
-                actualite.getTitre(),
-                actualite.getContenu(),
-                actualite.getDatePublication(),
-                actualite.getTypeActu(),
-                actualite.isFeatured(),
-                actualite.getImageUrl()
-        );
+    return new ActualiteDTO(
+        actualite.getId(),
+        actualite.getTitre(),
+        actualite.getContenu(),
+        actualite.getDatePublication(),
+        actualite.getTypeActu(),
+        actualite.getClubId(),
+        actualite.isFeatured(),
+        actualite.getImageUrl()
+    );
     }
 
     private Actualite toEntity(ActualiteDTO actualiteDTO) {
         Actualite actualite = new Actualite();
-        actualite.setId(actualiteDTO.getId());
-        actualite.setTitre(actualiteDTO.getTitre());
-        actualite.setContenu(actualiteDTO.getContenu());
-        actualite.setDatePublication(actualiteDTO.getDatePublication());
-        actualite.setTypeActu(actualiteDTO.getTypeActu());
-        actualite.setFeatured(actualiteDTO.isFeatured());
-        actualite.setImageUrl(actualiteDTO.getImageUrl());
-        return actualite;
+    actualite.setId(actualiteDTO.getId());
+    actualite.setTitre(actualiteDTO.getTitre());
+    actualite.setContenu(actualiteDTO.getContenu());
+    actualite.setDatePublication(actualiteDTO.getDatePublication());
+    actualite.setTypeActu(actualiteDTO.getTypeActu());
+    actualite.setClubId(actualiteDTO.getClubId());
+    actualite.setFeatured(actualiteDTO.isFeatured());
+    actualite.setImageUrl(actualiteDTO.getImageUrl());
+    return actualite;
     }
 }
 

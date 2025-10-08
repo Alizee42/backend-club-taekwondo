@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ActualiteRepository extends MongoRepository<Actualite, String> {
     List<Actualite> findByIsFeaturedTrue(); // Récupérer les actualités mises en avant
+
+    List<Actualite> findByClubId(String clubId); // Récupérer les actualités par club
 }

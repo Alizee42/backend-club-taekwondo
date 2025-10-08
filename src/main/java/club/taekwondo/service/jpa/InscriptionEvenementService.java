@@ -221,4 +221,12 @@ public class InscriptionEvenementService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+
+    // 🔹 Récupérer toutes les inscriptions d'un club
+    public List<InscriptionEvenementDTO> getInscriptionsByClubId(Long clubId) {
+        return inscriptionRepository.findByMembre_Club_Id(clubId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 }

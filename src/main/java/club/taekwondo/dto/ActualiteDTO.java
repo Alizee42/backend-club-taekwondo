@@ -14,6 +14,8 @@ public class ActualiteDTO {
 
     private String typeActu; // devient optionnel
 
+    private String clubId; // Ajout clubId pour filtrage par club
+
     @JsonProperty("isFeatured")
     private boolean isFeatured;
 
@@ -28,6 +30,7 @@ public class ActualiteDTO {
         String contenu,
         LocalDateTime datePublication,
         String typeActu,
+        String clubId,
         boolean isFeatured,
         String imageUrl
     ) {
@@ -36,9 +39,12 @@ public class ActualiteDTO {
         this.contenu = contenu;
         this.datePublication = datePublication;
         this.typeActu = typeActu;
+        this.clubId = clubId;
         this.isFeatured = isFeatured;
         this.imageUrl = imageUrl;
     }
+    public String getClubId() { return clubId; }
+    public void setClubId(String clubId) { this.clubId = clubId; }
 
     // Getters et Setters
     public String getId() { return id; }

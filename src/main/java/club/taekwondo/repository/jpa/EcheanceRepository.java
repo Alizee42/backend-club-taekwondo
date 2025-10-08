@@ -12,6 +12,9 @@ import club.taekwondo.entity.jpa.Echeance;
 
 @Repository
 public interface EcheanceRepository extends JpaRepository<Echeance, Long> {
+   // Récupérer les échéances par club (via paiement.membre.club.id)
+   @EntityGraph(attributePaths = {"paiement", "paiement.membre", "paiement.membre.club"})
+   List<Echeance> findByPaiement_Membre_Club_Id(Long clubId);
 
     /* =======================
        Chargements avec relations
