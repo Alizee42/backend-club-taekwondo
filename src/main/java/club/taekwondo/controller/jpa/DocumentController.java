@@ -2,7 +2,7 @@ package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.DocumentDTO;
 import club.taekwondo.dto.UtilisateurDTO;
-import club.taekwondo.service.common.FileUploadService;
+import club.taekwondo.service.common.GoogleDriveUploadService;
 import club.taekwondo.service.jpa.DocumentService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import club.taekwondo.entity.jpa.Utilisateur;
@@ -29,7 +29,7 @@ public class DocumentController {
     private UtilisateurService utilisateurService;
 
     @Autowired
-    private FileUploadService fileUploadService;
+    private GoogleDriveUploadService googleDriveUploadService;
 
     // ================== READ ==================
 
@@ -115,9 +115,16 @@ public class DocumentController {
                 return ResponseEntity.badRequest().body("L'ID de l'utilisateur est requis et doit être valide.");
             }
 
-            // 1) Upload du fichier
-            String cheminFichier = fileUploadService.uploadFile(file, "documents");
-            System.out.println("Fichier téléchargé avec succès: " + cheminFichier);
+            // 1) Upload du fichier sur Google Drive
+            String cheminFichier;
+            try {
+                cheminFichier = googleDriveUploadService.uploadFileToDrive(file);
+            } catch (Exception ex) {
+                System.out.println("Erreur Google Drive: " + ex.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Erreur Google Drive : " + ex.getMessage());
+            }
+            System.out.println("Fichier téléchargé sur Google Drive: " + cheminFichier);
 
             // 2) Construire le DTO
             UtilisateurDTO utilisateurDTO = new UtilisateurDTO();
@@ -178,8 +185,15 @@ public class DocumentController {
                 return ResponseEntity.badRequest().body("Le fichier est requis.");
             }
             // upload
-            String cheminFichier = fileUploadService.uploadFile(file, "documents");
-            System.out.println("Fichier téléchargé pour remplacement: " + cheminFichier);
+            String cheminFichier;
+            try {
+                cheminFichier = googleDriveUploadService.uploadFileToDrive(file);
+            } catch (Exception ex) {
+                System.out.println("Erreur Google Drive: " + ex.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Erreur Google Drive : " + ex.getMessage());
+            }
+            System.out.println("Fichier téléchargé sur Google Drive pour remplacement: " + cheminFichier);
 
             // récupérer le DTO existant, mettre à jour le chemin + nom + statut
             Optional<DocumentDTO> opt = documentService.getDocumentById(id);
