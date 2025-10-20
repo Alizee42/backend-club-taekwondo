@@ -139,6 +139,11 @@
       <artifactId>google-auth-library-oauth2-http</artifactId>
       <version>1.19.0</version>
     </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
   </dependencies>
 
