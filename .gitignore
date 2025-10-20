@@ -37,3 +37,4 @@ service-account-*.json
 *-service-account.json
 *-key.json
 credentials.json
+src/main/resources/credentials.json
