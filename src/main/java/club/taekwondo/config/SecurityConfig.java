@@ -51,6 +51,10 @@ public class SecurityConfig {
                     "/api/produits/**",
                     "/api/reinitialisation/**"     // ✅ Réinitialisation mot de passe
                 ).permitAll()
+                // Restreindre la modification des clubs (création / modification / suppression)
+                .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Permettre la création de membres lors de l'inscription (sans auth)
                 .requestMatchers(HttpMethod.POST, "/api/membres").permitAll()
 

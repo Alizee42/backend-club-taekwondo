@@ -279,8 +279,14 @@ public class UtilisateurService {
                 return Optional.empty();
             }
             if (out.get().getClubId() == null) {
-                System.out.println("[" + now() + "][USR-SVC][login] ❌ utilisateur sans club, connexion refusée");
-                return Optional.empty();
+                // Autoriser les SUPER_ADMIN à se connecter même s'ils n'ont pas de club
+                Role dtoRole = out.get().getRole();
+                if (dtoRole == Role.SUPER_ADMIN) {
+                    System.out.println("[" + now() + "][USR-SVC][login] ⚠ super-admin sans club, connexion autorisée");
+                } else {
+                    System.out.println("[" + now() + "][USR-SVC][login] ❌ utilisateur sans club, connexion refusée");
+                    return Optional.empty();
+                }
             }
         }
         System.out.println("[" + now() + "][USR-SVC][login] success? " + out.isPresent());

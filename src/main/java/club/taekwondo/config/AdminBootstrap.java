@@ -17,6 +17,23 @@ public class AdminBootstrap {
         return args -> {
             final String adminEmail = "admin@club.local";
 
+            // Création d'un compte SUPER_ADMIN pour la gestion globale
+            final String superAdminEmail = "superadmin@club.local";
+            if (utilisateurRepository.findByEmail(superAdminEmail).isEmpty()) {
+                Utilisateur superAdmin = new Utilisateur();
+                superAdmin.setNom("Super");
+                superAdmin.setPrenom("Admin");
+                superAdmin.setEmail(superAdminEmail);
+                superAdmin.setPassword(passwordEncoder.encode("superadmin123")); // changer le mot de passe après premier démarrage
+                superAdmin.setRole(Role.SUPER_ADMIN);
+
+                utilisateurRepository.save(superAdmin);
+                System.out.println("[BOOTSTRAP] Compte super-admin créé: " + superAdminEmail + " / superadmin123");
+            } else {
+                System.out.println("[BOOTSTRAP] Compte super-admin déjà présent: " + superAdminEmail);
+            }
+
+            // Compte admin historique (comportement existant)
             if (utilisateurRepository.findByEmail(adminEmail).isEmpty()) {
                 Utilisateur admin = new Utilisateur();
                 admin.setNom("Admin");

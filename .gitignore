@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore Google service account keys and credentials files (keep package.json etc.)
+service-account-*.json
+*-service-account.json
+*-key.json
+credentials.json
