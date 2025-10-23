@@ -4,12 +4,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import jakarta.persistence.Access;
-import jakarta.persistence.AccessType;
+// Suppression des imports JPA inutiles
 
 import java.time.LocalDateTime;
 
-@Access(AccessType.FIELD)
 @Document(collection = "galerie")
 public class Galerie {
     @Field("club_id")

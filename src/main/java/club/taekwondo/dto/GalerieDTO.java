@@ -2,13 +2,14 @@ package club.taekwondo.dto;
 
 import java.time.LocalDateTime;
 
-public class GalerieDTO {
 
+public class GalerieDTO {
     private String id;
     private String titre;
     private String imageUrl;
     private String description;
     private LocalDateTime datePublication;
+    private Long clubId;
 
     // Getters et Setters
 
@@ -50,5 +51,13 @@ public class GalerieDTO {
 
     public void setDatePublication(LocalDateTime datePublication) {
         this.datePublication = datePublication;
+    }
+
+    public Long getClubId() {
+        return clubId;
+    }
+
+    public void setClubId(Long clubId) {
+        this.clubId = clubId;
     }
 }

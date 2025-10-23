@@ -1,10 +1,12 @@
+
 package club.taekwondo.controller.mongo;
 
 import club.taekwondo.dto.GalerieDTO;
 import club.taekwondo.service.mongo.GalerieService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
@@ -34,14 +36,25 @@ public class GalerieController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public GalerieDTO create(@RequestBody GalerieDTO galerieDTO) {
-        return galerieService.create(galerieDTO);
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public GalerieDTO createMultipart(
+            @RequestParam("titre") String titre,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam("clubId") Long clubId,
+            @RequestParam("image") MultipartFile image,
+            @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-ClubId") Long userClubId) {
+        return galerieService.createMultipart(titre, description, clubId, image, userRole, userClubId);
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<GalerieDTO> update(@PathVariable String id, @RequestBody GalerieDTO galerieDTO) {
-    	GalerieDTO updated = galerieService.update(id, galerieDTO);
+    public ResponseEntity<GalerieDTO> update(@PathVariable String id,
+                                             @RequestBody GalerieDTO galerieDTO,
+                                             @RequestHeader("X-User-Role") String userRole,
+                                             @RequestHeader("X-User-ClubId") Long userClubId) {
+        GalerieDTO updated = galerieService.update(id, galerieDTO, userRole, userClubId);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         }

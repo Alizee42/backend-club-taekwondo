@@ -100,7 +100,8 @@ public class SecurityConfig {
             "http://127.0.0.1:5173",
             "https://frontend-club-taekwondo.netlify.app",
             "https://club-taekwondo-*.netlify.app",  // Pour les deploy previews
-            "https://*.netlify.app"  // Wildcard pour tous les sous-domaines Netlify
+            "https://*.netlify.app",  // Wildcard pour tous les sous-domaines Netlify
+            "null" // Autorise l'origine null
         ));
 
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

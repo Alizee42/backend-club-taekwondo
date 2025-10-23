@@ -58,33 +58,40 @@ public class UtilisateurController {
     @GetMapping("")
     public ResponseEntity<List<UtilisateurDTO>> listUtilisateurs(
             @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "clubId", required = false) Long clubId,
             @RequestParam(value = "q", required = false) String q) {
 
         System.out.println("[" + now() + "][USR][LIST] params role=" + role + ", q=" + q);
 
-        List<UtilisateurDTO> all = Optional.ofNullable(utilisateurService.getAllUtilisateurs())
-                .orElse(Collections.emptyList());
+    List<UtilisateurDTO> all = Optional.ofNullable(utilisateurService.getAllUtilisateurs())
+        .orElse(Collections.emptyList());
 
-        if (role != null && !role.isBlank()) {
-            String wanted = role.trim().toUpperCase(Locale.ROOT);
-            all = all.stream()
-                    .filter(u -> u != null && u.getRole() != null
-                            && String.valueOf(u.getRole()).equalsIgnoreCase(wanted))
-                    .toList();
-        }
+    if (role != null && !role.isBlank()) {
+        String wanted = role.trim().toUpperCase(Locale.ROOT);
+        all = all.stream()
+            .filter(u -> u != null && u.getRole() != null
+                && String.valueOf(u.getRole()).equalsIgnoreCase(wanted))
+            .toList();
+    }
 
-        if (q != null && !q.isBlank()) {
-            String s = q.trim().toLowerCase(Locale.ROOT);
-            all = all.stream()
-                    .filter(u -> u != null && (
-                            (u.getNom() != null && u.getNom().toLowerCase(Locale.ROOT).contains(s)) ||
-                            (u.getPrenom() != null && u.getPrenom().toLowerCase(Locale.ROOT).contains(s)) ||
-                            (u.getEmail() != null && u.getEmail().toLowerCase(Locale.ROOT).contains(s))
-                    ))
-                    .toList();
-        }
+    if (clubId != null) {
+        all = all.stream()
+            .filter(u -> u != null && u.getClubId() != null && u.getClubId().equals(clubId))
+            .toList();
+    }
 
-        return ResponseEntity.ok(all);
+    if (q != null && !q.isBlank()) {
+        String s = q.trim().toLowerCase(Locale.ROOT);
+        all = all.stream()
+            .filter(u -> u != null && (
+                (u.getNom() != null && u.getNom().toLowerCase(Locale.ROOT).contains(s)) ||
+                (u.getPrenom() != null && u.getPrenom().toLowerCase(Locale.ROOT).contains(s)) ||
+                (u.getEmail() != null && u.getEmail().toLowerCase(Locale.ROOT).contains(s))
+            ))
+            .toList();
+    }
+
+    return ResponseEntity.ok(all);
     }
 
     @PostMapping("/register")
