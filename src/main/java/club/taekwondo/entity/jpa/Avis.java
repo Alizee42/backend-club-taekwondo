@@ -24,7 +24,7 @@ public class Avis {
     @Column(name = "pseudo_visiteur", length = 100)
     private String pseudoVisiteur;
 
-    @Column(name = "note", columnDefinition = "TINYINT")
+    @Column(name = "note", columnDefinition = "SMALLINT")
     private Integer note;
 
     @Column(name = "type_avis", length = 50)

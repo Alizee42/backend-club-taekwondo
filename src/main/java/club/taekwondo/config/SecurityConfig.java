@@ -32,6 +32,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // 🔓 Endpoints publics
+                .requestMatchers(HttpMethod.GET, "/api/galeries/club/**").permitAll()
                 .requestMatchers(
                     "/error",
                     "/uploads/**",   // ✅ accès libre aux images uploadées
@@ -46,6 +47,7 @@ public class SecurityConfig {
                     "/api/actualites/**",
                     "/api/avis/**",
                     "/api/clubs/**", // ✅ accès libre à la liste des clubs
+                    "/api/galeries/club/**", // ✅ accès libre à la galerie par club (tous sous-chemins)
                     "/api/debug/**",
                     "/api/inscriptions/debug/**",  // ✅ Debug des inscriptions
                     "/api/produits/**",
