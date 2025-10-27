@@ -10,6 +10,15 @@ import java.util.List;
 @Table(name = "utilisateur")
 @Access(AccessType.FIELD)
 public class Utilisateur {
+    @Column(nullable = false)
+    private boolean passwordTemporaire = false;
+    public boolean isPasswordTemporaire() {
+        return passwordTemporaire;
+    }
+
+    public void setPasswordTemporaire(boolean passwordTemporaire) {
+        this.passwordTemporaire = passwordTemporaire;
+    }
 
     @ManyToOne
     private Club club;

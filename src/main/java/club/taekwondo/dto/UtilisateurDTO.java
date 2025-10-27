@@ -6,6 +6,14 @@ import club.taekwondo.enums.Role;
 import java.time.LocalDate;
 
 public class UtilisateurDTO {
+    private boolean passwordTemporaire = false;
+    public boolean isPasswordTemporaire() {
+        return passwordTemporaire;
+    }
+
+    public void setPasswordTemporaire(boolean passwordTemporaire) {
+        this.passwordTemporaire = passwordTemporaire;
+    }
 
     private Long id;
     private String nom;

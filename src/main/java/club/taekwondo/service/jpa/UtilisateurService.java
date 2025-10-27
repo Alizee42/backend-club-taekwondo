@@ -1,11 +1,3 @@
-// ...existing code...
-
-    /**
-     * Pour compatibilité avec les anciens contrôleurs :
-     * Retourne tous les utilisateurs (tous clubs confondus).
-     * À utiliser uniquement pour l’admin global !
-     */
-
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.UtilisateurDTO;
@@ -114,6 +106,7 @@ public class UtilisateurService {
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
         dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null);
+        dto.setPasswordTemporaire(utilisateur.isPasswordTemporaire());
         if (utilisateur.getClub() != null) {
             dto.setClubId(utilisateur.getClub().getId());
         }
@@ -160,9 +153,10 @@ public class UtilisateurService {
         utilisateur.setDateNaissance(dto.getDateNaissance());
         utilisateur.setAdresse(dto.getAdresse());
         utilisateur.setTelephone(dto.getTelephone());
-        Role parsed = parseRoleOrDefault(dto.getRole()); // ✅ convertit String -> Role
-        utilisateur.setRole(parsed);
-        utilisateur.setPassword(dto.getPassword()); // déjà encodé si createUtilisateur()
+    Role parsed = parseRoleOrDefault(dto.getRole()); // ✅ convertit String -> Role
+    utilisateur.setRole(parsed);
+    utilisateur.setPassword(dto.getPassword()); // déjà encodé si createUtilisateur()
+    utilisateur.setPasswordTemporaire(dto.isPasswordTemporaire());
         if (dto.getClubId() != null) {
             Club club = clubRepository.findById(dto.getClubId()).orElse(null);
             utilisateur.setClub(club);
@@ -329,6 +323,8 @@ public class UtilisateurService {
         }
 
     Utilisateur utilisateur = toUtilisateurEntity(dto);
+    // Si création par le super admin, le mot de passe est temporaire
+    utilisateur.setPasswordTemporaire(true);
     Utilisateur saved = utilisateurRepository.save(utilisateur);
     System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
     return saved;
@@ -344,11 +340,12 @@ public class UtilisateurService {
             user.setTelephone(dto.getTelephone());
             user.setAdresse(dto.getAdresse());
             user.setDateNaissance(dto.getDateNaissance());
-            user.setRole(parseRoleOrDefault(dto.getRole())); // ✅ String -> Role
+            user.setRole(parseRoleOrDefault(dto.getRole()));
 
             if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
                 System.out.println("[" + now() + "][USR-SVC][updateUtilisateurFromDTO] encodage nouveau mot de passe...");
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
+                user.setPasswordTemporaire(false); // Si on change le mot de passe, il n'est plus temporaire
             }
 
             if (dto.getClubId() != null) {

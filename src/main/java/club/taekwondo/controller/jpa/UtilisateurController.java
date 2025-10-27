@@ -24,6 +24,42 @@ import java.util.Optional;
 @RequestMapping("/api/utilisateurs")
 @CrossOrigin(origins = "*")
 public class UtilisateurController {
+    @PostMapping("")
+    public ResponseEntity<?> createUtilisateur(@RequestBody UtilisateurDTO utilisateurDTO) {
+        try {
+            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nouvelUtilisateur);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la création."));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUtilisateur(@PathVariable Long id, @RequestBody UtilisateurDTO utilisateurDTO) {
+        try {
+            utilisateurDTO.setId(id);
+            utilisateurService.updateUtilisateurFromDTO(id, utilisateurDTO);
+            // Récupérer l'utilisateur mis à jour pour le retourner
+            Optional<Utilisateur> utilisateurOpt = utilisateurService.getUtilisateurEntityById(id);
+            if (utilisateurOpt.isPresent()) {
+                return ResponseEntity.ok(utilisateurOpt.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé après modification."));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la modification."));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUtilisateur(@PathVariable Long id) {
+        try {
+            utilisateurService.deleteUtilisateur(id);
+            return ResponseEntity.ok(Map.of("message", "Utilisateur supprimé."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la suppression."));
+        }
+    }
 
     private final JwtUtil jwtUtil;
     private final UtilisateurService utilisateurService;
@@ -154,32 +190,40 @@ public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO)
                     .body(Map.of("message", "Email ou mot de passe incorrect."));
         }
 
-        UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
-        String roleStr = utilisateurDTO.getRole() != null ? String.valueOf(utilisateurDTO.getRole()) : "MEMBRE";
+    UtilisateurDTO utilisateurDTO = utilisateurOpt.get();
+    String roleStr = utilisateurDTO.getRole() != null ? String.valueOf(utilisateurDTO.getRole()) : "MEMBRE";
 
-        // 🔥 Chercher le membreId associé à cet utilisateur
-        Long membreId = membreRepository.findByCompteUtilisateur_Id(utilisateurDTO.getId())
-                .map(Membre::getId)
-                .orElse(null);
+    // 🔥 Chercher le membreId associé à cet utilisateur
+    Long membreId = membreRepository.findByCompteUtilisateur_Id(utilisateurDTO.getId())
+        .map(Membre::getId)
+        .orElse(null);
 
-        // Génération du token avec utilisateurId + membreId
-        String token = jwtUtil.generateToken(
-                utilisateurDTO.getEmail(),
-                roleStr,
-                utilisateurDTO.getId(),
-                membreId
-        );
+    // Vérifier si le mot de passe est temporaire
+    boolean passwordTemporaire = false;
+    Optional<Utilisateur> userEntityOpt = utilisateurService.getUtilisateurEntityById(utilisateurDTO.getId());
+    if (userEntityOpt.isPresent()) {
+        passwordTemporaire = userEntityOpt.get().isPasswordTemporaire();
+    }
 
-        // ✅ Utilisation de HashMap au lieu de Map.of pour éviter les NPE
-        Map<String, Object> response = new java.util.HashMap<>();
-        response.put("token", token);
-        response.put("role", roleStr);
-        response.put("email", utilisateurDTO.getEmail());
-        response.put("utilisateurId", utilisateurDTO.getId());
-        response.put("membreId", membreId); // peut rester null sans problème
-        response.put("utilisateur", utilisateurDTO);
+    // Génération du token avec utilisateurId + membreId
+    String token = jwtUtil.generateToken(
+        utilisateurDTO.getEmail(),
+        roleStr,
+        utilisateurDTO.getId(),
+        membreId
+    );
 
-        return ResponseEntity.ok(response);
+    // ✅ Utilisation de HashMap au lieu de Map.of pour éviter les NPE
+    Map<String, Object> response = new java.util.HashMap<>();
+    response.put("token", token);
+    response.put("role", roleStr);
+    response.put("email", utilisateurDTO.getEmail());
+    response.put("utilisateurId", utilisateurDTO.getId());
+    response.put("membreId", membreId); // peut rester null sans problème
+    response.put("utilisateur", utilisateurDTO);
+    response.put("passwordTemporaire", passwordTemporaire);
+
+    return ResponseEntity.ok(response);
 
     } catch (Exception e) {
         e.printStackTrace();
