@@ -33,6 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 🔓 Endpoints publics
                 .requestMatchers(HttpMethod.GET, "/api/galeries/club/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/horaires/club/**").permitAll()
                 .requestMatchers(
                     "/error",
                     "/uploads/**",   // ✅ accès libre aux images uploadées

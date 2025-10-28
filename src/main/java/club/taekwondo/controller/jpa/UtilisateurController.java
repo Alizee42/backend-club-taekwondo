@@ -6,6 +6,7 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.service.jpa.EmailService;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,14 +65,17 @@ public class UtilisateurController {
     private final JwtUtil jwtUtil;
     private final UtilisateurService utilisateurService;
     private final MembreRepository membreRepository;
+    private final EmailService emailService;
 
     @Autowired
     public UtilisateurController(JwtUtil jwtUtil,
                                  UtilisateurService utilisateurService,
-                                 MembreRepository membreRepository) {
+                                 MembreRepository membreRepository,
+                                 EmailService emailService) {
         this.jwtUtil = jwtUtil;
         this.utilisateurService = utilisateurService;
         this.membreRepository = membreRepository;
+        this.emailService = emailService;
     }
 
     // -------- Helpers debug --------
@@ -157,11 +161,25 @@ public class UtilisateurController {
 
             Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
 
+            // tenter d'envoyer un email de confirmation (ne doit pas empêcher la création)
+            boolean emailSent = false;
+            try {
+                if (nouvelUtilisateur.getEmail() != null && !nouvelUtilisateur.getEmail().isBlank()) {
+                    String nom = nouvelUtilisateur.getPrenom() != null ? nouvelUtilisateur.getPrenom() : nouvelUtilisateur.getNom();
+                    emailService.envoyerEmailConfirmationInscription(nouvelUtilisateur.getEmail(), nom != null ? nom : "");
+                    emailSent = true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                emailSent = false;
+            }
+
             Map<String, Object> response = new java.util.HashMap<>();
             response.put("message", "Utilisateur créé avec succès.");
             response.put("id", nouvelUtilisateur.getId());
             response.put("email", nouvelUtilisateur.getEmail());
             response.put("role", nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : null);
+            response.put("emailSent", emailSent);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
