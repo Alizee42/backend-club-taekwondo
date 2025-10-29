@@ -78,13 +78,25 @@ public class AvisController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createAvisAvecFichier(
-            @RequestParam("contenu") String contenu,
-            @RequestParam("note") Integer note,
-            @RequestParam("pseudoVisiteur") String pseudoVisiteur,
-            @RequestParam(value = "typeAvis", required = false) String typeAvis,
-            @RequestParam(value = "photo", required = false) MultipartFile photoFile
+        @RequestParam("contenu") String contenu,
+        @RequestParam("note") Integer note,
+        @RequestParam("pseudoVisiteur") String pseudoVisiteur,
+        @RequestParam(value = "typeAvis", required = false) String typeAvis,
+        @RequestParam(value = "photo", required = false) MultipartFile photoFile,
+        @RequestParam(value = "clubId", required = false) Long clubId,
+        @RequestParam(value = "utilisateurId", required = false) Long utilisateurId
     ) {
         try {
+            // Association du club si clubId fourni
+            club.taekwondo.entity.jpa.Club club = null;
+            if (clubId != null) {
+                // Service ou repo pour charger le club
+                // (On suppose un ClubRepository existe et est injecté)
+                club = clubRepository.findById(clubId).orElse(null);
+                if (club == null) {
+                    return ResponseEntity.badRequest().body(new ErrorResponse("Club introuvable pour l'ID fourni."));
+                }
+            }
             if (contenu == null || contenu.trim().length() < 3) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Le contenu de l'avis est trop court."));
             }
@@ -116,6 +128,7 @@ public class AvisController {
                 Files.copy(photoFile.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
             }
 
+
             Avis avis = new Avis();
             avis.setContenu(contenu.trim());
             avis.setNote(safeNote);
@@ -124,6 +137,14 @@ public class AvisController {
             avis.setDatePub(LocalDate.now());
             avis.setApprouve(false);
             avis.setPhoto(nomFichier);
+            if (club != null) {
+                avis.setClub(club);
+            }
+            // Assigner l'utilisateur si demandé
+            if (utilisateurId != null) {
+                var maybeUser = utilisateurRepository.findById(utilisateurId);
+                maybeUser.ifPresent(avis::setUtilisateur);
+            }
 
             Avis saved = avisService.ajouterAvis(avis);
 
@@ -167,6 +188,12 @@ public class AvisController {
         avisService.deleteAvis(id);
         return ResponseEntity.noContent().build();
     }
+
+    @Autowired
+    private club.taekwondo.repository.jpa.ClubRepository clubRepository;
+
+    @Autowired
+    private club.taekwondo.repository.jpa.UtilisateurRepository utilisateurRepository;
 
     private record ErrorResponse(String message) {}
 }

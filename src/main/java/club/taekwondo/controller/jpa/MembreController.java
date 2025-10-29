@@ -50,13 +50,20 @@ public class MembreController {
                 return children.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(children);
             }
 
+
             if (clubId != null) {
-                Utilisateur utilisateur = utilisateurService.findByEmail(authentication.getName()).orElse(null);
-                boolean isAdmin = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
-                if (!isAdmin && (utilisateur == null || utilisateur.getClub() == null || !utilisateur.getClub().getId().equals(clubId))) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Accès refusé à ce club."));
+                // Pour tous les rôles : si clubId fourni, on filtre par club
+                // (sauf pour les admins d'autres clubs, on garde la vérification d'accès)
+                boolean isSuperAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("SUPER_ADMIN"));
+                if (!isSuperAdmin) {
+                    Utilisateur utilisateur = utilisateurService.findByEmail(authentication.getName()).orElse(null);
+                    boolean isAdmin = authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+                    if (!isAdmin && (utilisateur == null || utilisateur.getClub() == null || !utilisateur.getClub().getId().equals(clubId))) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("message", "Accès refusé à ce club."));
+                    }
                 }
                 List<MembreDTO> membres = membreService.getMembresByClubId(clubId);
                 return membres.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(membres);

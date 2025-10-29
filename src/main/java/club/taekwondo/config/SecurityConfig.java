@@ -61,8 +61,8 @@ public class SecurityConfig {
                 // Permettre la création de membres lors de l'inscription (sans auth)
                 .requestMatchers(HttpMethod.POST, "/api/membres").permitAll()
 
-                // 👥 Membres : MEMBRE, PARENT, ADMIN (pour les autres opérations)
-                .requestMatchers("/api/membres/**").hasAnyRole("MEMBRE", "PARENT", "ADMIN")
+                // 👥 Membres : MEMBRE, PARENT, ADMIN, SUPER_ADMIN (pour les autres opérations)
+                .requestMatchers("/api/membres/**").hasAnyRole("MEMBRE", "PARENT", "ADMIN", "SUPER_ADMIN")
 
                 // 👑 Admin uniquement
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
