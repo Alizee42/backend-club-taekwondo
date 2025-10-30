@@ -15,11 +15,12 @@ import java.util.stream.Collectors;
 public class ActualiteService {
     /** Actualités par club */
     public List<ActualiteDTO> getByClubId(String clubId) {
-        log.info("Récupération des actualités pour le club : {}", clubId);
-        return actualiteRepository.findByClubId(clubId)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    log.info("Récupération des actualités pour le club : {}", clubId);
+    // On force la recherche sur la chaîne pour éviter tout bug de typage
+    return actualiteRepository.findByClubId(String.valueOf(clubId))
+        .stream()
+        .map(this::toDTO)
+        .collect(Collectors.toList());
     }
 
     private static final Logger log = LoggerFactory.getLogger(ActualiteService.class);
@@ -51,14 +52,17 @@ public class ActualiteService {
     }
 
     public ActualiteDTO create(ActualiteDTO actualiteDTO) {
-        log.info("Création d'une nouvelle actualité : {}", actualiteDTO.getTitre());
+        log.info("[SERVICE] Création d'une nouvelle actualité : {}", actualiteDTO);
 
         if (actualiteDTO.isFeatured()) {
-            log.info("Désactivation des autres actualités mises à la une.");
-            unsetAllFeatured();
+            log.info("[SERVICE] Désactivation des autres actualités mises à la une pour le club {}.", actualiteDTO.getClubId());
+            unsetAllFeatured(actualiteDTO.getClubId());
         }
 
-        Actualite saved = actualiteRepository.save(toEntity(actualiteDTO));
+        Actualite entity = toEntity(actualiteDTO);
+        log.info("[SERVICE] Entité à sauvegarder dans MongoDB : {}", entity);
+        Actualite saved = actualiteRepository.save(entity);
+        log.info("[SERVICE] Entité sauvegardée dans MongoDB : {}", saved);
         return toDTO(saved);
     }
 
@@ -69,8 +73,8 @@ public class ActualiteService {
                 .orElseThrow(() -> new RuntimeException("Actualité introuvable avec l'ID : " + id));
 
         if (actualiteDTO.isFeatured()) {
-            log.info("Désactivation des autres actualités mises à la une.");
-            unsetAllFeaturedExcept(id);
+            log.info("Désactivation des autres actualités mises à la une pour le club {}.", actualiteDTO.getClubId());
+            unsetAllFeaturedExcept(id, actualiteDTO.getClubId());
         }
 
         existing.setTitre(actualiteDTO.getTitre());
@@ -89,22 +93,22 @@ public class ActualiteService {
     }
 
     public void setFeatured(String id) {
-        log.info("Mise à la une de l'actualité avec ID : {}", id);
-        unsetAllFeatured();
-
-        Actualite actualite = actualiteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Actualité introuvable avec l'ID : " + id));
-
-        actualite.setFeatured(true);
-        actualiteRepository.save(actualite);
+    log.info("Mise à la une de l'actualité avec ID : {}", id);
+    Actualite actualite = actualiteRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Actualité introuvable avec l'ID : " + id));
+    unsetAllFeatured(actualite.getClubId());
+    actualite.setFeatured(true);
+    actualiteRepository.save(actualite);
     }
 
     /** Désactive toutes les actualités mises à la une */
-    private void unsetAllFeatured() {
-        actualiteRepository.findByIsFeaturedTrue().forEach(a -> {
-            a.setFeatured(false);
-            actualiteRepository.save(a);
-        });
+    private void unsetAllFeatured(String clubId) {
+        actualiteRepository.findByClubId(clubId).stream()
+            .filter(Actualite::isFeatured)
+            .forEach(a -> {
+                a.setFeatured(false);
+                actualiteRepository.save(a);
+            });
     }
 
     /** Compte le nombre d'actualités (pour debug) */
@@ -113,13 +117,13 @@ public class ActualiteService {
     }
 
     /** Désactive toutes les actualités mises à la une sauf celle en cours */
-    private void unsetAllFeaturedExcept(String excludeId) {
-        actualiteRepository.findByIsFeaturedTrue().forEach(a -> {
-            if (!a.getId().equals(excludeId)) {
+    private void unsetAllFeaturedExcept(String excludeId, String clubId) {
+        actualiteRepository.findByClubId(clubId).stream()
+            .filter(a -> a.isFeatured() && !a.getId().equals(excludeId))
+            .forEach(a -> {
                 a.setFeatured(false);
                 actualiteRepository.save(a);
-            }
-        });
+            });
     }
 
     private ActualiteDTO toDTO(Actualite actualite) {

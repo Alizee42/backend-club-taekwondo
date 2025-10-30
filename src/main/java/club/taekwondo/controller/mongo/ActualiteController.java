@@ -22,9 +22,10 @@ public class ActualiteController {
     /** Actualités filtrées par club */
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<ActualiteDTO>> getByClub(@PathVariable String clubId) {
-        log.debug("[CTRL] GET /api/actualites/club/{}", clubId);
-        List<ActualiteDTO> actualites = actualiteService.getByClubId(clubId);
-        return actualites.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(actualites);
+    log.debug("[CTRL] GET /api/actualites/club/{}", clubId);
+    List<ActualiteDTO> actualites = actualiteService.getByClubId(clubId);
+    if (actualites == null) actualites = List.of();
+    return ResponseEntity.ok(actualites);
     }
 
     private static final Logger log = LoggerFactory.getLogger(ActualiteController.class);
@@ -66,35 +67,42 @@ public class ActualiteController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ActualiteDTO> create(@RequestBody ActualiteDTO actualiteDTO) {
-        log.debug("[CTRL] POST /api/actualites payload={}", actualiteDTO);
+        log.info("[CTRL] POST /api/actualites (JSON) - Payload reçu : {}", actualiteDTO);
         actualiteDTO.setDatePublication(LocalDateTime.now());
-        return ResponseEntity.status(201).body(actualiteService.create(actualiteDTO));
+        ActualiteDTO saved = actualiteService.create(actualiteDTO);
+        log.info("[CTRL] POST /api/actualites (JSON) - Actualité sauvegardée : {}", saved);
+        return ResponseEntity.status(201).body(saved);
     }
 
     @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createWithImage(
-            @RequestParam String titre,
-            @RequestParam String contenu,
-            @RequestParam String typeActu,
-            @RequestParam boolean isFeatured,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile
+        @RequestParam String titre,
+        @RequestParam String contenu,
+        @RequestParam String typeActu,
+        @RequestParam boolean isFeatured,
+        @RequestParam String clubId,
+        @RequestParam(value = "image", required = false) MultipartFile imageFile
     ) {
-        log.debug("[CTRL] POST /api/actualites/with-image titre={}", titre);
-        try {
-            String imageUrl = (imageFile != null && !imageFile.isEmpty())
-                    ? fileUploadService.uploadFile(imageFile, "actualites")
-                    : null;
+    log.info("[CTRL] POST /api/actualites/with-image - titre={}, clubId={}, typeActu={}, isFeatured={}, imageFileName={}",
+        titre, clubId, typeActu, isFeatured, (imageFile != null ? imageFile.getOriginalFilename() : "AUCUNE"));
+    try {
+        String imageUrl = (imageFile != null && !imageFile.isEmpty())
+            ? fileUploadService.uploadFile(imageFile, "actualites")
+            : null;
 
-            ActualiteDTO actualiteDTO = new ActualiteDTO();
-            actualiteDTO.setTitre(titre);
-            actualiteDTO.setContenu(contenu);
-            actualiteDTO.setTypeActu(typeActu);
-            actualiteDTO.setFeatured(isFeatured);
-            actualiteDTO.setImageUrl(imageUrl);
-            actualiteDTO.setDatePublication(LocalDateTime.now());
+        ActualiteDTO actualiteDTO = new ActualiteDTO();
+        actualiteDTO.setTitre(titre);
+        actualiteDTO.setContenu(contenu);
+        actualiteDTO.setTypeActu(typeActu);
+        actualiteDTO.setFeatured(isFeatured);
+        actualiteDTO.setImageUrl(imageUrl);
+        actualiteDTO.setDatePublication(LocalDateTime.now());
+        actualiteDTO.setClubId(clubId);
 
-            return ResponseEntity.status(201).body(actualiteService.create(actualiteDTO));
-        } catch (IOException e) {
+        ActualiteDTO saved = actualiteService.create(actualiteDTO);
+        log.info("[CTRL] POST /api/actualites/with-image - Actualité sauvegardée : {}", saved);
+        return ResponseEntity.status(201).body(saved);
+    } catch (IOException e) {
             log.error("[CTRL] Erreur upload image", e);
             // ✅ réponse JSON au lieu de string brut
             return ResponseEntity.internalServerError()
