@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Document(collection = "actualite")
 public class Actualite {
+    private String complement;
 
     @Id
     private String id;
@@ -26,7 +27,7 @@ public class Actualite {
 
     public Actualite() {}
 
-    public Actualite(String titre, String contenu, LocalDateTime datePublication, String typeActu, String clubId, boolean isFeatured, String imageUrl) {
+    public Actualite(String titre, String contenu, LocalDateTime datePublication, String typeActu, String clubId, boolean isFeatured, String imageUrl, String complement) {
         this.titre = titre;
         this.contenu = contenu;
         this.datePublication = datePublication;
@@ -34,6 +35,14 @@ public class Actualite {
         this.clubId = clubId;
         this.isFeatured = isFeatured;
         this.imageUrl = imageUrl;
+        this.complement = complement;
+    }
+    public String getComplement() {
+        return complement;
+    }
+
+    public void setComplement(String complement) {
+        this.complement = complement;
     }
     public String getClubId() {
         return clubId;

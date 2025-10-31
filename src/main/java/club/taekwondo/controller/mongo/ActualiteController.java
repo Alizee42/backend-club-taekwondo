@@ -81,23 +81,25 @@ public class ActualiteController {
         @RequestParam String typeActu,
         @RequestParam boolean isFeatured,
         @RequestParam String clubId,
+        @RequestParam(value = "complement", required = false) String complement,
         @RequestParam(value = "image", required = false) MultipartFile imageFile
     ) {
-    log.info("[CTRL] POST /api/actualites/with-image - titre={}, clubId={}, typeActu={}, isFeatured={}, imageFileName={}",
-        titre, clubId, typeActu, isFeatured, (imageFile != null ? imageFile.getOriginalFilename() : "AUCUNE"));
+    log.info("[CTRL] POST /api/actualites/with-image - titre={}, clubId={}, typeActu={}, isFeatured={}, complement={}, imageFileName={}",
+        titre, clubId, typeActu, isFeatured, complement, (imageFile != null ? imageFile.getOriginalFilename() : "AUCUNE"));
     try {
         String imageUrl = (imageFile != null && !imageFile.isEmpty())
             ? fileUploadService.uploadFile(imageFile, "actualites")
             : null;
 
-        ActualiteDTO actualiteDTO = new ActualiteDTO();
-        actualiteDTO.setTitre(titre);
-        actualiteDTO.setContenu(contenu);
-        actualiteDTO.setTypeActu(typeActu);
-        actualiteDTO.setFeatured(isFeatured);
-        actualiteDTO.setImageUrl(imageUrl);
-        actualiteDTO.setDatePublication(LocalDateTime.now());
-        actualiteDTO.setClubId(clubId);
+    ActualiteDTO actualiteDTO = new ActualiteDTO();
+    actualiteDTO.setTitre(titre);
+    actualiteDTO.setContenu(contenu);
+    actualiteDTO.setTypeActu(typeActu);
+    actualiteDTO.setFeatured(isFeatured);
+    actualiteDTO.setImageUrl(imageUrl);
+    actualiteDTO.setDatePublication(LocalDateTime.now());
+    actualiteDTO.setClubId(clubId);
+    actualiteDTO.setComplement(complement);
 
         ActualiteDTO saved = actualiteService.create(actualiteDTO);
         log.info("[CTRL] POST /api/actualites/with-image - Actualité sauvegardée : {}", saved);

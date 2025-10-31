@@ -53,6 +53,7 @@ public class ActualiteService {
 
     public ActualiteDTO create(ActualiteDTO actualiteDTO) {
         log.info("[SERVICE] Création d'une nouvelle actualité : {}", actualiteDTO);
+        log.info("[SERVICE] Champ complément reçu : {}", actualiteDTO.getComplement());
 
         if (actualiteDTO.isFeatured()) {
             log.info("[SERVICE] Désactivation des autres actualités mises à la une pour le club {}.", actualiteDTO.getClubId());
@@ -61,8 +62,10 @@ public class ActualiteService {
 
         Actualite entity = toEntity(actualiteDTO);
         log.info("[SERVICE] Entité à sauvegarder dans MongoDB : {}", entity);
+        log.info("[SERVICE] Champ complément dans l'entité : {}", entity.getComplement());
         Actualite saved = actualiteRepository.save(entity);
         log.info("[SERVICE] Entité sauvegardée dans MongoDB : {}", saved);
+        log.info("[SERVICE] Champ complément sauvegardé : {}", saved.getComplement());
         return toDTO(saved);
     }
 
@@ -127,29 +130,31 @@ public class ActualiteService {
     }
 
     private ActualiteDTO toDTO(Actualite actualite) {
-    return new ActualiteDTO(
-        actualite.getId(),
-        actualite.getTitre(),
-        actualite.getContenu(),
-        actualite.getDatePublication(),
-        actualite.getTypeActu(),
-        actualite.getClubId(),
-        actualite.isFeatured(),
-        actualite.getImageUrl()
-    );
+        return new ActualiteDTO(
+            actualite.getId(),
+            actualite.getTitre(),
+            actualite.getContenu(),
+            actualite.getDatePublication(),
+            actualite.getTypeActu(),
+            actualite.getClubId(),
+            actualite.isFeatured(),
+            actualite.getImageUrl(),
+            actualite.getComplement()
+        );
     }
 
     private Actualite toEntity(ActualiteDTO actualiteDTO) {
         Actualite actualite = new Actualite();
-    actualite.setId(actualiteDTO.getId());
-    actualite.setTitre(actualiteDTO.getTitre());
-    actualite.setContenu(actualiteDTO.getContenu());
-    actualite.setDatePublication(actualiteDTO.getDatePublication());
-    actualite.setTypeActu(actualiteDTO.getTypeActu());
-    actualite.setClubId(actualiteDTO.getClubId());
-    actualite.setFeatured(actualiteDTO.isFeatured());
-    actualite.setImageUrl(actualiteDTO.getImageUrl());
-    return actualite;
+        actualite.setId(actualiteDTO.getId());
+        actualite.setTitre(actualiteDTO.getTitre());
+        actualite.setContenu(actualiteDTO.getContenu());
+        actualite.setDatePublication(actualiteDTO.getDatePublication());
+        actualite.setTypeActu(actualiteDTO.getTypeActu());
+        actualite.setClubId(actualiteDTO.getClubId());
+        actualite.setFeatured(actualiteDTO.isFeatured());
+        actualite.setImageUrl(actualiteDTO.getImageUrl());
+        actualite.setComplement(actualiteDTO.getComplement());
+        return actualite;
     }
 }
 

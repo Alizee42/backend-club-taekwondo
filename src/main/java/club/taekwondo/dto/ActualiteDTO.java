@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL) // ✅ ne sérialise pas les champs null
 public class ActualiteDTO {
+    private String complement;
 
     private String id;
     private String titre;
@@ -32,7 +33,8 @@ public class ActualiteDTO {
         String typeActu,
         String clubId,
         boolean isFeatured,
-        String imageUrl
+        String imageUrl,
+        String complement
     ) {
         this.id = id;
         this.titre = titre;
@@ -42,7 +44,10 @@ public class ActualiteDTO {
         this.clubId = clubId;
         this.isFeatured = isFeatured;
         this.imageUrl = imageUrl;
+        this.complement = complement;
     }
+    public String getComplement() { return complement; }
+    public void setComplement(String complement) { this.complement = complement; }
     public String getClubId() { return clubId; }
     public void setClubId(String clubId) { this.clubId = clubId; }
 
