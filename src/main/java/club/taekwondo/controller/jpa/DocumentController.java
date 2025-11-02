@@ -58,6 +58,18 @@ public class DocumentController {
         return ResponseEntity.ok(documents);
     }
 
+    // ✅ Super Admin: tous les documents (tous clubs)
+    @GetMapping("/all")
+    public ResponseEntity<List<DocumentDTO>> getAllDocumentsAllClubs(@RequestParam(value = "clubId", required = false) Long clubId) {
+        List<DocumentDTO> documents = (clubId != null && clubId > 0)
+                ? documentService.getDocumentsByClubId(clubId)
+                : documentService.getAllDocumentsWithUtilisateur();
+        if (documents.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(documents);
+    }
+
     // Téléchargement/redirect : si cheminFichier est une URL Drive, on redirige; sinon on sert le fichier local
     @GetMapping("/{id}/download")
     public ResponseEntity<?> downloadDocument(@PathVariable Long id) {

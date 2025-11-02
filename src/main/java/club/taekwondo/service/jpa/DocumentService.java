@@ -171,6 +171,10 @@ public class DocumentService {
             utilisateurDTO.setEmail(utilisateur.getEmail());
             utilisateurDTO.setTelephone(utilisateur.getTelephone());
             utilisateurDTO.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null);
+            // ✅ propager le clubId pour les vues Super Admin
+            if (utilisateur.getClub() != null) {
+                utilisateurDTO.setClubId(utilisateur.getClub().getId());
+            }
             documentDTO.setUtilisateur(utilisateurDTO);
         }
 
