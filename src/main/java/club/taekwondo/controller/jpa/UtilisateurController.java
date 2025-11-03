@@ -7,6 +7,7 @@ import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.service.jpa.EmailService;
+import club.taekwondo.service.jpa.ReinitialisationMotDePasseService;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,8 @@ public class UtilisateurController {
     @PostMapping("")
     public ResponseEntity<?> createUtilisateur(@RequestBody UtilisateurDTO utilisateurDTO) {
         try {
-            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
+            // Inscription depuis le site: le mot de passe NE DOIT PAS être temporaire
+            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO, false);
             return ResponseEntity.status(HttpStatus.CREATED).body(nouvelUtilisateur);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la création."));
@@ -66,16 +68,19 @@ public class UtilisateurController {
     private final UtilisateurService utilisateurService;
     private final MembreRepository membreRepository;
     private final EmailService emailService;
+    private final ReinitialisationMotDePasseService reinitService;
 
     @Autowired
     public UtilisateurController(JwtUtil jwtUtil,
                                  UtilisateurService utilisateurService,
                                  MembreRepository membreRepository,
-                                 EmailService emailService) {
+                                 EmailService emailService,
+                                 ReinitialisationMotDePasseService reinitService) {
         this.jwtUtil = jwtUtil;
         this.utilisateurService = utilisateurService;
         this.membreRepository = membreRepository;
         this.emailService = emailService;
+        this.reinitService = reinitService;
     }
 
     // -------- Helpers debug --------
@@ -240,6 +245,14 @@ public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO)
     response.put("membreId", membreId); // peut rester null sans problème
     response.put("utilisateur", utilisateurDTO);
     response.put("passwordTemporaire", passwordTemporaire);
+    if (passwordTemporaire) {
+        try {
+            var demande = reinitService.creerDemande(utilisateurDTO.getId());
+            response.put("resetToken", demande.getToken());
+        } catch (Exception e) {
+            // Ne bloque pas le login si génération du token échoue, le front peut proposer "mot de passe oublié"
+        }
+    }
 
     return ResponseEntity.ok(response);
 

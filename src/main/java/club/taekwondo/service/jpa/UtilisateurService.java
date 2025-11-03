@@ -288,7 +288,18 @@ public class UtilisateurService {
     }
 
     public Utilisateur createUtilisateur(UtilisateurDTO dto) {
-        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] in DTO: " + safeDto(dto));
+        // Par défaut (compat), on considère que cet appel est une création par un administrateur
+        // et donc on marque le mot de passe comme temporaire.
+        return createUtilisateur(dto, true);
+    }
+
+    /**
+     * Crée un utilisateur en contrôlant l'origine de la création.
+     * @param dto Données utilisateur
+     * @param adminCreation true si créé par un admin (mot de passe temporaire), false si auto-inscription (mot de passe définitif)
+     */
+    public Utilisateur createUtilisateur(UtilisateurDTO dto, boolean adminCreation) {
+        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] in DTO: " + safeDto(dto) + ", adminCreation=" + adminCreation);
 
         if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
             System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ nom manquant");
@@ -322,12 +333,14 @@ public class UtilisateurService {
             System.out.println("[" + now() + "][USR-SVC][createUtilisateur] role reçu='" + dto.getRole() + "'");
         }
 
-    Utilisateur utilisateur = toUtilisateurEntity(dto);
-    // Si création par le super admin, le mot de passe est temporaire
-    utilisateur.setPasswordTemporaire(true);
-    Utilisateur saved = utilisateurRepository.save(utilisateur);
-    System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
-    return saved;
+        // Propager l'état temporaire dans le DTO pour toEntity(), puis s'assurer sur l'entité
+        dto.setPasswordTemporaire(adminCreation);
+        Utilisateur utilisateur = toUtilisateurEntity(dto);
+        utilisateur.setPasswordTemporaire(adminCreation);
+
+        Utilisateur saved = utilisateurRepository.save(utilisateur);
+        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
+        return saved;
     }
 
 

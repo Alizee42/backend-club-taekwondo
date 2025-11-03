@@ -49,6 +49,7 @@ public class SecurityConfig {
                     "/api/avis/**",
                     "/api/clubs/**", // ✅ accès libre à la liste des clubs
                     "/api/galeries/club/**", // ✅ accès libre à la galerie par club (tous sous-chemins)
+                    "/api/enseignants/club/**", // ✅ enseignants publics par club
                     "/api/debug/**",
                     "/api/inscriptions/debug/**",  // ✅ Debug des inscriptions
                     "/api/produits/**",
@@ -58,6 +59,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                // Enseignants: création / modification / suppression restreintes
+                .requestMatchers(HttpMethod.POST, "/api/enseignants/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/enseignants/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/enseignants/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Permettre la création de membres lors de l'inscription (sans auth)
                 .requestMatchers(HttpMethod.POST, "/api/membres").permitAll()
 
