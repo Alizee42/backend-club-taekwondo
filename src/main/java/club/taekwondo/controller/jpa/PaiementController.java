@@ -29,6 +29,7 @@ import java.util.Locale;
 @RequestMapping("/api/paiements")
 @CrossOrigin(origins = "*")
 public class PaiementController {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PaiementController.class);
     // 🔹 Récupérer tous les paiements d'un club
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<PaiementDTO>> getPaiementsByClub(@PathVariable Long clubId) {
@@ -382,7 +383,7 @@ public class PaiementController {
     @PreAuthorize("hasAnyRole('MEMBRE','ADMIN')")
     @GetMapping("/membre/mes-paiements")
     public ResponseEntity<List<PaiementDTO>> getPaiementsPourMembreConnecte(
-            @RequestHeader("Authorization") String authHeader) {
+        @RequestHeader("Authorization") String authHeader) {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -391,13 +392,24 @@ public class PaiementController {
         final String jwt = authHeader.substring(7);
         final String email = jwtUtil.extractEmail(jwt);
 
-        Utilisateur membre = utilisateurService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+    Utilisateur compte = utilisateurService.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        List<PaiementDTO> paiements = paiementService.getPaiementsParMembre(membre.getId());
+    // Un membre connecté (adulte) possède un Membre rattaché via compteUtilisateur
+    Long membreId = membreService.getMembreEntityByIdUtilisateur(compte.getId())
+        .map(Membre::getId)
+        .orElse(null);
+        if (membreId == null) {
+            log.info("[MEMBRE] Aucun Membre rattaché au compte utilisateur id={} email={}", compte.getId(), compte.getEmail());
+        return ResponseEntity.ok(Collections.emptyList());
+    }
+        List<PaiementDTO> paiements = paiementService.getPaiementsParMembre(membreId);
+        log.info("[MEMBRE] mes-paiements membreId={} → {} paiements", membreId, paiements.size());
 
         return ResponseEntity.ok(paiements);
     }
+
+    
     /* ===========================
      *   Espace Membre (SÉCURISÉ)
      * =========================== */
@@ -413,6 +425,8 @@ public class PaiementController {
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, Object> body) {
         try {
+            log.info("==================================================");
+            log.info("🧾 [PAY] POST /api/paiements/ajouter-membre appelé");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token manquant ou invalide"));
             }
@@ -421,6 +435,8 @@ public class PaiementController {
 
             Utilisateur utilisateur = utilisateurService.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+            log.info("[PAY] Utilisateur={} (role={})", utilisateur.getEmail(), utilisateur.getRole());
 
             // normalisations
             Double montantTotal = doubleOrNull(body.get("montantTotal"));
@@ -441,6 +457,8 @@ public class PaiementController {
             } else {
                 nbEch = 1;
             }
+
+            log.info("[PAY] Demande: type={} mode={} total={} nbEcheances={}", typeBack, modeBack, montantTotal, nbEch);
 
             PaiementRequestDTO req = new PaiementRequestDTO();
             req.setUtilisateurId(utilisateur.getId());
@@ -464,6 +482,7 @@ public class PaiementController {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Ce membre ne vous est pas rattaché"));
                 }
                 req.setMembreId(membreId);
+                log.info("[PAY] Parent → paiement pour enfant membreId={}", membreId);
             }
 
             List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
@@ -472,6 +491,7 @@ public class PaiementController {
                         .body(Map.of("error", "Aucun paiement créé"));
             }
             Long firstId = created.get(0).getId();
+            log.info("[PAY] ✅ Paiement créé: id={} total={} type={} mode={}", firstId, montantTotal, typeBack, modeBack);
             Map<String, Object> resp = new HashMap<>();
             resp.put("paiementId", firstId);
             resp.put("reference", null);
@@ -480,6 +500,7 @@ public class PaiementController {
 
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("[PAY] ❌ Erreur ajout paiement membre: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }

@@ -29,9 +29,25 @@ public class UtilisateurController {
     @PostMapping("")
     public ResponseEntity<?> createUtilisateur(@RequestBody UtilisateurDTO utilisateurDTO) {
         try {
-            // Inscription depuis le site: le mot de passe NE DOIT PAS être temporaire
-            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO, false);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nouvelUtilisateur);
+            // Création par ADMIN / SUPER-ADMIN -> mot de passe TEMPORAIRE + envoi email de réinitialisation
+            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO, true);
+
+            // Générer un token de réinitialisation et envoyer l'email (best-effort)
+            try {
+                var demande = reinitService.creerDemande(nouvelUtilisateur.getId());
+                if (nouvelUtilisateur.getEmail() != null && !nouvelUtilisateur.getEmail().isBlank()) {
+                    emailService.envoyerEmailReinitialisationMotDePasse(nouvelUtilisateur.getEmail(), demande.getToken());
+                }
+            } catch (Exception ignore) {}
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of(
+                            "message", "Utilisateur créé. Un email de définition de mot de passe a été envoyé.",
+                            "id", nouvelUtilisateur.getId(),
+                            "email", nouvelUtilisateur.getEmail(),
+                            "role", nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : null,
+                            "passwordTemporaire", true
+                    ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la création."));
         }
@@ -164,7 +180,8 @@ public class UtilisateurController {
                 utilisateurDTO.setRole(Role.MEMBRE.name());
             }
 
-            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO);
+            // Auto-inscription: mot de passe défini par l'utilisateur (pas temporaire)
+            Utilisateur nouvelUtilisateur = utilisateurService.createUtilisateur(utilisateurDTO, false);
 
             // tenter d'envoyer un email de confirmation (ne doit pas empêcher la création)
             boolean emailSent = false;

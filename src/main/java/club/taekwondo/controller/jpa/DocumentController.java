@@ -7,6 +7,7 @@ import club.taekwondo.service.jpa.DocumentService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import club.taekwondo.entity.jpa.Utilisateur;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,7 @@ public class DocumentController {
     // ================== READ ==================
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<List<DocumentDTO>> getAllDocuments(Authentication authentication) {
         Utilisateur user = utilisateurService.findByEmail(authentication.getName()).orElseThrow();
         Long clubId = user.getClub().getId();
@@ -60,6 +62,7 @@ public class DocumentController {
 
     // ✅ Super Admin: tous les documents (tous clubs)
     @GetMapping("/all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<DocumentDTO>> getAllDocumentsAllClubs(@RequestParam(value = "clubId", required = false) Long clubId) {
         List<DocumentDTO> documents = (clubId != null && clubId > 0)
                 ? documentService.getDocumentsByClubId(clubId)
@@ -318,6 +321,7 @@ public class DocumentController {
     // ================== VALIDATION ==================
 
     @PutMapping("/{id}/valider")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<?> validerDocument(@PathVariable Long id) {
         System.out.println("Validation du document ID: " + id);
         Optional<DocumentDTO> document = documentService.getDocumentById(id);
@@ -333,6 +337,7 @@ public class DocumentController {
     }
 
     @PutMapping("/{id}/refuser")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<?> refuserDocument(@PathVariable Long id) {
         System.out.println("Refus du document ID: " + id);
         Optional<DocumentDTO> document = documentService.getDocumentById(id);

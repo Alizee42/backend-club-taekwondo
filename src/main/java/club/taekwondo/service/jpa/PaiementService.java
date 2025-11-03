@@ -24,7 +24,7 @@ public class PaiementService {
      * Récupérer tous les paiements d'un club
      */
     public List<PaiementDTO> getPaiementsByClubId(Long clubId) {
-        return paiementRepository.findByClubId(clubId)
+        return paiementRepository.findByClubIdAny(clubId)
                 .stream()
                 .map(this::toPaiementDTO)
                 .collect(Collectors.toList());
@@ -629,6 +629,20 @@ public class PaiementService {
         dto.setDateAnnulation(paiement.getDateAnnulation());
         dto.setAdminResponsable(paiement.getAdminResponsable());
 
+        // Détermine le club: priorité commande.club > membre.club > utilisateur.club
+        Long clubId = null;
+        if (paiement.getCommande() != null
+                && paiement.getCommande().getClub() != null) {
+            clubId = paiement.getCommande().getClub().getId();
+        } else if (paiement.getMembre() != null
+                && paiement.getMembre().getClub() != null) {
+            clubId = paiement.getMembre().getClub().getId();
+        } else if (paiement.getUtilisateur() != null
+                && paiement.getUtilisateur().getClub() != null) {
+            clubId = paiement.getUtilisateur().getClub().getId();
+        }
+        dto.setClubId(clubId);
+
         if (paiement.getUtilisateur() != null) {
             dto.setUtilisateurId(paiement.getUtilisateur().getId());
             dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
@@ -837,6 +851,136 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
                             e.getNumero(), e.getId(), e.getMontant(), e.getStatut(), e.getDateEcheance(), e.getReference()));
         }
         log.info("=== [PaiementService] Fin ajout paiement parent ===");
+        return saved;
+    }
+
+    /**
+     * Création de paiement initiée par un MEMBRE connecté (adulte).
+     * Vérifie que le membre ciblé appartient bien au compte utilisateur courant (compteUtilisateur.id == utilisateurId)
+     * puis construit un paiement UNIQUE ou ECHELONNE identique au flux parent.
+     */
+    @Transactional
+    public Paiement ajouterPaiementMembre(PaiementRequestDTO req, Long utilisateurId) {
+        log.info("=== [PaiementService] Début ajout paiement membre ===");
+        log.info("[Request reçu] {}", req);
+        log.info("[Utilisateur connecté ID] {}", utilisateurId);
+
+        if (req.getMembreId() == null || req.getMembreId() <= 0) {
+            throw new RuntimeException("ID du membre invalide pour le paiement !");
+        }
+        Membre membre = membreService.getMembreEntityById(req.getMembreId())
+                .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
+
+        // Autorisation: le membre doit être rattaché au compte utilisateur courant
+        if (membre.getCompteUtilisateur() == null
+                || membre.getCompteUtilisateur().getId() == null
+                || !Objects.equals(membre.getCompteUtilisateur().getId(), utilisateurId)) {
+            throw new RuntimeException("Ce membre n'appartient pas au compte connecté !");
+        }
+
+        double montant = req.getMontantTotal() != null ? req.getMontantTotal() : 0.0;
+        if (montant <= 0.0) {
+            throw new IllegalArgumentException("Montant total invalide.");
+        }
+
+        final String type = normalizeType(Optional.ofNullable(req.getTypePaiement()).orElse("COTISATION"));
+        final String mode = normalizeMode(req.getModePaiement());
+
+        Paiement paiement = new Paiement();
+        paiement.setType(type);
+        paiement.setModePaiement(mode);
+        paiement.setDatePaiement(LocalDate.now());
+        paiement.setUtilisateur(membre.getCompteUtilisateur());
+        paiement.setMembre(membre);
+        paiement.setMontantTotal(montant);
+
+        paiement.setMontantPaye(0.0);
+        paiement.setMontantRestant(montant);
+        paiement.setStatut("en attente");
+
+        if (isTypeEchelonne(type)) {
+            List<Echeance> echs = new ArrayList<>();
+
+            if (req.getEcheances() != null && !req.getEcheances().isEmpty()) {
+                int autoNum = 1;
+                for (PaiementRequestDTO.EcheanceInput ein : req.getEcheances()) {
+                    if (ein.getMontant() == null || ein.getMontant() <= 0) {
+                        throw new RuntimeException("Échéance invalide (montant).");
+                    }
+                    if (ein.getDateEcheance() == null || ein.getDateEcheance().isBlank()) {
+                        throw new RuntimeException("Échéance invalide (date manquante).");
+                    }
+                    Echeance e = new Echeance();
+                    e.setPaiement(paiement);
+                    e.setNumero(ein.getNumero() != null ? ein.getNumero() : autoNum++);
+                    e.setDateEcheance(LocalDate.parse(ein.getDateEcheance()));
+                    e.setMontant(ein.getMontant());
+
+                    e.setStatut(Optional.ofNullable(ein.getStatut()).orElse("en attente"));
+                    e.setModePaiement(null);
+                    e.setReference(null);
+                    e.setDatePaiementReel(null);
+
+                    echs.add(e);
+                }
+            } else {
+                int n = (req.getNombreEcheances() != null && req.getNombreEcheances() > 0)
+                        ? Math.min(12, Math.max(1, req.getNombreEcheances()))
+                        : 2;
+
+                LocalDate start = LocalDate.now();
+                double base = Math.floor((montant / n) * 100.0) / 100.0;
+                double somme = 0.0;
+
+                for (int i = 0; i < n; i++) {
+                    double part = (i == n - 1) ? round2(montant - somme) : base;
+                    somme += part;
+
+                    Echeance e = new Echeance();
+                    e.setPaiement(paiement);
+                    e.setNumero(i + 1);
+                    e.setDateEcheance(start.plusMonths(i));
+                    e.setMontant(part);
+                    e.setStatut("en attente");
+                    e.setModePaiement(null);
+                    e.setReference(null);
+                    e.setDatePaiementReel(null);
+
+                    echs.add(e);
+                }
+            }
+
+            paiement.setEcheances(echs);
+            paiement.setEcheancesTotales(echs.size());
+
+            long nbRest = echs.stream().filter(e -> !"payé".equalsIgnoreCase(e.getStatut())).count();
+            double montantPaye = echs.stream().filter(e -> "payé".equalsIgnoreCase(e.getStatut()))
+                    .map(Echeance::getMontant).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+            double restant = echs.stream().filter(e -> !"payé".equalsIgnoreCase(e.getStatut()))
+                    .map(Echeance::getMontant).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+
+            paiement.setEcheancesRestantes((int) nbRest);
+            paiement.setMontantPaye(montantPaye);
+            paiement.setMontantRestant(restant);
+        } else {
+            paiement.setEcheances(Collections.emptyList());
+            paiement.setEcheancesTotales(0);
+            paiement.setEcheancesRestantes(0);
+        }
+
+        Paiement saved = paiementRepository.save(paiement);
+        log.info("[Paiement enregistré (membre)] ID={} | MembreID={} | UtilisateurID={} | Total={} | Payé={} | Restant={} | Statut={}",
+                saved.getId(), saved.getMembre() != null ? saved.getMembre().getId() : null,
+                saved.getUtilisateur() != null ? saved.getUtilisateur().getId() : null,
+                saved.getMontantTotal(), saved.getMontantPaye(),
+                saved.getMontantRestant(), saved.getStatut());
+        if (saved.getEcheances() != null) {
+            saved.getEcheances().stream()
+                    .sorted(Comparator.comparingInt(Echeance::getNumero))
+                    .forEach(e -> log.info("   • ech#{} id={} montant={} statut={} dateEch={} ref={}",
+                            e.getNumero(), e.getId(), e.getMontant(), e.getStatut(), e.getDateEcheance(), e.getReference()));
+        }
+        log.info("=== [PaiementService] Fin ajout paiement membre ===");
         return saved;
     }
 

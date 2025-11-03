@@ -4,6 +4,7 @@ import club.taekwondo.enums.Role;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Entity
@@ -42,6 +43,8 @@ public class Utilisateur {
 
     @Column(nullable = false)
     private String password;
+
+    private OffsetDateTime passwordUpdatedAt;
 
     private String telephone;
 
@@ -136,6 +139,14 @@ public class Utilisateur {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public OffsetDateTime getPasswordUpdatedAt() {
+        return passwordUpdatedAt;
+    }
+
+    public void setPasswordUpdatedAt(OffsetDateTime passwordUpdatedAt) {
+        this.passwordUpdatedAt = passwordUpdatedAt;
     }
 
     public String getTelephone() {

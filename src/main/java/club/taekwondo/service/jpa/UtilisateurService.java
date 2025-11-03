@@ -106,7 +106,8 @@ public class UtilisateurService {
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
         dto.setRole(utilisateur.getRole() != null ? utilisateur.getRole().name() : null);
-        dto.setPasswordTemporaire(utilisateur.isPasswordTemporaire());
+    dto.setPasswordTemporaire(utilisateur.isPasswordTemporaire());
+    dto.setPasswordUpdatedAt(utilisateur.getPasswordUpdatedAt());
         if (utilisateur.getClub() != null) {
             dto.setClubId(utilisateur.getClub().getId());
         }
@@ -288,9 +289,8 @@ public class UtilisateurService {
     }
 
     public Utilisateur createUtilisateur(UtilisateurDTO dto) {
-        // Par défaut (compat), on considère que cet appel est une création par un administrateur
-        // et donc on marque le mot de passe comme temporaire.
-        return createUtilisateur(dto, true);
+        // Par défaut désormais: auto-inscription (password définitif)
+        return createUtilisateur(dto, false);
     }
 
     /**
@@ -309,9 +309,22 @@ public class UtilisateurService {
             System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ email manquant");
             throw new IllegalArgumentException("L'email est requis.");
         }
-        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
-            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ mot de passe manquant");
-            throw new IllegalArgumentException("Le mot de passe est requis.");
+        // Gestion différenciée du mot de passe selon l'origine
+    if (adminCreation) {
+            // Si l'admin ne fournit pas de mot de passe, on en génère un temporaire
+            if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+                String generated = java.util.UUID.randomUUID().toString().replace("-", "");
+                // raccourcir à 12 caractères pour lisibilité si jamais exposé (il reste encodé avant save)
+                generated = generated.substring(0, 12);
+                dto.setPassword(generated);
+                System.out.println("[" + now() + "][USR-SVC][createUtilisateur] 🔐 mot de passe temporaire généré (admin)");
+            }
+        } else {
+            // Auto-inscription: le mot de passe est obligatoire et définitif
+            if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+                System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ mot de passe manquant (self-register)");
+                throw new IllegalArgumentException("Le mot de passe est requis.");
+            }
         }
 
         dto.setEmail(lowerOrNull(dto.getEmail()));
@@ -333,11 +346,15 @@ public class UtilisateurService {
             System.out.println("[" + now() + "][USR-SVC][createUtilisateur] role reçu='" + dto.getRole() + "'");
         }
 
-        // Propager l'état temporaire dans le DTO pour toEntity(), puis s'assurer sur l'entité
-        dto.setPasswordTemporaire(adminCreation);
+    // Propager l'état temporaire dans le DTO pour toEntity(), puis s'assurer sur l'entité
+    dto.setPasswordTemporaire(adminCreation);
         Utilisateur utilisateur = toUtilisateurEntity(dto);
         utilisateur.setPasswordTemporaire(adminCreation);
 
+        // Initialiser la date de mise à jour du mot de passe si absente
+        if (utilisateur.getPasswordUpdatedAt() == null) {
+            utilisateur.setPasswordUpdatedAt(java.time.OffsetDateTime.now());
+        }
         Utilisateur saved = utilisateurRepository.save(utilisateur);
         System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
         return saved;
@@ -359,6 +376,7 @@ public class UtilisateurService {
                 System.out.println("[" + now() + "][USR-SVC][updateUtilisateurFromDTO] encodage nouveau mot de passe...");
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
                 user.setPasswordTemporaire(false); // Si on change le mot de passe, il n'est plus temporaire
+                user.setPasswordUpdatedAt(java.time.OffsetDateTime.now());
             }
 
             if (dto.getClubId() != null) {

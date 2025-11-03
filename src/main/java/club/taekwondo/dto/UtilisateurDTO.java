@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import club.taekwondo.enums.Role;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 public class UtilisateurDTO {
     private boolean passwordTemporaire = false;
@@ -24,6 +25,8 @@ public class UtilisateurDTO {
     private String telephone;
     private Role role;
     private Long clubId;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private OffsetDateTime passwordUpdatedAt;
     
     // Informations supplémentaires pour les parents
     private String nomParent;
@@ -98,6 +101,13 @@ public class UtilisateurDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+    public OffsetDateTime getPasswordUpdatedAt() {
+        return passwordUpdatedAt;
+    }
+
+    public void setPasswordUpdatedAt(OffsetDateTime passwordUpdatedAt) {
+        this.passwordUpdatedAt = passwordUpdatedAt;
     }
     
     public String getNomParent() {

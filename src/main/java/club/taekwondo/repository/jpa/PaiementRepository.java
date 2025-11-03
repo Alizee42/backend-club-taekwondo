@@ -128,7 +128,19 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     Optional<String> getReceiptUrl(@Param("id") Long paiementId);
 
     Optional<Paiement> findTopByCommandeIdOrderByIdDesc(Long commandeId);
-    // Filtrage par club
+    // Filtrage par club via Commande uniquement (hist.)
     @Query("SELECT p FROM Paiement p WHERE p.commande.club.id = :clubId")
     List<Paiement> findByClubId(Long clubId);
+
+    // Filtrage par club couvrant Commande, Membre et Utilisateur
+    @Query("""
+        SELECT p FROM Paiement p
+        LEFT JOIN p.commande c
+        LEFT JOIN p.membre m
+        LEFT JOIN p.utilisateur u
+        WHERE (c IS NOT NULL AND c.club.id = :clubId)
+           OR (m IS NOT NULL AND m.club.id = :clubId)
+           OR (u IS NOT NULL AND u.club.id = :clubId)
+    """)
+    List<Paiement> findByClubIdAny(Long clubId);
 }

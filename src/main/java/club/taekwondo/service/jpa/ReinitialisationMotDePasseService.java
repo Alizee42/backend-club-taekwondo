@@ -160,6 +160,8 @@ public class ReinitialisationMotDePasseService {
                 // Récupérer l'utilisateur et mettre à jour son mot de passe
                 Utilisateur utilisateur = demande.getUtilisateur();
                 utilisateur.setPassword(passwordEncoder.encode(newPassword));
+                // Le mot de passe n'est plus temporaire après une réinitialisation réussie
+                utilisateur.setPasswordTemporaire(false);
                 utilisateurRepository.save(utilisateur);
                 
                 // Marquer le token comme utilisé

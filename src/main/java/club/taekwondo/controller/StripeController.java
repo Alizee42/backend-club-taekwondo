@@ -277,6 +277,8 @@ public class StripeController {
     public ResponseEntity<?> syncPayment(@RequestBody Map<String, Object> body,
                                          @RequestHeader HttpHeaders headers) {
         try {
+            log.info("==================================================");
+            log.info("🔁 [STRIPE] sync-payment déclenché: {}", body);
             String piId = asString(body.get("paymentIntentId"));
             if (piId == null || piId.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "paymentIntentId manquant"));
@@ -351,8 +353,11 @@ public class StripeController {
                 paiement.setDatePaiement(LocalDate.now());
             }
 
-            paiementService.save(paiement);
-            return ResponseEntity.ok(Map.of("status", "synced"));
+        paiementService.save(paiement);
+        log.info("[STRIPE] ✅ sync OK → paiementId={} statut={} restant={} nbEchRestantes={} ",
+            paiement.getId(), paiement.getStatut(), paiement.getMontantRestant(), paiement.getEcheancesRestantes());
+        log.info("==================================================");
+        return ResponseEntity.ok(Map.of("status", "synced"));
 
         } catch (Exception e) {
             log.error("[STRIPE] ❌ sync-payment error: {}", e.getMessage(), e);
@@ -363,6 +368,7 @@ public class StripeController {
     @GetMapping("/receipt/{paiementId}")
     public ResponseEntity<?> redirectToStripeReceipt(@PathVariable Long paiementId) {
         try {
+            log.info("🧾 [STRIPE] receipt pour paiementId={}", paiementId);
             Paiement p = paiementService.getById(paiementId)
                     .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable"));
 
@@ -404,6 +410,7 @@ public class StripeController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Aucun reçu disponible"));
             }
+            log.info("[STRIPE] ➡️ redirection vers receipt_url={}", receiptUrl);
             return ResponseEntity.status(302).location(URI.create(receiptUrl)).build();
 
         } catch (Exception e) {

@@ -15,6 +15,9 @@ public class PaiementDTO {
     private Double montantPaye;
     private Double montantRestant;
 
+    /** Club associé au paiement (dérivé: commande.club, membre.club ou utilisateur.club) */
+    private Long clubId;
+
     /** Utilisateur (parent/adulte) payeur */
     private Long utilisateurId;
     private String utilisateurNom;
@@ -59,6 +62,9 @@ public class PaiementDTO {
 
     public Double getMontantRestant() { return montantRestant; }
     public void setMontantRestant(Double montantRestant) { this.montantRestant = montantRestant; }
+
+    public Long getClubId() { return clubId; }
+    public void setClubId(Long clubId) { this.clubId = clubId; }
 
     public Long getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }
