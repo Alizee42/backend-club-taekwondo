@@ -28,7 +28,11 @@ public class StripeService {
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
-        System.out.println("✅ Stripe API Key initialized.");
+        if (stripeApiKey == null || stripeApiKey.isBlank() || stripeApiKey.toLowerCase().contains("dummy")) {
+            System.err.println("❌ Stripe API Key absente ou factice. Définissez STRIPE_API_KEY (sk_test_...) dans vos variables d'environnement.");
+        } else {
+            System.out.println("✅ Stripe API Key initialized.");
+        }
     }
 
     public String getPublicKey() {
@@ -88,6 +92,11 @@ public class StripeService {
             System.out.println("⚠️ Erreur lors de la récupération du clientSecret : " + e.getMessage());
             return null;
         }
+    }
+
+    /** Indique si une clé Stripe exploitable est présente (sans divulguer la clé). */
+    public boolean isConfigured() {
+        return stripeApiKey != null && !stripeApiKey.isBlank() && !stripeApiKey.toLowerCase().contains("dummy");
     }
 
     // Helpers

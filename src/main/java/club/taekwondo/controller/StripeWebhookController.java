@@ -1,8 +1,11 @@
 package club.taekwondo.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Charge;
 import com.stripe.net.Webhook;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
@@ -25,6 +28,7 @@ public class StripeWebhookController {
     private String endpointSecret;
 
     private final PaiementService paiementService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public StripeWebhookController(PaiementService paiementService) {
         this.paiementService = paiementService;
@@ -52,9 +56,40 @@ public class StripeWebhookController {
         System.out.printf("[STRIPE] 📦 Mode=%s | Événement=%s | eventId=%s%n",
                 event.getLivemode() ? "LIVE" : "TEST", event.getType(), eventId);
 
+        // 1) Tentative de désérialisation directe (version API compatible)
         var dataObj = event.getDataObjectDeserializer().getObject();
-        if (dataObj.isEmpty() || !(dataObj.get() instanceof PaymentIntent pi)) {
-            System.err.println("[STRIPE] ❌ Impossible de désérialiser PaymentIntent.");
+        PaymentIntent pi = null;
+        if (dataObj.isPresent() && dataObj.get() instanceof PaymentIntent) {
+            pi = (PaymentIntent) dataObj.get();
+        } else {
+            // 2) Fallback robuste pour versions "preview" ou objets Charge
+            //    - Pour payment_intent.* → data.object.id
+            //    - Pour charge.* → data.object.payment_intent
+            try {
+                JsonNode root = objectMapper.readTree(payload);
+                JsonNode obj = root.path("data").path("object");
+                String type = event.getType() == null ? "" : event.getType();
+
+                String piId = null;
+                if (type.startsWith("payment_intent.")) {
+                    piId = obj.path("id").asText(null);
+                } else if (type.startsWith("charge.")) {
+                    piId = obj.path("payment_intent").asText(null);
+                }
+
+                if (piId != null && !piId.isBlank()) {
+                    System.out.printf("[STRIPE] 🔄 Fallback retrieve PaymentIntent by id=%s (type=%s)%n", piId, type);
+                    pi = PaymentIntent.retrieve(piId);
+                } else {
+                    System.err.println("[STRIPE] ❌ Impossible d'extraire payment_intent id du payload (fallback)");
+                }
+            } catch (Exception ex) {
+                System.err.println("[STRIPE] ❌ Fallback JSON parse/retrieve échoué: " + ex.getMessage());
+            }
+        }
+
+        if (pi == null) {
+            System.err.println("[STRIPE] ❌ Impossible de désérialiser PaymentIntent (après fallback).");
             return ResponseEntity.ok("ignored");
         }
 
@@ -104,7 +139,7 @@ public class StripeWebhookController {
                 return ResponseEntity.ok("amount-currency-mismatch");
             }
 
-            // -------- Paiement échelonné --------
+        // -------- Paiement échelonné --------
             if ("ECHELONNE".equalsIgnoreCase(safe(paiement.getType()))
                     && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
 
@@ -144,6 +179,22 @@ public class StripeWebhookController {
                 paiement.setModePaiement("CB");
                 paiement.setStatut(nbRestantes == 0 ? "payé" : "en attente");
 
+                // 🧾 Persiste infos Stripe utiles
+                try {
+                    if (isBlank(paiement.getPaymentIntentId())) paiement.setPaymentIntentId(piId);
+                    String latestChargeId = pi.getLatestCharge();
+                    if (!isBlank(latestChargeId)) {
+                        paiement.setChargeId(latestChargeId);
+                        try {
+                            Charge c = Charge.retrieve(latestChargeId);
+                            if (c != null && !isBlank(c.getReceiptUrl())) {
+                                paiement.setReceiptUrl(c.getReceiptUrl());
+                            }
+                        } catch (Exception ignored) { }
+                    }
+                    if (!isBlank(pi.getStatus())) paiement.setStripeStatus(pi.getStatus());
+                } catch (Exception ignored) { }
+
                 paiementService.save(paiement);
                 dumpPaiementState("AFTER", paiement);
                 System.out.printf("[STRIPE] ✅ Échéance #%d soldée pour paiement %d. Restantes=%d, Restant=%.2f%n",
@@ -164,12 +215,28 @@ public class StripeWebhookController {
             paiement.setDatePaiement(LocalDate.now());
             paiement.setModePaiement("CB");
 
+            // 🧾 Persiste infos Stripe utiles (UNIQUE)
+            try {
+                if (isBlank(paiement.getPaymentIntentId())) paiement.setPaymentIntentId(piId);
+                String latestChargeId = pi.getLatestCharge();
+                if (!isBlank(latestChargeId)) {
+                    paiement.setChargeId(latestChargeId);
+                    try {
+                        Charge c = Charge.retrieve(latestChargeId);
+                        if (c != null && !isBlank(c.getReceiptUrl())) {
+                            paiement.setReceiptUrl(c.getReceiptUrl());
+                        }
+                    } catch (Exception ignored) { }
+                }
+                if (!isBlank(pi.getStatus())) paiement.setStripeStatus(pi.getStatus());
+            } catch (Exception ignored) { }
+
             paiementService.save(paiement);
             dumpPaiementState("AFTER", paiement);
             System.out.printf("[STRIPE] ✅ Paiement UNIQUE %d soldé%n", paiement.getId());
         }
 
-        if ("payment_intent.payment_failed".equals(event.getType())) {
+    if ("payment_intent.payment_failed".equals(event.getType())) {
             String reason = (pi.getLastPaymentError() != null)
                     ? pi.getLastPaymentError().getMessage()
                     : "unknown";

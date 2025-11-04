@@ -6,6 +6,7 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementService;
+import club.taekwondo.service.jpa.EmailService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import com.stripe.exception.IdempotencyException;
 import com.stripe.model.Charge;
@@ -38,6 +39,7 @@ public class StripeController {
     private final UtilisateurService utilisateurService;
     private final JwtUtil jwtUtil;
     private final StripeService stripeService;
+    private final EmailService emailService;
 
     @Value("${stripe.public.key:}")
     private String publishableKey;
@@ -45,17 +47,19 @@ public class StripeController {
     public StripeController(PaiementService paiementService,
                             UtilisateurService utilisateurService,
                             JwtUtil jwtUtil,
-                            StripeService stripeService) {
+                            StripeService stripeService,
+                            EmailService emailService) {
         this.paiementService = paiementService;
         this.utilisateurService = utilisateurService;
         this.jwtUtil = jwtUtil;
         this.stripeService = stripeService;
+        this.emailService = emailService;
     }
 
     @GetMapping("/public-key")
     public ResponseEntity<?> getPublicKey() {
         log.info("[STRIPE] /public-key");
-        if (publishableKey == null || publishableKey.isBlank()) {
+        if (publishableKey == null || publishableKey.isBlank() || publishableKey.toLowerCase().contains("dummy")) {
             log.warn("[STRIPE] Clé publique Stripe non configurée");
             return ResponseEntity.noContent().build();
         }
@@ -71,6 +75,12 @@ public class StripeController {
         log.info("[STRIPE] Payload: {}", body);
 
         try {
+            // Court-circuit si Stripe n'est pas configuré
+            if (!stripeService.isConfigured()) {
+                log.warn("[STRIPE] API Key non configurée (ou factice). Abandon de la création du PaymentIntent.");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(Map.of("error", "Stripe non configuré côté serveur. Contactez l'administrateur."));
+            }
             // --------- Auth (facultative mais utile pour l’autorisation) ---------
             String auth = headers.getFirst(HttpHeaders.AUTHORIZATION);
             String jwt = (auth != null && auth.startsWith("Bearer ")) ? auth.substring(7) : null;
@@ -85,6 +95,7 @@ public class StripeController {
             Long paiementId = asLong(body.get("paiementId"));
             final Long reqEcheanceId = asLong(body.get("echeanceId"));
             String customerEmail = asString(body.get("customerEmail"));
+            Boolean sendReceiptEmail = asBoolean(body.get("sendReceiptEmail")); // null = non fourni
 
             if (paiementId == null) {
                 log.warn("[STRIPE] paiementId manquant");
@@ -211,9 +222,15 @@ public class StripeController {
             piReq.put("metadata", metadata);
             piReq.put("description", "Cotisation / Paiement #" + paiementId);
             piReq.put("automatic_payment_methods", Map.of("enabled", true));
-            if (customerEmail != null && !customerEmail.isBlank()) {
+            // Respecte la préférence d'envoi du reçu (par défaut: true si non précisé)
+            boolean wantReceiptEmail = sendReceiptEmail == null ? true : Boolean.TRUE.equals(sendReceiptEmail);
+            if (wantReceiptEmail && customerEmail != null && !customerEmail.isBlank()) {
                 piReq.put("receipt_email", customerEmail);
             }
+            // trace légère de la préférence
+            Map<String, Object> mdForPi = new HashMap<>(metadata);
+            mdForPi.put("sendReceiptEmail", String.valueOf(wantReceiptEmail));
+            piReq.put("metadata", mdForPi);
 
             // --------- Idempotency-Key stable ---------
             String idemKeySuffix = "ECHELONNE".equalsIgnoreCase(typeCourant)
@@ -273,6 +290,16 @@ public class StripeController {
         }
     }
 
+    @GetMapping("/config-status")
+    public ResponseEntity<?> getConfigStatus() {
+        boolean pkConfigured = publishableKey != null && !publishableKey.isBlank() && !publishableKey.toLowerCase().contains("dummy");
+        boolean skConfigured = stripeService.isConfigured();
+        return ResponseEntity.ok(Map.of(
+                "publishableKeyConfigured", pkConfigured,
+                "secretKeyConfigured", skConfigured
+        ));
+    }
+
     @PostMapping("/sync-payment")
     public ResponseEntity<?> syncPayment(@RequestBody Map<String, Object> body,
                                          @RequestHeader HttpHeaders headers) {
@@ -296,6 +323,7 @@ public class StripeController {
             if (md == null) return ResponseEntity.badRequest().body(Map.of("error", "metadata manquantes"));
             Long paiementId = asLong(md.get("paiementId"));
             Long echeanceId = asLong(md.get("echeanceId"));
+            boolean optInReceipt = Boolean.parseBoolean(String.valueOf(md.getOrDefault("sendReceiptEmail","true")));
 
             if (paiementId == null)
                 return ResponseEntity.badRequest().body(Map.of("error", "paiementId manquant dans metadata"));
@@ -314,7 +342,9 @@ public class StripeController {
 
             paiement.setModePaiement("CB");
 
-            if ("ECHELONNE".equalsIgnoreCase(paiement.getType())
+        double montantPaye = 0.0;
+
+        if ("ECHELONNE".equalsIgnoreCase(paiement.getType())
                     && paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
 
                 Echeance cible = null;
@@ -337,6 +367,7 @@ public class StripeController {
                     cible.setDatePaiementReel(LocalDate.now());
                     cible.setModePaiement("CB");
                 }
+                try { montantPaye = Optional.ofNullable(cible.getMontant()).orElse(0.0); } catch (Exception ignored) {}
 
                 long nbRestantes = paiement.getEcheances().stream()
                         .filter(e -> !"payé".equalsIgnoreCase(e.getStatut())).count();
@@ -351,11 +382,67 @@ public class StripeController {
                 paiement.setStatut("payé");
                 paiement.setMontantRestant(0.0);
                 paiement.setDatePaiement(LocalDate.now());
+                montantPaye = Optional.ofNullable(paiement.getMontantTotal()).orElse(0.0);
             }
 
         paiementService.save(paiement);
         log.info("[STRIPE] ✅ sync OK → paiementId={} statut={} restant={} nbEchRestantes={} ",
             paiement.getId(), paiement.getStatut(), paiement.getMontantRestant(), paiement.getEcheancesRestantes());
+        
+        // ✉️ Envoi email de reçu (fallback club) si opt-in
+        try {
+            if (optInReceipt) {
+                String receiptUrl = null;
+                String latestChargeId = pi.getLatestCharge();
+                if (latestChargeId != null && !latestChargeId.isBlank()) {
+                    Charge charge = Charge.retrieve(latestChargeId);
+                    if (charge != null) {
+                        // 🔗 Persiste chargeId et receiptUrl
+                        paiement.setChargeId(latestChargeId);
+                        receiptUrl = charge.getReceiptUrl();
+                        if (receiptUrl == null || receiptUrl.isBlank()) {
+                            Object latestObj = pi.getLatestChargeObject();
+                            if (latestObj instanceof Charge) {
+                                // Assure le chargeId et l'URL depuis l'objet latest
+                                paiement.setChargeId(((Charge) latestObj).getId());
+                                receiptUrl = ((Charge) latestObj).getReceiptUrl();
+                            }
+                        }
+                    }
+                }
+                // Sauvegarde des infos Stripe utiles
+                try {
+                    if (paiement.getPaymentIntentId() == null || paiement.getPaymentIntentId().isBlank()) {
+                        paiement.setPaymentIntentId(piId);
+                    }
+                    if (receiptUrl != null && !receiptUrl.isBlank()) {
+                        paiement.setReceiptUrl(receiptUrl);
+                    }
+                    if (pi.getStatus() != null) {
+                        paiement.setStripeStatus(pi.getStatus());
+                    }
+                    paiementService.save(paiement);
+                } catch (Exception ignored) { }
+
+                String destinataire = null;
+                try {
+                    if (pi.getReceiptEmail() != null && !pi.getReceiptEmail().isBlank()) destinataire = pi.getReceiptEmail();
+                } catch (Exception ignored) {}
+                if (destinataire == null && paiement.getUtilisateur() != null) {
+                    destinataire = paiement.getUtilisateur().getEmail();
+                }
+
+                if (destinataire != null && receiptUrl != null && !receiptUrl.isBlank()) {
+                    String description = ("ECHELONNE".equalsIgnoreCase(paiement.getType()))
+                            ? ("Échéance du paiement #" + paiement.getId())
+                            : ("Paiement unique #" + paiement.getId());
+                    emailService.envoyerRecuPaiement(destinataire, montantPaye, description, receiptUrl);
+                    log.info("[STRIPE] ✉️ Reçu envoyé par email à {} (fallback club)", destinataire);
+                }
+            }
+        } catch (Exception exMail) {
+            log.warn("[STRIPE] ⚠️ Impossible d'envoyer le reçu email (fallback): {}", exMail.getMessage());
+        }
         log.info("==================================================");
         return ResponseEntity.ok(Map.of("status", "synced"));
 
@@ -428,6 +515,15 @@ public class StripeController {
 
     private static String asString(Object o) {
         return (o == null) ? null : String.valueOf(o);
+    }
+
+    private static Boolean asBoolean(Object o) {
+        if (o == null) return null;
+        if (o instanceof Boolean b) return b;
+        String s = String.valueOf(o).trim().toLowerCase();
+        if (s.equals("true") || s.equals("1") || s.equals("yes") || s.equals("oui")) return true;
+        if (s.equals("false") || s.equals("0") || s.equals("no") || s.equals("non")) return false;
+        return null;
     }
 
     private static String safe(String s) {

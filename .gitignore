@@ -38,3 +38,6 @@ service-account-*.json
 *-key.json
 credentials.json
 src/main/resources/credentials.json
+
+# Secrets locaux non versionnés (profil local uniquement)
+src/main/resources/application-local-secrets.properties

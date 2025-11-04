@@ -34,6 +34,9 @@ public class SecurityConfig {
                 // 🔓 Endpoints publics
                 .requestMatchers(HttpMethod.GET, "/api/galeries/club/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/horaires/club/**").permitAll()
+                // Reçus Stripe: autoriser l'ouverture dans un nouvel onglet (pas d'en-tête Authorization transmis)
+                .requestMatchers(HttpMethod.GET, "/api/stripe/receipt/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/paiements/*/facture").permitAll()
                 .requestMatchers(
                     "/error",
                     "/uploads/**",   // ✅ accès libre aux images uploadées

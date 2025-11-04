@@ -72,6 +72,11 @@ public class Paiement {
     @JoinColumn(name = "membre_id", nullable = false)
     private Membre membre;
 
+    // 🎯 Rattachement direct (dénormalisé) au club pour faciliter les filtres/exports
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id", nullable = true)
+    private Club club;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commande_id", nullable = true) 
     private Commande commande; 
@@ -89,6 +94,34 @@ public class Paiement {
     public void prePersist() {
         if (statut == null || statut.isBlank()) {
             statut = "en attente";
+        }
+        // Auto-rattachement du club à la création si non fourni (priorité: commande > membre > utilisateur)
+        if (this.club == null) {
+            try {
+                if (this.commande != null && this.commande.getClub() != null) {
+                    this.club = this.commande.getClub();
+                } else if (this.membre != null && this.membre.getClub() != null) {
+                    this.club = this.membre.getClub();
+                } else if (this.utilisateur != null && this.utilisateur.getClub() != null) {
+                    this.club = this.utilisateur.getClub();
+                }
+            } catch (Exception ignored) { /* éviter toute NPE bloquante au persist */ }
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        // Même logique lors des updates pour combler un club manquant
+        if (this.club == null) {
+            try {
+                if (this.commande != null && this.commande.getClub() != null) {
+                    this.club = this.commande.getClub();
+                } else if (this.membre != null && this.membre.getClub() != null) {
+                    this.club = this.membre.getClub();
+                } else if (this.utilisateur != null && this.utilisateur.getClub() != null) {
+                    this.club = this.utilisateur.getClub();
+                }
+            } catch (Exception ignored) { }
         }
     }
 
@@ -182,4 +215,7 @@ public class Paiement {
         this.echeances.remove(e);
         e.setPaiement(null);
     }
+
+    public Club getClub() { return club; }
+    public void setClub(Club club) { this.club = club; }
 }

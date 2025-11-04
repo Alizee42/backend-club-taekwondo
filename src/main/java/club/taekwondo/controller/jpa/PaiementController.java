@@ -327,9 +327,21 @@ public class PaiementController {
 
         List<Membre> enfants = membreService.getEnfantsDuParent(parent.getId());
         List<Long> enfantsIds = enfants.stream().map(Membre::getId).toList();
+    // Paiements liés aux enfants
+    List<PaiementDTO> byMembre = paiementService.getPaiementsParMembres(enfantsIds);
+    // Paiements qui auraient pu être saisis au niveau du parent (historique)
+    List<PaiementDTO> byUser = paiementService.getPaiementsParUtilisateur(parent.getId());
 
-        List<PaiementDTO> paiements = paiementService.getPaiementsParMembres(enfantsIds);
-        return ResponseEntity.ok(paiements);
+    // Fusion sans doublons par id (priorité à la vue par membre)
+    Map<Long, PaiementDTO> merged = new LinkedHashMap<>();
+    byMembre.forEach(p -> merged.put(p.getId(), p));
+    byUser.forEach(p -> merged.putIfAbsent(p.getId(), p));
+
+    List<PaiementDTO> out = new ArrayList<>(merged.values());
+    log.info("[PARENT] mes-paiements parentId={} → {} paiements ({} via enfants, {} via user)",
+        parent.getId(), out.size(), byMembre.size(), byUser.size());
+
+    return ResponseEntity.ok(out);
     }
 
     @PreAuthorize("hasAnyRole('PARENT','ADMIN')")  // ✅ Corrigé
@@ -403,10 +415,20 @@ public class PaiementController {
             log.info("[MEMBRE] Aucun Membre rattaché au compte utilisateur id={} email={}", compte.getId(), compte.getEmail());
         return ResponseEntity.ok(Collections.emptyList());
     }
-        List<PaiementDTO> paiements = paiementService.getPaiementsParMembre(membreId);
-        log.info("[MEMBRE] mes-paiements membreId={} → {} paiements", membreId, paiements.size());
+    // Paiements directement liés au membre
+    List<PaiementDTO> byMembre = paiementService.getPaiementsParMembre(membreId);
+    // Paiements éventuellement liés à l'utilisateur (anciens enregistrements)
+    List<PaiementDTO> byUser = paiementService.getPaiementsParUtilisateur(compte.getId());
+    // Fusion sans doublons (par id)
+    Map<Long, PaiementDTO> merged = new LinkedHashMap<>();
+    byMembre.forEach(p -> merged.put(p.getId(), p));
+    byUser.forEach(p -> merged.putIfAbsent(p.getId(), p));
 
-        return ResponseEntity.ok(paiements);
+    List<PaiementDTO> out = new ArrayList<>(merged.values());
+    log.info("[MEMBRE] mes-paiements membreId={} (userId={}) → {} paiements ({} par membre, {} par user)",
+        membreId, compte.getId(), out.size(), byMembre.size(), byUser.size());
+
+    return ResponseEntity.ok(out);
     }
 
     
@@ -483,6 +505,18 @@ public class PaiementController {
                 }
                 req.setMembreId(membreId);
                 log.info("[PAY] Parent → paiement pour enfant membreId={}", membreId);
+            } else {
+                // MEMBRE adulte connecté → rattacher au membre lié à son compte utilisateur
+                Long membreCourantId = membreService.getMembreEntityByIdUtilisateur(utilisateur.getId())
+                        .map(Membre::getId)
+                        .orElse(null);
+                if (membreCourantId != null) {
+                    req.setMembreId(membreCourantId);
+                    log.info("[PAY] Membre → rattachement automatique membreId={}", membreCourantId);
+                } else {
+                    log.warn("[PAY] Membre connecté sans entité Membre liée (compteUtilisateurId={}) — un membre Adulte sera créé côté service si nécessaire",
+                            utilisateur.getId());
+                }
             }
 
             List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
@@ -582,6 +616,44 @@ public class PaiementController {
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(location));
         return new ResponseEntity<>(body, headers, HttpStatus.CREATED);
+    }
+
+    /**
+     * Admin: backfill du club sur les paiements existants (colonne club_id) à partir de commande/membre/utilisateur.
+     */
+    @PostMapping("/admin/backfill-club")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> backfillClub() {
+        int updated = paiementService.backfillClubForExistingPaiements();
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
+    /**
+     * Admin: backfill Stripe (charge_id, receipt_url, stripe_status) pour les paiements existants
+     * en se basant sur payment_intent_id.
+     */
+    @PostMapping("/admin/backfill-charge")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> backfillCharge() {
+        int updated = paiementService.backfillStripeChargeInfoForExistingPaiements();
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
+    /**
+     * Facture PDF (placeholder) → redirige vers le reçu Stripe si disponible.
+     * Pour l’instant, on s’appuie sur le reçu Stripe natif.
+     */
+    @GetMapping("/{paiementId}/facture")
+    public ResponseEntity<Void> telechargerFacture(@PathVariable Long paiementId) {
+        // Redirection serveur vers l’endpoint reçu Stripe
+        try {
+            URI redirect = URI.create("/api/stripe/receipt/" + paiementId);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setLocation(redirect);
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     // ----- helpers parse / normalisation -----

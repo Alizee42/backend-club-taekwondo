@@ -116,7 +116,30 @@ public class EmailService {
     }
 
     /* ============================================
-       🧩 Template de base pour tous les emails
+       � EMAIL - Reçu de paiement (fallback club)
+       ============================================ */
+    public void envoyerRecuPaiement(String destinataire, double montant, String description, String receiptUrl) {
+        String sujet = "Votre reçu de paiement - Club de Taekwondo";
+        String body = baseTemplate("Reçu de paiement",
+                ("""
+                <p>Bonjour,</p>
+                <p>Nous confirmons la réception de votre paiement au <strong>Club de Taekwondo</strong>.</p>
+                <ul>
+                    <li><strong>Montant :</strong> %s</li>
+                    <li><strong>Détails :</strong> %s</li>
+                </ul>
+                <div style=\"text-align:center;margin:24px 0;\">
+                    <a href=\"%s\" class=\"button\">Voir mon reçu Stripe</a>
+                </div>
+                <p style=\"margin-top:24px;\">Cordialement,<br><strong>L'équipe du Club de Taekwondo</strong></p>
+                """
+                        ).formatted(String.format("%.2f €", montant), escape(description == null ? "Paiement" : description), receiptUrl)
+        );
+        envoyerEmailHtml(destinataire, sujet, body);
+    }
+
+    /* ============================================
+       �🧩 Template de base pour tous les emails
        ============================================ */
     private String baseTemplate(String titre, String contenuHtml) {
         return """

@@ -83,6 +83,10 @@ public class MembreService {
                 Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
                         .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + utilisateurId));
                 membre.setCompteUtilisateur(utilisateur);
+                // Adultes: si aucun club précisé dans le DTO mais que l'utilisateur a un club, on l'hérite par défaut
+                if (membre.getClub() == null && utilisateur.getClub() != null) {
+                    membre.setClub(utilisateur.getClub());
+                }
             } else {
                 throw new RuntimeException("Impossible de créer un membre adulte sans utilisateur associé.");
             }
@@ -92,13 +96,23 @@ public class MembreService {
                 Utilisateur parent = utilisateurRepository.findById(utilisateurId)
                         .orElseThrow(() -> new RuntimeException("Parent non trouvé avec l'ID : " + utilisateurId));
                 membre.setParent(parent);
+
+                // Enforcer: l'enfant doit appartenir au même club que le parent
+                if (parent.getClub() == null) {
+                    throw new RuntimeException("Le parent n'a pas de club renseigné. Veuillez d'abord définir le club du parent.");
+                }
+
+                // Si un club est déjà positionné via DTO et différent, on force celui du parent
+                if (membre.getClub() == null || !parent.getClub().getId().equals(membre.getClub().getId())) {
+                    membre.setClub(parent.getClub());
+                }
             } else {
                 throw new RuntimeException("Impossible de créer un membre enfant sans parent associé.");
             }
         }
 
-        // 🔹 Rattacher le club si clubId présent dans le DTO
-        if (membreDTO.getClubId() != null) {
+        // 🔹 Cas général restant: si le DTO fournit un club et qu'aucune règle précédente ne l'a fixé
+        if (membre.getClub() == null && membreDTO.getClubId() != null) {
             Club club = clubRepository.findById(membreDTO.getClubId())
                     .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
             membre.setClub(club);
@@ -131,11 +145,27 @@ public class MembreService {
             membre.setNumeroLicence(membreDTO.getNumeroLicence());
             membre.setCeinture(membreDTO.getCeinture());
             membre.setEstAdulte(membreDTO.isEstAdulte());
-            // MAJ du club si besoin
-            if (membreDTO.getClubId() != null) {
-                Club club = clubRepository.findById(membreDTO.getClubId())
-                        .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
-                membre.setClub(club);
+
+            // Enfant: enforcer le même club que le parent
+            if (!membre.isEstAdulte()) {
+                if (membre.getParent() == null) {
+                    throw new RuntimeException("Impossible de mettre à jour l'enfant: parent manquant.");
+                }
+                if (membre.getParent().getClub() == null) {
+                    throw new RuntimeException("Impossible de mettre à jour l'enfant: le parent n'a pas de club.");
+                }
+                // Forcer le club de l'enfant = club du parent (ignore un DTO divergent)
+                membre.setClub(membre.getParent().getClub());
+            } else {
+                // Adulte: MAJ du club si fourni
+                if (membreDTO.getClubId() != null) {
+                    Club club = clubRepository.findById(membreDTO.getClubId())
+                            .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
+                    membre.setClub(club);
+                } else if (membre.getCompteUtilisateur() != null && membre.getCompteUtilisateur().getClub() != null) {
+                    // À défaut, hériter du club de l'utilisateur adulte si disponible
+                    membre.setClub(membre.getCompteUtilisateur().getClub());
+                }
             }
             return toMembreDTO(membreRepository.save(membre));
         }).orElseThrow(() -> new RuntimeException("Membre non trouvé avec l'ID : " + id));
@@ -203,7 +233,7 @@ public class MembreService {
         membre.setNumeroLicence(dto.getNumeroLicence());
         membre.setCeinture(dto.getCeinture());
         membre.setEstAdulte(dto.isEstAdulte());
-        // Ajout du club si présent dans le DTO
+        // Ajout du club si présent dans le DTO (sera éventuellement écrasé par la règle parent/enfant plus haut)
         if (dto.getClubId() != null) {
             Club club = clubRepository.findById(dto.getClubId())
                     .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + dto.getClubId()));

@@ -5,6 +5,8 @@ import club.taekwondo.entity.jpa.*;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.PaiementRepository;
 import club.taekwondo.repository.jpa.CommandeRepository;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.Charge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -533,6 +535,10 @@ public class PaiementService {
             enfant.setPrenom(prenom);
             enfant.setNom(nom);
             enfant.setParent(payeur);
+            // Si le parent a un club, on hérite pour l'enfant créé à la volée (cohérence parent/enfant)
+            if (payeur.getClub() != null) {
+                enfant.setClub(payeur.getClub());
+            }
             enfant = membreService.save(enfant);
             out.add(enfant);
         }
@@ -748,6 +754,23 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
             throw new RuntimeException("Ce membre n'appartient pas au parent connecté !");
         }
 
+    // 🔒 Enforcer: parent et enfant doivent appartenir au même club
+    if (membre.getParent() == null || membre.getParent().getClub() == null || membre.getClub() == null) {
+        log.warn("[PaiementParent] Club manquant (parentClub={}, enfantClub={}) pour parentId={}, membreId={}",
+            membre.getParent() != null ? (membre.getParent().getClub() != null ? membre.getParent().getClub().getId() : null) : null,
+            membre.getClub() != null ? membre.getClub().getId() : null,
+            parentId, membre.getId());
+        throw new IllegalStateException("Impossible d'initier le paiement: club parent ou enfant non renseigné.");
+    }
+    if (!Objects.equals(membre.getParent().getClub().getId(), membre.getClub().getId())) {
+        Long clubParentId = membre.getParent().getClub().getId();
+        Long clubEnfantId = membre.getClub().getId();
+        log.warn("[PaiementParent] Blocage club mismatch: parentClubId={} vs enfantClubId={} (parentId={}, membreId={})",
+            clubParentId, clubEnfantId, parentId, membre.getId());
+        throw new IllegalStateException("Cet enfant appartient au club " + clubEnfantId + 
+            ", différent de votre club (" + clubParentId + "). Veuillez effectuer le paiement depuis le club de l'enfant.");
+    }
+
         double montant = req.getMontantTotal() != null ? req.getMontantTotal() : 0.0;
         if (montant <= 0.0) {
             throw new IllegalArgumentException("Montant total invalide.");
@@ -762,6 +785,12 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
         paiement.setDatePaiement(LocalDate.now());
         paiement.setUtilisateur(membre.getParent());
         paiement.setMembre(membre);
+        // 📌 Rattache le club (si connu) depuis le membre ou le parent
+        if (membre.getClub() != null) {
+            paiement.setClub(membre.getClub());
+        } else if (membre.getParent() != null && membre.getParent().getClub() != null) {
+            paiement.setClub(membre.getParent().getClub());
+        }
         paiement.setMontantTotal(montant);
 
         paiement.setMontantPaye(0.0);
@@ -892,6 +921,12 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
         paiement.setDatePaiement(LocalDate.now());
         paiement.setUtilisateur(membre.getCompteUtilisateur());
         paiement.setMembre(membre);
+        // 📌 Rattache le club (si connu) depuis le membre ou l'utilisateur
+        if (membre.getClub() != null) {
+            paiement.setClub(membre.getClub());
+        } else if (membre.getCompteUtilisateur() != null && membre.getCompteUtilisateur().getClub() != null) {
+            paiement.setClub(membre.getCompteUtilisateur().getClub());
+        }
         paiement.setMontantTotal(montant);
 
         paiement.setMontantPaye(0.0);
@@ -1078,6 +1113,83 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
         return paiementRepository.save(paiement);
     }
 
+    /**
+     * Maintenance: rattache le club aux paiements existants si manquant, en déduisant depuis commande/membre/utilisateur.
+     * Retourne le nombre de paiements mis à jour.
+     */
+    @Transactional
+    public int backfillClubForExistingPaiements() {
+        List<Paiement> all = paiementRepository.findAll();
+        int updated = 0;
+        for (Paiement p : all) {
+            if (p.getClub() != null) continue;
+            Club club = null;
+            if (p.getCommande() != null && p.getCommande().getClub() != null) {
+                club = p.getCommande().getClub();
+            } else if (p.getMembre() != null && p.getMembre().getClub() != null) {
+                club = p.getMembre().getClub();
+            } else if (p.getUtilisateur() != null && p.getUtilisateur().getClub() != null) {
+                club = p.getUtilisateur().getClub();
+            }
+            if (club != null) {
+                p.setClub(club);
+                paiementRepository.save(p);
+                updated++;
+            }
+        }
+        return updated;
+    }
+
+    /**
+     * Maintenance: backfill chargeId et receiptUrl depuis Stripe pour les paiements existants
+     * possédant un paymentIntentId, mais sans chargeId/receiptUrl.
+     * Retourne le nombre de paiements mis à jour.
+     */
+    @Transactional
+    public int backfillStripeChargeInfoForExistingPaiements() {
+        List<Paiement> all = paiementRepository.findAll();
+        int updated = 0;
+        for (Paiement p : all) {
+            try {
+                String piId = p.getPaymentIntentId();
+                boolean needs = (piId != null && !piId.isBlank()) && (p.getChargeId() == null || p.getChargeId().isBlank() || p.getReceiptUrl() == null || p.getReceiptUrl().isBlank());
+                if (!needs) continue;
+
+                PaymentIntent pi = PaymentIntent.retrieve(piId);
+                if (pi == null) continue;
+
+                String latestChargeId = pi.getLatestCharge();
+                if (latestChargeId != null && !latestChargeId.isBlank()) {
+                    p.setChargeId(latestChargeId);
+                    try {
+                        Charge c = Charge.retrieve(latestChargeId);
+                        if (c != null && c.getReceiptUrl() != null && !c.getReceiptUrl().isBlank()) {
+                            p.setReceiptUrl(c.getReceiptUrl());
+                        }
+                    } catch (Exception ignored) { }
+                } else {
+                    Object latestObj = pi.getLatestChargeObject();
+                    if (latestObj instanceof Charge c2) {
+                        // fallback si l'objet latestCharge est présent
+                        if (p.getChargeId() == null || p.getChargeId().isBlank()) p.setChargeId(c2.getId());
+                        if (p.getReceiptUrl() == null || p.getReceiptUrl().isBlank()) p.setReceiptUrl(c2.getReceiptUrl());
+                    }
+                }
+
+                if (pi.getStatus() != null && (p.getStripeStatus() == null || p.getStripeStatus().isBlank())) {
+                    p.setStripeStatus(pi.getStatus());
+                }
+
+                paiementRepository.save(p);
+                updated++;
+            } catch (Exception ex) {
+                log.warn("[BACKFILL] Échec backfill charge pour paiement id={} : {}", p.getId(), ex.getMessage());
+            }
+        }
+        log.info("[BACKFILL] charge_id/receipt_url mis à jour pour {} paiements", updated);
+        return updated;
+    }
+
     /* =========================================================
        =========  Méthodes Stripe / Échéances (BDD)  ==========
        ========================================================= */
@@ -1205,7 +1317,7 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
 
         // 2) Commande (LocalDate) + logique mode/statut/date
         final String mode = normalizeMode(req.getModePaiement()); // "CB", "CLUB", "CHEQUE", "VIREMENT", ...
-        Commande commande = new Commande();
+    Commande commande = new Commande();
         commande.setDateCommande(LocalDate.now());
         commande.setModePaiement(mode);
         if ("CB".equalsIgnoreCase(mode)) {
@@ -1217,12 +1329,16 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
         }
         commande.setMontantTotal(BigDecimal.valueOf(total));
         commande.setUtilisateur(user);
+        // 📌 Rattache le club côté commande pour la boutique
+        if (user.getClub() != null) {
+            commande.setClub(user.getClub());
+        }
         commande = commandeRepository.save(commande);
         log.info("📋 Commande créée id={} statut={} mode={} datePaiement={}",
                 commande.getId(), commande.getStatut(), commande.getModePaiement(), commande.getDatePaiement());
 
         // 3) Paiement lié
-        Paiement p = new Paiement();
+    Paiement p = new Paiement();
         p.setUtilisateur(user);
 
         // Membre : si absent → créer un "adulte" rattaché pour ne pas bloquer
@@ -1238,6 +1354,14 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
             membreCible = membreService.save(adulte);
         }
         p.setMembre(membreCible);
+        // 📌 Rattache le club côté paiement (priorité commande > membre > utilisateur)
+        if (commande.getClub() != null) {
+            p.setClub(commande.getClub());
+        } else if (membreCible != null && membreCible.getClub() != null) {
+            p.setClub(membreCible.getClub());
+        } else if (user.getClub() != null) {
+            p.setClub(user.getClub());
+        }
 
         p.setType("BOUTIQUE");
         p.setModePaiement(mode);
@@ -1300,6 +1424,13 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
 
         return paiementRepository.findAll().stream()
                 .filter(p -> p.getMembre() != null && Objects.equals(p.getMembre().getId(), membreId))
+                .map(this::toPaiementDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PaiementDTO> getPaiementsParUtilisateur(Long utilisateurId) {
+        if (utilisateurId == null) return Collections.emptyList();
+        return paiementRepository.findByUtilisateurId(utilisateurId).stream()
                 .map(this::toPaiementDTO)
                 .collect(Collectors.toList());
     }
