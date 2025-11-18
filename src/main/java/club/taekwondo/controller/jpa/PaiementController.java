@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -59,14 +61,78 @@ public class PaiementController {
         return ResponseEntity.ok(paiementService.getAllWithEcheances());
     }
 
+    // Debug endpoint pour vérifier l'auth en backend (dev only)
+    @GetMapping("/debug/whoami")
+    public ResponseEntity<Map<String,Object>> whoami(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Map<String,Object> out = new HashMap<>();
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            out.put("securityPrincipal", auth != null ? auth.getPrincipal() : null);
+            out.put("securityAuthorities", auth != null ? auth.getAuthorities().stream().map(a -> a.getAuthority()).toList() : null);
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                out.put("tokenRole", jwtUtil.extractRole(token));
+                out.put("tokenEmail", jwtUtil.extractEmail(token));
+            }
+
+            // role from DB if possible
+            if (auth != null && auth.getName() != null) {
+                Optional<Utilisateur> u = utilisateurService.getUtilisateurEntityByEmail(auth.getName());
+                if (u.isPresent()) {
+                    out.put("dbRole", u.get().getRole());
+                    out.put("userId", u.get().getId());
+                }
+            }
+
+            return ResponseEntity.ok(out);
+        } catch (Exception e) {
+            out.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(out);
+        }
+    }
+
     /* ===========================
      *   Echéances (ADMIN)
      * =========================== */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @PostMapping("/{id}/payer-echeance")
     public ResponseEntity<PaiementDTO> payerEcheance(
             @PathVariable Long id,
             @RequestBody List<Map<String, Object>> echeancesPayees) {
+
+        // --- Autorisation supplémentaire côté serveur : ADMIN ou propriétaire (parent/membre/utilisateur) ---
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String authEmail = (auth != null) ? auth.getName() : null;
+
+        Optional<Paiement> optPaiementAuth = paiementService.getById(id);
+        if (optPaiementAuth.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        Paiement paiementAuth = optPaiementAuth.get();
+
+        boolean isAdmin = auth != null && auth.getAuthorities().stream().anyMatch(a -> {
+            String authVal = a.getAuthority();
+            return "ROLE_ADMIN".equals(authVal) || "ROLE_SUPER_ADMIN".equals(authVal);
+        });
+        if (!isAdmin) {
+            // vérifier propriété : utilisateur direct
+            Optional<club.taekwondo.entity.jpa.Utilisateur> optUser = (authEmail != null) ? utilisateurService.getUtilisateurEntityByEmail(authEmail) : Optional.empty();
+            Long userId = optUser.map(u -> u.getId()).orElse(null);
+
+            boolean owner = false;
+            if (userId != null && paiementAuth.getUtilisateur() != null && Objects.equals(paiementAuth.getUtilisateur().getId(), userId)) owner = true;
+            // membre lié au compte
+            if (!owner && userId != null) {
+                Long membreId = membreService.getMembreEntityByIdUtilisateur(userId).map(Membre::getId).orElse(null);
+                if (membreId != null && paiementAuth.getMembre() != null && Objects.equals(paiementAuth.getMembre().getId(), membreId)) owner = true;
+            }
+            // parent -> vérifier enfants
+            if (!owner && userId != null) {
+                List<Membre> enfants = membreService.getEnfantsDuParent(userId);
+                if (paiementAuth.getMembre() != null && enfants.stream().anyMatch(m -> Objects.equals(m.getId(), paiementAuth.getMembre().getId()))) owner = true;
+            }
+
+            if (!owner) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         Optional<Paiement> optPaiement = paiementService.getById(id);
         if (optPaiement.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -126,9 +192,37 @@ public class PaiementController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @PostMapping("/{id}/valider")
     public ResponseEntity<PaiementDTO> validerPaiement(@PathVariable Long id) {
+        // idem : autorisation serveur pour owner non-admin
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String authEmail = (auth != null) ? auth.getName() : null;
+
+        Optional<Paiement> optPaiementAuth = paiementService.getById(id);
+        if (optPaiementAuth.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        Paiement paiementAuth = optPaiementAuth.get();
+
+        boolean isAdmin = auth != null && auth.getAuthorities().stream().anyMatch(a -> {
+            String authVal = a.getAuthority();
+            return "ROLE_ADMIN".equals(authVal) || "ROLE_SUPER_ADMIN".equals(authVal);
+        });
+        if (!isAdmin) {
+            Optional<club.taekwondo.entity.jpa.Utilisateur> optUser = (authEmail != null) ? utilisateurService.getUtilisateurEntityByEmail(authEmail) : Optional.empty();
+            Long userId = optUser.map(u -> u.getId()).orElse(null);
+
+            boolean owner = false;
+            if (userId != null && paiementAuth.getUtilisateur() != null && Objects.equals(paiementAuth.getUtilisateur().getId(), userId)) owner = true;
+            if (!owner && userId != null) {
+                Long membreId = membreService.getMembreEntityByIdUtilisateur(userId).map(Membre::getId).orElse(null);
+                if (membreId != null && paiementAuth.getMembre() != null && Objects.equals(paiementAuth.getMembre().getId(), membreId)) owner = true;
+            }
+            if (!owner && userId != null) {
+                List<Membre> enfants = membreService.getEnfantsDuParent(userId);
+                if (paiementAuth.getMembre() != null && enfants.stream().anyMatch(m -> Objects.equals(m.getId(), paiementAuth.getMembre().getId()))) owner = true;
+            }
+            if (!owner) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             Paiement saved = paiementService.validerPaiementAdmin(id);
             return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
