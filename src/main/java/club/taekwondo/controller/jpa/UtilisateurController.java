@@ -6,6 +6,7 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.security.JwtRevocationService;
 import club.taekwondo.service.jpa.EmailService;
 import club.taekwondo.service.jpa.ReinitialisationMotDePasseService;
 import club.taekwondo.security.JwtUtil;
@@ -13,6 +14,7 @@ import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -24,9 +26,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
-@CrossOrigin(origins = "*")
 public class UtilisateurController {
     @PostMapping("")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> createUtilisateur(@RequestBody UtilisateurDTO utilisateurDTO) {
         try {
             // Création par ADMIN / SUPER-ADMIN -> mot de passe TEMPORAIRE + envoi email de réinitialisation
@@ -54,6 +56,7 @@ public class UtilisateurController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> updateUtilisateur(@PathVariable Long id, @RequestBody UtilisateurDTO utilisateurDTO) {
         try {
             utilisateurDTO.setId(id);
@@ -71,6 +74,7 @@ public class UtilisateurController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> deleteUtilisateur(@PathVariable Long id) {
         try {
             utilisateurService.deleteUtilisateur(id);
@@ -85,18 +89,21 @@ public class UtilisateurController {
     private final MembreRepository membreRepository;
     private final EmailService emailService;
     private final ReinitialisationMotDePasseService reinitService;
+    private final JwtRevocationService jwtRevocationService;
 
     @Autowired
     public UtilisateurController(JwtUtil jwtUtil,
                                  UtilisateurService utilisateurService,
                                  MembreRepository membreRepository,
                                  EmailService emailService,
-                                 ReinitialisationMotDePasseService reinitService) {
+                                 ReinitialisationMotDePasseService reinitService,
+                                 JwtRevocationService jwtRevocationService) {
         this.jwtUtil = jwtUtil;
         this.utilisateurService = utilisateurService;
         this.membreRepository = membreRepository;
         this.emailService = emailService;
         this.reinitService = reinitService;
+        this.jwtRevocationService = jwtRevocationService;
     }
 
     // -------- Helpers debug --------
@@ -117,12 +124,31 @@ public class UtilisateurController {
     }
 
     @GetMapping("")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<UtilisateurDTO>> listUtilisateurs(
             @RequestParam(value = "role", required = false) String role,
             @RequestParam(value = "clubId", required = false) Long clubId,
             @RequestParam(value = "q", required = false) String q) {
 
         System.out.println("[" + now() + "][USR][LIST] params role=" + role + ", q=" + q);
+
+    org.springframework.security.core.Authentication authentication =
+        org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+    // ADMIN : restreindre au périmètre de son propre club
+    boolean isSuperAdmin = authentication.getAuthorities().stream()
+        .anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+    if (!isSuperAdmin) {
+        Optional<club.taekwondo.entity.jpa.Utilisateur> adminEntity =
+            utilisateurService.getUtilisateurEntityByEmail(authentication.getName());
+        if (adminEntity.isPresent() && adminEntity.get().getClub() != null) {
+            Long adminClubId = adminEntity.get().getClub().getId();
+            if (clubId != null && !clubId.equals(adminClubId)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+            }
+            clubId = adminClubId; // force le scope club de l'admin
+        }
+    }
 
     List<UtilisateurDTO> all = Optional.ofNullable(utilisateurService.getAllUtilisateurs())
         .orElse(Collections.emptyList());
@@ -136,8 +162,9 @@ public class UtilisateurController {
     }
 
     if (clubId != null) {
+        final Long finalClubId = clubId;
         all = all.stream()
-            .filter(u -> u != null && u.getClubId() != null && u.getClubId().equals(clubId))
+            .filter(u -> u != null && u.getClubId() != null && u.getClubId().equals(finalClubId))
             .toList();
     }
 
@@ -262,27 +289,44 @@ public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO)
     response.put("membreId", membreId); // peut rester null sans problème
     response.put("utilisateur", utilisateurDTO);
     response.put("passwordTemporaire", passwordTemporaire);
-    if (passwordTemporaire) {
+    // Le resetToken n'est plus renvoyé dans la réponse de login pour éviter l'exposition
+    // dans l'historique navigateur, les logs et les referers.
+    // Le frontend doit rediriger vers /mot-de-passe-oublie lorsque passwordTemporaire est true.
+
+	    return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(Map.of("message", "Erreur lors de l'authentification."));
+	    }
+	}
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Token manquant ou invalide."));
+        }
+
+        String token = authHeader.substring(7).trim();
+        if (token.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Token manquant ou invalide."));
+        }
+
         try {
-            var demande = reinitService.creerDemande(utilisateurDTO.getId());
-            response.put("resetToken", demande.getToken());
+            jwtRevocationService.revokeToken(token);
+            return ResponseEntity.ok(Map.of("message", "Deconnexion prise en compte."));
         } catch (Exception e) {
-            // Ne bloque pas le login si génération du token échoue, le front peut proposer "mot de passe oublié"
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Token manquant ou invalide."));
         }
     }
 
-    return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", "Erreur lors de l'authentification."));
-    }
-}
-
-
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+	
+	    @GetMapping("/me")
+	    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

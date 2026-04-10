@@ -5,6 +5,7 @@ import club.taekwondo.entity.jpa.Avis;
 import club.taekwondo.service.jpa.AvisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -161,6 +162,7 @@ public class AvisController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AvisDTO> updateAvis(@PathVariable Integer id, @RequestBody AvisDTO avisDTO) {
         try {
             if (avisDTO.getTypeAvis() != null) {
@@ -174,6 +176,7 @@ public class AvisController {
     }
 
     @PutMapping("/{id}/approuver")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AvisDTO> approuverAvis(@PathVariable Integer id) {
         try {
             AvisDTO approuveAvis = avisService.approuverAvis(id);
@@ -184,6 +187,7 @@ public class AvisController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Void> deleteAvis(@PathVariable Integer id) {
         avisService.deleteAvis(id);
         return ResponseEntity.noContent().build();

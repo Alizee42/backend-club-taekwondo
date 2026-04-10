@@ -26,7 +26,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/stripe")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class StripeController {
 
     private static final Logger log = LoggerFactory.getLogger(StripeController.class);

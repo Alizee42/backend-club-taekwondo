@@ -5,7 +5,9 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import club.taekwondo.service.jpa.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +37,16 @@ public class NotificationController {
 
     // 🔹 Récupérer les notifications non lues d'un utilisateur
     @GetMapping("/utilisateur/{id}")
-    public ResponseEntity<List<NotificationDTO>> getNotificationsUtilisateur(@PathVariable Long id) {
+    public ResponseEntity<List<NotificationDTO>> getNotificationsUtilisateur(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (!isAdmin) {
+            Utilisateur caller = utilisateurRepository.findByEmail(authentication.getName()).orElse(null);
+            if (caller == null || !caller.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
         List<NotificationDTO> notifications = notificationService.getToutesNotificationsUtilisateur(id);
         return ResponseEntity.ok(notifications);
     }

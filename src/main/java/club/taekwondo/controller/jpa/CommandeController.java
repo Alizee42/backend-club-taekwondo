@@ -5,6 +5,7 @@ import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.service.jpa.CommandeService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import club.taekwondo.entity.jpa.Utilisateur;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -57,14 +58,27 @@ public class CommandeController {
     // =========================
 
     @GetMapping("/membre/{membreId}")
-    public ResponseEntity<List<CommandeDTO>> getCommandesParMembre(@PathVariable Long membreId) {
+    public ResponseEntity<List<CommandeDTO>> getCommandesParMembre(@PathVariable Long membreId, Authentication authentication) {
         logger.info("👤 Récupération commandes du membre {}", membreId);
+        Utilisateur caller = utilisateurService.findByEmail(authentication.getName()).orElseThrow();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (!isAdmin && (caller.getId() == null || !caller.getId().equals(membreId))) {
+            // Le MEMBRE doit être l'utilisateur lui-même (via son membreId) ou ADMIN
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(commandeService.getCommandesParMembre(membreId));
     }
 
     @GetMapping("/parent/{parentId}")
-    public ResponseEntity<List<CommandeDTO>> getCommandesParParent(@PathVariable Long parentId) {
+    public ResponseEntity<List<CommandeDTO>> getCommandesParParent(@PathVariable Long parentId, Authentication authentication) {
         logger.info("👨‍👩‍👧 Récupération commandes du parent {}", parentId);
+        Utilisateur caller = utilisateurService.findByEmail(authentication.getName()).orElseThrow();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (!isAdmin && !caller.getId().equals(parentId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(commandeService.getCommandesParParent(parentId));
     }
 
@@ -127,6 +141,7 @@ public class CommandeController {
     }
 
     @PutMapping("/{id}/valider")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<CommandeDTO> validerCommande(
             @PathVariable Long id,
             @RequestBody Map<String, Object> payload) {
@@ -143,6 +158,7 @@ public class CommandeController {
     }
 
     @PutMapping("/{id}/annuler")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<CommandeDTO> annulerCommande(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         try {
             String motif = (String) payload.getOrDefault("motif", "Motif non renseigné");
@@ -154,6 +170,7 @@ public class CommandeController {
     }
 
     @PutMapping("/{id}/a-retirer")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<CommandeDTO> marquerCommandeARetirer(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(commandeService.marquerCommandeARetirer(id));

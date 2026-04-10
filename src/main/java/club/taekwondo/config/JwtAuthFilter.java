@@ -1,6 +1,7 @@
 package club.taekwondo.config;
 
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.security.JwtRevocationService;
 import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.jpa.UtilisateurService;
 import jakarta.servlet.FilterChain;
@@ -28,6 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     private final JwtUtil jwtUtil;
+    private final JwtRevocationService jwtRevocationService;
     private final UtilisateurService utilisateurService;
 
     // Routes publiques (aucun traitement JWT)
@@ -46,8 +48,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         "/api/uploads" // Ajouté : accès libre aux fichiers/documents
     );
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UtilisateurService utilisateurService) {
+    public JwtAuthFilter(JwtUtil jwtUtil,
+                         JwtRevocationService jwtRevocationService,
+                         UtilisateurService utilisateurService) {
         this.jwtUtil = jwtUtil;
+        this.jwtRevocationService = jwtRevocationService;
         this.utilisateurService = utilisateurService;
     }
 
@@ -104,6 +109,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         log.debug("[SEC] Bearer présent (len={})", token.length());
 
         try {
+            if (jwtRevocationService.isRevoked(token)) {
+                log.warn("[SEC] JWT revoque pour {}", request.getRequestURI());
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"message\":\"Token revoked\"}");
+                return;
+            }
+
             String email = jwtUtil.extractEmail(token);
             String roleFromToken = jwtUtil.extractRole(token);
 

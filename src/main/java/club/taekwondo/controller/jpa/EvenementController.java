@@ -2,11 +2,16 @@ package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.EvenementDTO;
 import club.taekwondo.dto.InscriptionEvenementDTO;
+import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.service.jpa.EvenementService;
 import club.taekwondo.service.jpa.InscriptionEvenementService;
+import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +27,9 @@ public class EvenementController {
 
     @Autowired
     private InscriptionEvenementService inscriptionService;
+
+    @Autowired
+    private UtilisateurService utilisateurService;
 
     // 🔹 Récupérer tous les événements
     @GetMapping
@@ -46,6 +54,7 @@ public class EvenementController {
 
     // ✅ Nouvelle méthode conforme au FormData Angular
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<EvenementDTO> ajouterEvenement(
             @RequestParam("titre") String titre,
             @RequestParam("dateDebut") String dateDebut,
@@ -67,6 +76,7 @@ public class EvenementController {
 
     // 🔹 Mettre à jour un événement
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<EvenementDTO> updateEvenement(@PathVariable Long id, @RequestBody EvenementDTO dto) {
         try {
             EvenementDTO updated = evenementService.updateEvenement(id, dto);
@@ -78,6 +88,7 @@ public class EvenementController {
 
     // 🔹 Changer le statut actif/inactif d'un événement
     @PutMapping("/{id}/statut")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<EvenementDTO> changerStatutEvenement(@PathVariable Long id, @RequestBody java.util.Map<String, Boolean> statutMap) {
         try {
             Boolean actif = statutMap.get("actif");
@@ -90,6 +101,7 @@ public class EvenementController {
 
     // 🔹 Supprimer un événement
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<Void> deleteEvenement(@PathVariable Long id) {
         try {
             evenementService.deleteEvenement(id);
@@ -117,7 +129,16 @@ public class EvenementController {
 
     // 🔹 Récupérer tous les événements d'un club
     @GetMapping("/club/{clubId}")
-    public ResponseEntity<List<EvenementDTO>> getEvenementsByClub(@PathVariable Long clubId) {
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<List<EvenementDTO>> getEvenementsByClub(@PathVariable Long clubId, Authentication authentication) {
+        boolean isSuperAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (!isSuperAdmin) {
+            Utilisateur user = utilisateurService.findByEmail(authentication.getName()).orElseThrow();
+            if (user.getClub() == null || !user.getClub().getId().equals(clubId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
         List<EvenementDTO> evenements = evenementService.getEvenementsByClubId(clubId);
         return ResponseEntity.ok(evenements);
     }

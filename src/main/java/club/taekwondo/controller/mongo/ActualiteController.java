@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -66,6 +67,7 @@ public class ActualiteController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ActualiteDTO> create(@RequestBody ActualiteDTO actualiteDTO) {
         log.info("[CTRL] POST /api/actualites (JSON) - Payload reçu : {}", actualiteDTO);
         actualiteDTO.setDatePublication(LocalDateTime.now());
@@ -75,6 +77,7 @@ public class ActualiteController {
     }
 
     @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> createWithImage(
         @RequestParam String titre,
         @RequestParam String contenu,
@@ -113,6 +116,7 @@ public class ActualiteController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ActualiteDTO> update(@PathVariable String id, @RequestBody ActualiteDTO actualiteDTO) {
         log.debug("[CTRL] PUT /api/actualites/{} payload={}", id, actualiteDTO);
         ActualiteDTO updated = actualiteService.update(id, actualiteDTO);
@@ -120,6 +124,7 @@ public class ActualiteController {
     }
 
     @PutMapping("/{id}/featured")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Void> setFeatured(@PathVariable String id) {
         log.debug("[CTRL] PUT /api/actualites/{}/featured", id);
         try {
@@ -132,6 +137,7 @@ public class ActualiteController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         log.debug("[CTRL] DELETE /api/actualites/{}", id);
         actualiteService.delete(id);

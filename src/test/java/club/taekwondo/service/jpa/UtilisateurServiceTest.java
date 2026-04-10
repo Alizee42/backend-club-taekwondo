@@ -136,6 +136,8 @@ class UtilisateurServiceTest {
         user.setId(1L);
         user.setEmail("test@example.com");
         user.setPassword("hashed");
+        // SUPER_ADMIN n'a pas besoin d'un club pour se connecter
+        user.setRole(Role.SUPER_ADMIN);
 
         when(utilisateurRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "hashed")).thenReturn(true);

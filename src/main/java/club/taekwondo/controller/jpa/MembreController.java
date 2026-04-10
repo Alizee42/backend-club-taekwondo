@@ -5,6 +5,7 @@ import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.service.jpa.MembreService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +13,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/membres")
-@CrossOrigin(origins = "*")
 public class MembreController {
 
     private final MembreService membreService;
@@ -69,12 +69,41 @@ public class MembreController {
                 return membres.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(membres);
             }
 
+            // MEMBRE : accès refusé à la liste globale
+            boolean isMembre = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_MEMBRE") || a.getAuthority().equals("MEMBRE"));
+            if (isMembre) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Accès refusé : un membre ne peut pas lister tous les membres."));
+            }
+
             List<MembreDTO> all = membreService.getAllMembres();
             return all.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(all);
         }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getMembreById(@PathVariable Long id) {
+    public ResponseEntity<?> getMembreById(@PathVariable Long id, Authentication authentication) {
+        boolean isAdminOrSuper = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN")
+                        || a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("SUPER_ADMIN"));
+        if (!isAdminOrSuper) {
+            String email = authentication.getName();
+            boolean isParent = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
+            if (isParent) {
+                boolean ownsChild = membreService.getMembresByParentEmail(email).stream()
+                        .anyMatch(m -> id.equals(m.getId()));
+                if (!ownsChild) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Accès refusé : ce membre ne fait pas partie de votre famille."));
+            } else {
+                // MEMBRE : seulement sa propre fiche
+                return membreService.getMembreByUtilisateurEmail(email)
+                        .filter(m -> id.equals(m.getId()))
+                        .<ResponseEntity<?>>map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(Map.of("message", "Accès refusé.")));
+            }
+        }
         return membreService.getMembreById(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -91,6 +91,13 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- Rate limiting -->
+    <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j-core</artifactId>
+      <version>8.10.1</version>
+    </dependency>
+
     <!-- DevTools (optionnel, dev only) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -106,11 +113,17 @@
       <scope>test</scope>
     </dependency>
     <!-- Base H2 pour les tests -->
-<dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-    <scope>test</scope>
-</dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Support @WithMockUser dans les tests WebMvc -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <!-- Google Drive API and OAuth (compatible versions) -->
     <dependency>

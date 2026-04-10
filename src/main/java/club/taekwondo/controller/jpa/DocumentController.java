@@ -1,9 +1,11 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.DocumentDTO;
+import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.service.common.GoogleDriveUploadService;
 import club.taekwondo.service.jpa.DocumentService;
+import club.taekwondo.service.jpa.MembreService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import club.taekwondo.entity.jpa.Utilisateur;
 import org.springframework.security.core.Authentication;
@@ -31,7 +33,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/documents")
-@CrossOrigin(origins = "*")
 public class DocumentController {
 
     @Autowired
@@ -39,6 +40,9 @@ public class DocumentController {
 
     @Autowired
     private UtilisateurService utilisateurService;
+
+    @Autowired
+    private MembreService membreService;
 
     @Autowired
     private GoogleDriveUploadService googleDriveUploadService;
@@ -137,18 +141,36 @@ public class DocumentController {
 
     // ✅ NOUVEAU : Listing par enfant (membre)
     @GetMapping("/membre/{membreId}")
-    public ResponseEntity<?> getDocumentsByMembre(@PathVariable Long membreId) {
-        System.out.println("Récupération des documents pour le membre avec ID: " + membreId);
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
+    public ResponseEntity<?> getDocumentsByMembre(@PathVariable Long membreId, Authentication authentication) {
+        String email = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (!isAdmin) {
+            boolean isParent = authentication.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_PARENT".equals(a.getAuthority()));
+            if (isParent) {
+                boolean ownsChild = membreService.getMembresByParentEmail(email).stream()
+                        .anyMatch(m -> membreId.equals(m.getId()));
+                if (!ownsChild) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Accès refusé : ce membre ne fait pas partie de votre famille.");
+            } else {
+                Optional<MembreDTO> monMembre = membreService.getMembreByUtilisateurEmail(email);
+                if (monMembre.isEmpty() || !membreId.equals(monMembre.get().getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body("Accès refusé : vous ne pouvez consulter que vos propres documents.");
+                }
+            }
+        }
         List<DocumentDTO> documents = documentService.getDocumentsByMembreId(membreId);
         if (documents.isEmpty()) {
-            System.out.println("Aucun document trouvé pour le membre avec ID: " + membreId);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Aucun document trouvé pour ce membre.");
         }
-        System.out.println("Documents trouvés pour le membre: " + documents.size());
         return ResponseEntity.ok(documents);
     }
 
     @GetMapping("/en-attente")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<List<DocumentDTO>> getDocumentsEnAttente() {
         System.out.println("Récupération des documents en attente...");
         List<DocumentDTO> documents = documentService.getDocumentsByStatus("en attente");

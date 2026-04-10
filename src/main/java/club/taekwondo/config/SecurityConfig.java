@@ -25,6 +25,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   AuthRateLimitFilter authRateLimitFilter,
                                                    JwtAuthFilter jwtAuthFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -39,24 +40,30 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/paiements/*/facture").permitAll()
                 .requestMatchers(
                     "/error",
-                    "/uploads/**",   // ✅ accès libre aux images uploadées
-                    "/api/uploads/**", // ✅ accès libre aux documents/images via API
+                    "/uploads/**",
+                    "/api/uploads/**",
                     "/api/stripe/webhook",
                     "/api/stripe/public-key",
                     "/api/stripe/create-payment-intent",
                     "/api/utilisateurs/login",
                     "/api/utilisateurs/register",
                     "/api/parametres-paiement/public",
-                    "/api/public/**", // ✅ zone publique générique (contact, etc.)
+                    "/api/public/**",
+                    "/api/clubs/**",
+                    "/api/galeries/club/**",
+                    "/api/enseignants/club/**",
+                    "/api/debug/**",
+                    "/api/inscriptions/debug/**",
+                    "/api/reinitialisation/**"
+                ).permitAll()
+                // Lecture publique : actualités, avis, produits, événements
+                .requestMatchers(HttpMethod.GET,
                     "/api/actualites/**",
                     "/api/avis/**",
-                    "/api/clubs/**", // ✅ accès libre à la liste des clubs
-                    "/api/galeries/club/**", // ✅ accès libre à la galerie par club (tous sous-chemins)
-                    "/api/enseignants/club/**", // ✅ enseignants publics par club
-                    "/api/debug/**",
-                    "/api/inscriptions/debug/**",  // ✅ Debug des inscriptions
                     "/api/produits/**",
-                    "/api/reinitialisation/**"     // ✅ Réinitialisation mot de passe
+                    "/api/evenements",
+                    "/api/evenements/actifs",
+                    "/api/evenements/{id}"
                 ).permitAll()
                 // Restreindre la modification des clubs (création / modification / suppression)
                 .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
@@ -78,6 +85,7 @@ public class SecurityConfig {
                 // 🔒 Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(authRateLimitFilter, JwtAuthFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
                 // 401 si pas de token / token invalide
@@ -107,12 +115,11 @@ public class SecurityConfig {
         c.setAllowedOriginPatterns(List.of(
             "http://localhost:4200",
             "http://127.0.0.1:4200",
-            "http://localhost:5173",   // si tu utilises Vite
+            "http://localhost:5173",
             "http://127.0.0.1:5173",
             "https://frontend-club-taekwondo.netlify.app",
-            "https://club-taekwondo-*.netlify.app",  // Pour les deploy previews
-            "https://*.netlify.app",  // Wildcard pour tous les sous-domaines Netlify
-            "null" // Autorise l'origine null
+            "https://club-taekwondo-*.netlify.app",
+            "https://*.netlify.app"
         ));
 
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

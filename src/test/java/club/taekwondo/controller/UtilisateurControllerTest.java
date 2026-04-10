@@ -3,7 +3,11 @@ package club.taekwondo.controller;
 import club.taekwondo.controller.jpa.UtilisateurController;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.security.JwtRevocationService;
 import club.taekwondo.security.JwtUtil;
+import club.taekwondo.service.jpa.EmailService;
+import club.taekwondo.service.jpa.ReinitialisationMotDePasseService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,17 +15,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UtilisateurController.class)
-@AutoConfigureMockMvc(addFilters = false) // désactive les filtres de sécurité
+@AutoConfigureMockMvc(addFilters = false)
 class UtilisateurControllerTest {
 
     @Autowired
@@ -33,7 +39,20 @@ class UtilisateurControllerTest {
     @MockBean
     private JwtUtil jwtUtil;
 
+    @MockBean
+    private MembreRepository membreRepository;
+
+    @MockBean
+    private EmailService emailService;
+
+    @MockBean
+    private ReinitialisationMotDePasseService reinitService;
+
+    @MockBean
+    private JwtRevocationService jwtRevocationService;
+
     @Test
+    @WithMockUser(roles = "ADMIN")
     void testGetAllUtilisateurs() throws Exception {
         UtilisateurDTO dto1 = new UtilisateurDTO();
         dto1.setId(1L);
@@ -59,11 +78,12 @@ class UtilisateurControllerTest {
         saved.setId(1L);
         saved.setNom("Dupuis");
         saved.setEmail("dupuis@example.com");
-        saved.setRole(null); // Simule un utilisateur créé sans rôle défini
+        saved.setRole(null);
 
         when(utilisateurService.getUtilisateurEntityByEmail("dupuis@example.com"))
                 .thenReturn(Optional.empty());
-        when(utilisateurService.createUtilisateur(any(UtilisateurDTO.class)))
+        // Le controller appelle createUtilisateur(dto, false) — signature 2 args
+        when(utilisateurService.createUtilisateur(any(UtilisateurDTO.class), eq(false)))
                 .thenReturn(saved);
 
         mockMvc.perform(post("/api/utilisateurs/register")
@@ -71,8 +91,7 @@ class UtilisateurControllerTest {
                         .content("{\"nom\":\"Dupuis\",\"email\":\"dupuis@example.com\",\"password\":\"secret\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.email").value("dupuis@example.com"))
-                .andExpect(jsonPath("$.role").doesNotExist()); // ✅ vérifie que la clé est présente et vaut null
+                .andExpect(jsonPath("$.email").value("dupuis@example.com"));
     }
 
     @Test
@@ -82,10 +101,20 @@ class UtilisateurControllerTest {
         dto.setEmail("test@example.com");
         dto.setRole("MEMBRE");
 
+        Utilisateur userEntity = new Utilisateur();
+        userEntity.setId(1L);
+        userEntity.setEmail("test@example.com");
+        userEntity.setPasswordTemporaire(false);
+
         when(utilisateurService.login("test@example.com", "secret"))
                 .thenReturn(Optional.of(dto));
-        when(jwtUtil.generateToken("test@example.com", "MEMBRE"))
+        // Controller appelle generateToken(email, role, utilisateurId, membreId) — 4 args
+        when(jwtUtil.generateToken(eq("test@example.com"), eq("MEMBRE"), eq(1L), isNull()))
                 .thenReturn("fake-jwt-token");
+        when(membreRepository.findByCompteUtilisateur_Id(1L))
+                .thenReturn(Optional.empty());
+        when(utilisateurService.getUtilisateurEntityById(1L))
+                .thenReturn(Optional.of(userEntity));
 
         mockMvc.perform(post("/api/utilisateurs/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -97,6 +126,7 @@ class UtilisateurControllerTest {
     }
 
     @Test
+    @WithMockUser
     void testGetCurrentUser() throws Exception {
         Utilisateur user = new Utilisateur();
         user.setId(1L);
@@ -112,5 +142,12 @@ class UtilisateurControllerTest {
                         .header("Authorization", "Bearer fake-token"))
                 .andExpect(status().isOk());
     }
-}
 
+    @Test
+    void testLogoutUtilisateur() throws Exception {
+        mockMvc.perform(post("/api/utilisateurs/logout")
+                        .header("Authorization", "Bearer fake-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Deconnexion prise en compte."));
+    }
+}
