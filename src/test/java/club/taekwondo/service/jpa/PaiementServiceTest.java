@@ -15,15 +15,32 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+import club.taekwondo.service.mongo.ActualiteService;
+import club.taekwondo.service.mongo.GalerieService;
+
+@SpringBootTest(properties = {
+        "spring.autoconfigure.exclude="
+                + "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,"
+                + "org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,"
+                + "org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration"
+})
+@ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class PaiementServiceTest {
+
+    @MockBean
+    private ActualiteService actualiteService;
+
+    @MockBean
+    private GalerieService galerieService;
 
     @Autowired
     private PaiementService paiementService;
