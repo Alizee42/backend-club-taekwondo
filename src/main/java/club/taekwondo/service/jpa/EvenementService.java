@@ -1,9 +1,11 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.EvenementDTO;
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Evenement;
 import club.taekwondo.entity.jpa.InscriptionEvenement;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.EvenementRepository;
 import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
@@ -36,12 +38,18 @@ public class EvenementService {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
+    @Autowired
+    private ClubRepository clubRepository;
+
     // 🔹 Nouvelle méthode adaptée à l'envoi multipart
     public EvenementDTO ajouterEvenement(String titre, String dateDebut, String dateFin, String lieu,
-                                         int capacite, String description, MultipartFile imageFile) {
+                                         int capacite, String description, MultipartFile imageFile,
+                                         Long clubId) {
         String imageFilename = saveImage(imageFile);
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new RuntimeException("Club non trouvÃ© avec l'ID : " + clubId));
 
         Evenement evenement = new Evenement();
         evenement.setTitre(titre);
@@ -51,6 +59,7 @@ public class EvenementService {
         evenement.setCapacite(capacite);
         evenement.setDescription(description);
         evenement.setImageFilename(imageFilename);
+        evenement.setClub(club);
         evenement.setActif(true); // Par défaut actif
 
         Evenement saved = evenementRepository.save(evenement);
@@ -80,6 +89,10 @@ public class EvenementService {
     // 🔹 Récupérer un événement par ID
     public Optional<EvenementDTO> getEvenementById(Long id) {
         return evenementRepository.findById(id).map(this::convertToDTO);
+    }
+
+    public Optional<Evenement> getEvenementEntityById(Long id) {
+        return evenementRepository.findById(id);
     }
 
     // 🔹 Créer un événement via DTO
