@@ -10,12 +10,12 @@ RUN mvn -q -B dependency:go-offline
 COPY src ./src
 RUN mvn -q -B clean package -DskipTests
 
-# Étape 2 : Exécution du JAR
+# Etape 2 : Execution du JAR
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Copier le JAR généré depuis l’étape build
+# Copier le JAR genere depuis l'etape build
 COPY --from=build /app/target/club-taekwondo-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar", "--server.port=${PORT}"]
+CMD ["java", "-jar", "app.jar"]
