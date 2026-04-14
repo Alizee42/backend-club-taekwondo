@@ -5,6 +5,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -12,7 +13,7 @@ import java.nio.file.Paths;
 @RequestMapping("/uploads")
 public class FileController {
 
-    private final Path uploadPath = Paths.get("uploads");
+    private final Path uploadPath = Paths.get("uploads").toAbsolutePath().normalize();
 
     // Accepte les sous-dossiers (ex: uploads/avis/image.jpg)
     @GetMapping("/{folder}/{filename:.+}")
@@ -20,10 +21,16 @@ public class FileController {
             @PathVariable String folder,
             @PathVariable String filename) {
         try {
-            Path file = uploadPath.resolve(folder).resolve(filename).normalize();
+            Path base = uploadPath.resolve(folder).normalize();
+            Path file = base.resolve(filename).normalize();
+
+            if (!base.startsWith(uploadPath) || !file.startsWith(base)) {
+                return ResponseEntity.notFound().build();
+            }
+
             Resource resource = new UrlResource(file.toUri());
 
-            if (!resource.exists() || !resource.isReadable()) {
+            if (!Files.exists(file) || !Files.isRegularFile(file) || !resource.isReadable()) {
                 return ResponseEntity.notFound().build();
             }
 

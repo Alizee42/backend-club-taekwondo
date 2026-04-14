@@ -2,10 +2,12 @@ package club.taekwondo.entity.jpa;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Entity
 @Table(
@@ -13,7 +15,7 @@ import java.util.List;
     indexes = {
         @Index(name = "idx_paiement_utilisateur", columnList = "utilisateur_id"),
         @Index(name = "idx_paiement_membre", columnList = "membre_id"),
-        @Index(name = "idx_paiement_intent", columnList = "payment_intent_id") // utile pour retrouver vite un intent
+        @Index(name = "idx_paiement_intent", columnList = "payment_intent_id")
     }
 )
 public class Paiement {
@@ -21,13 +23,18 @@ public class Paiement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false)
     private String type;
+
     @Column(name = "date_paiement")
     private LocalDate datePaiement;
+
     private String statut;
+
     @Column(name = "mode_paiement")
     private String modePaiement;
+
     @Column(name = "payment_intent_id", unique = true, length = 100)
     private String paymentIntentId;
 
@@ -54,7 +61,7 @@ public class Paiement {
 
     @Column(name = "admin_responsable")
     private String adminResponsable;
-    
+
     @Column(name = "charge_id", length = 100)
     private String chargeId;
 
@@ -72,30 +79,26 @@ public class Paiement {
     @JoinColumn(name = "membre_id", nullable = false)
     private Membre membre;
 
-    // 🎯 Rattachement direct (dénormalisé) au club pour faciliter les filtres/exports
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id", nullable = true)
     private Club club;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "commande_id", nullable = true) 
-    private Commande commande; 
+    @JoinColumn(name = "commande_id", nullable = true)
+    private Commande commande;
 
     @OneToMany(mappedBy = "paiement", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("numero ASC, dateEcheance ASC")
     @JsonManagedReference
     private List<Echeance> echeances = new ArrayList<>();
-    
-    public Paiement() {}
 
-    /* ---------------- Hooks ---------------- */
+    public Paiement() {}
 
     @PrePersist
     public void prePersist() {
         if (statut == null || statut.isBlank()) {
             statut = "en attente";
         }
-        // Auto-rattachement du club à la création si non fourni (priorité: commande > membre > utilisateur)
         if (this.club == null) {
             try {
                 if (this.commande != null && this.commande.getClub() != null) {
@@ -105,13 +108,13 @@ public class Paiement {
                 } else if (this.utilisateur != null && this.utilisateur.getClub() != null) {
                     this.club = this.utilisateur.getClub();
                 }
-            } catch (Exception ignored) { /* éviter toute NPE bloquante au persist */ }
+            } catch (Exception ignored) {
+            }
         }
     }
 
     @PreUpdate
     public void preUpdate() {
-        // Même logique lors des updates pour combler un club manquant
         if (this.club == null) {
             try {
                 if (this.commande != null && this.commande.getClub() != null) {
@@ -121,27 +124,43 @@ public class Paiement {
                 } else if (this.utilisateur != null && this.utilisateur.getClub() != null) {
                     this.club = this.utilisateur.getClub();
                 }
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         }
     }
 
-    /* ------------- Normalisation simple du mode ------------- */
+    private String normalizeMode(String value) {
+        if (value == null) {
+            return null;
+        }
 
-    private String normalizeMode(String v) {
-        if (v == null) return null;
-        String m = v.toLowerCase()
+        String normalized = value.toLowerCase(Locale.ROOT)
                 .replace("é", "e").replace("è", "e").replace("ê", "e")
                 .replace("à", "a").replace("ç", "c")
                 .trim();
-        if (m.equals("cb") || m.equals("carte") || m.equals("carte bancaire") || m.equals("cartebancaire") || m.equals("stripe")) {
-            return "cb";
-        }
-        if (m.equals("virement")) return "virement";
-        if (m.equals("especes") || m.equals("espece")) return "espèces";
-        return v; // conserver tel quel sinon
-    }
 
-    /* ---------------- Getters / Setters ---------------- */
+        if (normalized.equals("cb")
+                || normalized.equals("carte")
+                || normalized.equals("carte bancaire")
+                || normalized.equals("cartebancaire")
+                || normalized.equals("stripe")) {
+            return "CB";
+        }
+        if (normalized.equals("virement")) {
+            return "VIREMENT";
+        }
+        if (normalized.equals("cheque")) {
+            return "CHEQUE";
+        }
+        if (normalized.equals("club")) {
+            return "CLUB";
+        }
+        if (normalized.equals("especes") || normalized.equals("espece")) {
+            return "ESPECES";
+        }
+
+        return value.trim().toUpperCase(Locale.ROOT);
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -168,7 +187,7 @@ public class Paiement {
     public void setMembre(Membre membre) { this.membre = membre; }
 
     public Commande getCommande() { return commande; }
-    public void setCommande(Commande commande) { this.commande = commande; }  // Getters et Setters pour Commande
+    public void setCommande(Commande commande) { this.commande = commande; }
 
     public List<Echeance> getEcheances() { return echeances; }
     public void setEcheances(List<Echeance> echeances) { this.echeances = echeances; }
@@ -206,14 +225,14 @@ public class Paiement {
     public String getStripeStatus() { return stripeStatus; }
     public void setStripeStatus(String stripeStatus) { this.stripeStatus = stripeStatus; }
 
-    public void addEcheance(Echeance e) {
-        this.echeances.add(e);
-        e.setPaiement(this);
+    public void addEcheance(Echeance echeance) {
+        this.echeances.add(echeance);
+        echeance.setPaiement(this);
     }
 
-    public void removeEcheance(Echeance e) {
-        this.echeances.remove(e);
-        e.setPaiement(null);
+    public void removeEcheance(Echeance echeance) {
+        this.echeances.remove(echeance);
+        echeance.setPaiement(null);
     }
 
     public Club getClub() { return club; }

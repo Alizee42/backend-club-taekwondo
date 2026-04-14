@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -72,20 +73,51 @@ public class CommandeService {
         return commandeRepository.findById(id).map(this::convertToDTO);
     }
 
+    public Optional<Commande> getCommandeEntityById(Long id) {
+        return commandeRepository.findById(id);
+    }
+
+    public CommandeDTO toCommandeDTO(Commande commande) {
+        return convertToDTO(commande);
+    }
+
     // Récupérer les commandes d’un membre
     public List<CommandeDTO> getCommandesParMembre(Long membreId) {
-        return commandeRepository.findAll().stream()
-                .filter(c -> c.getUtilisateur() != null && c.getUtilisateur().getId().equals(membreId))
+        LinkedHashMap<Long, CommandeDTO> merged = new LinkedHashMap<>();
+
+        commandeRepository.findByMembreId(membreId).stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .forEach(dto -> merged.put(dto.getId(), dto));
+
+        membreRepository.findById(membreId)
+                .map(Membre::getCompteUtilisateur)
+                .map(Utilisateur::getId)
+                .ifPresent(utilisateurId ->
+                        commandeRepository.findByUtilisateurId(utilisateurId).stream()
+                                .map(this::convertToDTO)
+                                .forEach(dto -> merged.putIfAbsent(dto.getId(), dto))
+                );
+
+        return new ArrayList<>(merged.values());
     }
 
     // Récupérer les commandes d’un parent (lui + ses enfants)
     public List<CommandeDTO> getCommandesParParent(Long parentId) {
-        return commandeRepository.findAll().stream()
-                .filter(c -> c.getUtilisateur() != null && c.getUtilisateur().getId().equals(parentId))
+        LinkedHashMap<Long, CommandeDTO> merged = new LinkedHashMap<>();
+
+        commandeRepository.findByUtilisateurId(parentId).stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .forEach(dto -> merged.put(dto.getId(), dto));
+
+        membreRepository.findByParentId(parentId).stream()
+                .map(Membre::getId)
+                .forEach(membreId ->
+                        commandeRepository.findByMembreId(membreId).stream()
+                                .map(this::convertToDTO)
+                                .forEach(dto -> merged.putIfAbsent(dto.getId(), dto))
+                );
+
+        return new ArrayList<>(merged.values());
     }
 
     // Créer une commande simple (maintenant avec gestion des lignes)
@@ -225,6 +257,20 @@ public class CommandeService {
     // Récupérer les commandes à payer au club
     public List<CommandeDTO> getCommandesPaiementClub() {
         return commandeRepository.findAll().stream()
+                .filter(c -> "EN_ATTENTE".equalsIgnoreCase(nullSafeUpper(c.getStatut()))
+                        && c.getModePaiement() != null
+                        && (
+                            "CLUB".equals(normalizeMode(c.getModePaiement())) ||
+                            "ESPECES".equals(normalizeMode(c.getModePaiement())) ||
+                            "VIREMENT".equals(normalizeMode(c.getModePaiement()))
+                        )
+                )
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<CommandeDTO> getCommandesPaiementClubByClubId(Long clubId) {
+        return commandeRepository.findByClub_Id(clubId).stream()
                 .filter(c -> "EN_ATTENTE".equalsIgnoreCase(nullSafeUpper(c.getStatut()))
                         && c.getModePaiement() != null
                         && (

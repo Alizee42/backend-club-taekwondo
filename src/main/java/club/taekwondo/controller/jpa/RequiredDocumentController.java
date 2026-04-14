@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents-requis")
-@CrossOrigin(origins = "*")
 public class RequiredDocumentController {
 
     @Autowired

@@ -2,7 +2,9 @@ package club.taekwondo.entity.jpa;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
+import java.util.Locale;
 
 @Entity
 @Table(
@@ -19,24 +21,20 @@ public class Echeance {
     private LocalDate dateEcheance;
 
     @Column(nullable = false)
-    private Double montant; // <— Double pour rester cohérent
+    private Double montant;
 
-    /** payé | en attente | en retard | annulé */
     @Column(nullable = false)
     private String statut;
 
     @Column(name = "numero")
     private Integer numero;
 
-    // mode de paiement spécifique à l'échéance (cb/stripe, virement, espèces)
     @Column(name = "mode_paiement")
     private String modePaiement;
 
-    // date réelle d'enregistrement du paiement de cette échéance
     @Column(name = "date_paiement_reel")
     private LocalDate datePaiementReel;
 
-    // référence technique (id Stripe, n° virement, note espèces)
     @Column(name = "reference")
     private String reference;
 
@@ -45,7 +43,6 @@ public class Echeance {
     @JsonBackReference
     private Paiement paiement;
 
-    /* ---------- Hooks ---------- */
     @PrePersist
     public void prePersist() {
         if (statut == null || statut.isBlank()) {
@@ -53,7 +50,6 @@ public class Echeance {
         }
     }
 
-    /* ---------- Getters / Setters ---------- */
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -71,20 +67,32 @@ public class Echeance {
 
     public String getModePaiement() { return modePaiement; }
     public void setModePaiement(String modePaiement) {
-        // Normalisation légère (optionnelle)
-        if (modePaiement == null) { this.modePaiement = null; return; }
-        String m = modePaiement.toLowerCase()
-            .replace("é", "e").replace("è", "e").replace("ê", "e")
-            .replace("à", "a").replace("ç", "c")
-            .trim();
-        if (m.equals("cb") || m.equals("carte") || m.equals("carte bancaire") || m.equals("cartebancaire") || m.equals("stripe")) {
-            this.modePaiement = "cb";
-        } else if (m.equals("virement")) {
-            this.modePaiement = "virement";
-        } else if (m.equals("especes") || m.equals("espece")) {
-            this.modePaiement = "espèces";
+        if (modePaiement == null) {
+            this.modePaiement = null;
+            return;
+        }
+
+        String normalized = modePaiement.toLowerCase(Locale.ROOT)
+                .replace("é", "e").replace("è", "e").replace("ê", "e")
+                .replace("à", "a").replace("ç", "c")
+                .trim();
+
+        if (normalized.equals("cb")
+                || normalized.equals("carte")
+                || normalized.equals("carte bancaire")
+                || normalized.equals("cartebancaire")
+                || normalized.equals("stripe")) {
+            this.modePaiement = "CB";
+        } else if (normalized.equals("virement")) {
+            this.modePaiement = "VIREMENT";
+        } else if (normalized.equals("cheque")) {
+            this.modePaiement = "CHEQUE";
+        } else if (normalized.equals("club")) {
+            this.modePaiement = "CLUB";
+        } else if (normalized.equals("especes") || normalized.equals("espece")) {
+            this.modePaiement = "ESPECES";
         } else {
-            this.modePaiement = modePaiement;
+            this.modePaiement = modePaiement.trim().toUpperCase(Locale.ROOT);
         }
     }
 

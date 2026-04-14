@@ -39,26 +39,6 @@ public class InscriptionEvenementController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 🔧 DEBUG : Endpoint pour tester la récupération des données
-    @GetMapping("/debug/evenement/{evenementId}")
-    public ResponseEntity<Map<String, Object>> debugInscriptions(@PathVariable Long evenementId) {
-        try {
-            List<InscriptionEvenementDTO> inscriptions = inscriptionService.getInscriptionsByEvenementAndStatut(evenementId, null);
-            Map<String, Object> debug = Map.of(
-                "totalInscriptions", inscriptions.size(),
-                "inscriptions", inscriptions,
-                "message", "Debug des inscriptions pour l'événement " + evenementId
-            );
-            return ResponseEntity.ok(debug);
-        } catch (Exception e) {
-            Map<String, Object> error = Map.of(
-                "error", e.getMessage(),
-                "stackTrace", e.getStackTrace()
-            );
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-
     // 🔹 Créer une nouvelle inscription (plusieurs enfants)
     @PostMapping
     public ResponseEntity<?> inscrireMembres(@RequestBody InscriptionRequestDTO request) {

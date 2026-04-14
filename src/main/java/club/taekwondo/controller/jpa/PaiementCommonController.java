@@ -49,37 +49,6 @@ public class PaiementCommonController {
         return ResponseEntity.ok(paiementService.getAllWithEcheances());
     }
 
-    @GetMapping("/debug/whoami")
-    public ResponseEntity<Map<String, Object>> whoami(@RequestHeader(value = "Authorization", required = false) String authHeader,
-                                                      Authentication authentication) {
-        Map<String, Object> out = new HashMap<>();
-        try {
-            out.put("securityPrincipal", authentication != null ? authentication.getPrincipal() : null);
-            out.put("securityAuthorities", authentication != null
-                    ? authentication.getAuthorities().stream().map(a -> a.getAuthority()).toList()
-                    : null);
-
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                out.put("tokenRole", jwtUtil.extractRole(token));
-                out.put("tokenEmail", jwtUtil.extractEmail(token));
-            }
-
-            if (authentication != null && authentication.getName() != null) {
-                Optional<Utilisateur> user = utilisateurService.getUtilisateurEntityByEmail(authentication.getName());
-                if (user.isPresent()) {
-                    out.put("dbRole", user.get().getRole());
-                    out.put("userId", user.get().getId());
-                }
-            }
-
-            return ResponseEntity.ok(out);
-        } catch (Exception e) {
-            out.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(out);
-        }
-    }
-
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @PostMapping("/{id}/payer-echeance")
     public ResponseEntity<PaiementDTO> payerEcheance(@PathVariable Long id,

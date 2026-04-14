@@ -52,8 +52,6 @@ public class SecurityConfig {
                     "/api/clubs/**",
                     "/api/galeries/club/**",
                     "/api/enseignants/club/**",
-                    "/api/debug/**",
-                    "/api/inscriptions/debug/**",
                     "/api/reinitialisation/**"
                 ).permitAll()
                 // Lecture publique : actualités, avis, produits, événements
@@ -85,7 +83,7 @@ public class SecurityConfig {
                 // 🔒 Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(authRateLimitFilter, JwtAuthFilter.class)
+            .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
                 // 401 si pas de token / token invalide
