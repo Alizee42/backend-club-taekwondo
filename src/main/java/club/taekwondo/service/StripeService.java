@@ -1,20 +1,28 @@
 package club.taekwondo.service;
 
+import club.taekwondo.entity.jpa.Echeance;
+import club.taekwondo.entity.jpa.Paiement;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCreateParams;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class StripeService {
+
+    private static final Logger log = LoggerFactory.getLogger(StripeService.class);
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
@@ -97,6 +105,47 @@ public class StripeService {
     /** Indique si une clé Stripe exploitable est présente (sans divulguer la clé). */
     public boolean isConfigured() {
         return stripeApiKey != null && !stripeApiKey.isBlank() && !stripeApiKey.toLowerCase().contains("dummy");
+    }
+
+    /**
+     * Récupère l'URL du reçu Stripe pour un paiement donné.
+     * Utilise l'URL mise en cache si disponible, sinon interroge l'API Stripe.
+     */
+    public Optional<String> getReceiptUrl(Paiement p) {
+        if (p.getReceiptUrl() != null && !p.getReceiptUrl().isBlank()) {
+            return Optional.of(p.getReceiptUrl());
+        }
+        String piId = null;
+        if (p.getEcheances() != null) {
+            for (int i = p.getEcheances().size() - 1; i >= 0; i--) {
+                Echeance e = p.getEcheances().get(i);
+                if ("payé".equalsIgnoreCase(e.getStatut())
+                        && e.getReference() != null && !e.getReference().isBlank()) {
+                    piId = e.getReference();
+                    break;
+                }
+            }
+        }
+        if (piId == null) piId = p.getPaymentIntentId();
+        if (piId == null || piId.isBlank()) return Optional.empty();
+        try {
+            PaymentIntent pi = PaymentIntent.retrieve(piId);
+            String latestChargeId = pi.getLatestCharge();
+            if (latestChargeId != null && !latestChargeId.isBlank()) {
+                Charge charge = Charge.retrieve(latestChargeId);
+                if (charge != null && charge.getReceiptUrl() != null && !charge.getReceiptUrl().isBlank()) {
+                    return Optional.of(charge.getReceiptUrl());
+                }
+            }
+            Object latestObj = pi.getLatestChargeObject();
+            if (latestObj instanceof Charge charge) {
+                String url = charge.getReceiptUrl();
+                if (url != null && !url.isBlank()) return Optional.of(url);
+            }
+        } catch (Exception e) {
+            log.warn("[STRIPE] Erreur récupération receiptUrl pour paiement {}: {}", p.getId(), e.getMessage());
+        }
+        return Optional.empty();
     }
 
     // Helpers

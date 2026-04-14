@@ -6,12 +6,12 @@ import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.security.JwtUtil;
+import club.taekwondo.service.StripeService;
 import club.taekwondo.service.jpa.PaiementAccessService;
 import club.taekwondo.service.jpa.PaiementService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,7 +19,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,17 +32,21 @@ public class PaiementCommonController {
     private final PaiementAccessService paiementAccessService;
     private final UtilisateurService utilisateurService;
     private final JwtUtil jwtUtil;
+    private final StripeService stripeService;
 
     public PaiementCommonController(PaiementService paiementService,
                                     PaiementAccessService paiementAccessService,
                                     UtilisateurService utilisateurService,
-                                    JwtUtil jwtUtil) {
+                                    JwtUtil jwtUtil,
+                                    StripeService stripeService) {
         this.paiementService = paiementService;
         this.paiementAccessService = paiementAccessService;
         this.utilisateurService = utilisateurService;
         this.jwtUtil = jwtUtil;
+        this.stripeService = stripeService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping
     public ResponseEntity<List<PaiementDTO>> getAll() {
         return ResponseEntity.ok(paiementService.getAllWithEcheances());
@@ -106,6 +109,7 @@ public class PaiementCommonController {
         return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping("/filter")
     public ResponseEntity<List<PaiementDTO>> filterPaiements(@RequestParam(required = false) String statut,
                                                              @RequestParam(required = false) String modePaiement) {
@@ -134,20 +138,29 @@ public class PaiementCommonController {
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
-        return ResponseEntity.ok(paiementService.buildDashboardStats());
+    public ResponseEntity<DashboardStatsDTO> getDashboardStats(Authentication authentication) {
+        Long clubId = null;
+        if (paiementAccessService.hasAnyRole(authentication, "ADMIN")
+                && !paiementAccessService.hasAnyRole(authentication, "SUPER_ADMIN")) {
+            Utilisateur admin = paiementAccessService.requireAuthenticatedUser(authentication);
+            clubId = (admin.getClub() != null) ? admin.getClub().getId() : null;
+        }
+        return ResponseEntity.ok(paiementService.buildDashboardStats(clubId));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @GetMapping("/{paiementId}/facture")
-    public ResponseEntity<Void> telechargerFacture(@PathVariable Long paiementId) {
-        try {
-            URI redirect = URI.create("/api/stripe/receipt/" + paiementId);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(redirect);
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    public ResponseEntity<?> telechargerFacture(@PathVariable Long paiementId,
+                                                Authentication authentication) {
+        Paiement p = paiementService.getById(paiementId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Paiement introuvable"));
+        paiementAccessService.assertCanAccessPaiement(authentication, p);
+        String receiptUrl = stripeService.getReceiptUrl(p).orElse(null);
+        if (receiptUrl == null || receiptUrl.isBlank()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Aucun reçu disponible pour ce paiement"));
         }
+        return ResponseEntity.ok(Map.of("receiptUrl", receiptUrl));
     }
 
 }

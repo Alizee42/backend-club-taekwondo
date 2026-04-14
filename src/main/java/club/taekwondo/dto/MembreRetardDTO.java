@@ -7,6 +7,7 @@ public class MembreRetardDTO {
     private double totalRestant;
     private LocalDate echeanceDate; // Date de l'échéance en retard
     private double echeanceMontant; // Montant de l'échéance en retard
+    private Long utilisateurId;    // ID du payeur — utilisé pour le filtrage par club
 
     // Constructeur
     public MembreRetardDTO(String nom, double totalRestant, LocalDate echeanceDate, double echeanceMontant) {
@@ -47,5 +48,13 @@ public class MembreRetardDTO {
 
     public void setEcheanceMontant(double echeanceMontant) {
         this.echeanceMontant = echeanceMontant;
+    }
+
+    public Long getUtilisateurId() {
+        return utilisateurId;
+    }
+
+    public void setUtilisateurId(Long utilisateurId) {
+        this.utilisateurId = utilisateurId;
     }
 }

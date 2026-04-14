@@ -3,24 +3,22 @@ package club.taekwondo.controller;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
-import club.taekwondo.security.JwtUtil;
 import club.taekwondo.service.StripeService;
-import club.taekwondo.service.jpa.PaiementService;
 import club.taekwondo.service.jpa.EmailService;
-import club.taekwondo.service.jpa.UtilisateurService;
+import club.taekwondo.service.jpa.PaiementAccessService;
+import club.taekwondo.service.jpa.PaiementService;
 import com.stripe.exception.IdempotencyException;
 import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -35,8 +33,7 @@ public class StripeController {
     );
 
     private final PaiementService paiementService;
-    private final UtilisateurService utilisateurService;
-    private final JwtUtil jwtUtil;
+    private final PaiementAccessService paiementAccessService;
     private final StripeService stripeService;
     private final EmailService emailService;
 
@@ -44,13 +41,11 @@ public class StripeController {
     private String publishableKey;
 
     public StripeController(PaiementService paiementService,
-                            UtilisateurService utilisateurService,
-                            JwtUtil jwtUtil,
+                            PaiementAccessService paiementAccessService,
                             StripeService stripeService,
                             EmailService emailService) {
         this.paiementService = paiementService;
-        this.utilisateurService = utilisateurService;
-        this.jwtUtil = jwtUtil;
+        this.paiementAccessService = paiementAccessService;
         this.stripeService = stripeService;
         this.emailService = emailService;
     }
@@ -65,31 +60,24 @@ public class StripeController {
         return ResponseEntity.ok(Map.of("publicKey", publishableKey));
     }
 
+    @PreAuthorize("hasAnyRole(‘ADMIN’,’SUPER_ADMIN’,’PARENT’,’MEMBRE’)")
     @PostMapping({"/payment-intent", "/create-payment-intent"})
     public ResponseEntity<?> createPaymentIntent(@RequestBody Map<String, Object> body,
-                                                 @RequestHeader HttpHeaders headers,
-                                                 HttpServletRequest request) {
+                                                 Authentication authentication) {
         log.info("==================================================");
         log.info("🚀 [STRIPE] createPaymentIntent déclenché");
         log.info("[STRIPE] Payload: {}", body);
 
         try {
-            // Court-circuit si Stripe n'est pas configuré
+            // Court-circuit si Stripe n’est pas configuré
             if (!stripeService.isConfigured()) {
                 log.warn("[STRIPE] API Key non configurée (ou factice). Abandon de la création du PaymentIntent.");
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                        .body(Map.of("error", "Stripe non configuré côté serveur. Contactez l'administrateur."));
+                        .body(Map.of("error", "Stripe non configuré côté serveur. Contactez l’administrateur."));
             }
-            // --------- Auth (facultative mais utile pour l’autorisation) ---------
-            String auth = headers.getFirst(HttpHeaders.AUTHORIZATION);
-            String jwt = (auth != null && auth.startsWith("Bearer ")) ? auth.substring(7) : null;
-
-            Utilisateur utilisateur = null;
-            if (jwt != null) {
-                String email = jwtUtil.extractEmail(jwt);
-                log.info("[STRIPE] JWT décodé → email={}", email);
-                utilisateur = utilisateurService.findByEmail(email).orElse(null);
-            }
+            // --------- Auth via Spring Security ---------
+            Utilisateur utilisateur = paiementAccessService.requireAuthenticatedUser(authentication);
+            log.info("[STRIPE] Auth OK → {}", authentication.getName());
 
             Long paiementId = asLong(body.get("paiementId"));
             final Long reqEcheanceId = asLong(body.get("echeanceId"));
@@ -108,22 +96,9 @@ public class StripeController {
             }
             Paiement p = optPaiement.get();
 
-            // --------- Autorisation basique ---------
-            boolean autorise = false;
-            try {
-                autorise = (utilisateur != null) && (
-                        // propriétaire direct du paiement
-                        (p.getUtilisateur() != null && Objects.equals(p.getUtilisateur().getId(), utilisateur.getId()))
-                                // ou parent du membre ciblé
-                                || (p.getMembre() != null && p.getMembre().getParent() != null
-                                && Objects.equals(p.getMembre().getParent().getId(), utilisateur.getId()))
-                );
-            } catch (Exception ignored) {}
-            log.info("[STRIPE] Vérif autorisation → {}", autorise ? "OK" : "REFUSÉ");
-            if (!autorise) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "Non autorisé pour ce paiement."));
-            }
+            // --------- Autorisation via PaiementAccessService ---------
+            paiementAccessService.assertCanAccessPaiement(authentication, p);
+            log.info("[STRIPE] Autorisation OK pour paiementId={}", paiementId);
 
             // --------- Déterminer montant à payer (centimes) ---------
             Echeance cible = null;
@@ -299,9 +274,10 @@ public class StripeController {
         ));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @PostMapping("/sync-payment")
     public ResponseEntity<?> syncPayment(@RequestBody Map<String, Object> body,
-                                         @RequestHeader HttpHeaders headers) {
+                                         Authentication authentication) {
         try {
             log.info("==================================================");
             log.info("🔁 [STRIPE] sync-payment déclenché: {}", body);
@@ -332,6 +308,9 @@ public class StripeController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Paiement introuvable"));
 
             Paiement paiement = opt.get();
+
+            // --------- Autorisation ---------
+            paiementAccessService.assertCanAccessPaiement(authentication, paiement);
 
             // 🔁 Idempotence côté BDD : si déjà payé et plus de restant, on ne refait rien
             if ("payé".equalsIgnoreCase(paiement.getStatut())
@@ -451,53 +430,25 @@ public class StripeController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @GetMapping("/receipt/{paiementId}")
-    public ResponseEntity<?> redirectToStripeReceipt(@PathVariable Long paiementId) {
+    public ResponseEntity<?> redirectToStripeReceipt(@PathVariable Long paiementId,
+                                                     Authentication authentication) {
         try {
             log.info("🧾 [STRIPE] receipt pour paiementId={}", paiementId);
             Paiement p = paiementService.getById(paiementId)
                     .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable"));
 
-            String piId = null;
-            if (p.getEcheances() != null && !p.getEcheances().isEmpty()) {
-                for (int i = p.getEcheances().size() - 1; i >= 0; i--) {
-                    var e = p.getEcheances().get(i);
-                    if ("payé".equalsIgnoreCase(e.getStatut())
-                            && e.getReference() != null && !e.getReference().isBlank()) {
-                        piId = e.getReference();
-                        break;
-                    }
-                }
-            }
-            if (piId == null) piId = p.getPaymentIntentId();
-            if (piId == null || piId.isBlank()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "Aucun PaymentIntent associé"));
-            }
+            paiementAccessService.assertCanAccessPaiement(authentication, p);
 
-            PaymentIntent pi = PaymentIntent.retrieve(piId);
-
-            String receiptUrl = null;
-
-            String latestChargeId = pi.getLatestCharge();
-            if (latestChargeId != null && !latestChargeId.isBlank()) {
-                Charge charge = Charge.retrieve(latestChargeId);
-                if (charge != null) receiptUrl = charge.getReceiptUrl();
-            }
-
-            if ((receiptUrl == null || receiptUrl.isBlank())) {
-                Object latestObj = pi.getLatestChargeObject();
-                if (latestObj instanceof Charge charge) {
-                    receiptUrl = charge.getReceiptUrl();
-                }
-            }
-
+            String receiptUrl = stripeService.getReceiptUrl(p).orElse(null);
             if (receiptUrl == null || receiptUrl.isBlank()) {
+                log.warn("[STRIPE] Aucun reçu disponible pour paiementId={}", paiementId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Aucun reçu disponible"));
             }
-            log.info("[STRIPE] ➡️ redirection vers receipt_url={}", receiptUrl);
-            return ResponseEntity.status(302).location(URI.create(receiptUrl)).build();
+            log.info("[STRIPE] ✅ receiptUrl trouvée pour paiementId={}", paiementId);
+            return ResponseEntity.ok(Map.of("receiptUrl", receiptUrl));
 
         } catch (Exception e) {
             log.error("[STRIPE] ❌ receipt error: {}", e.getMessage(), e);

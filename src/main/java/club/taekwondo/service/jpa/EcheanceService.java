@@ -166,12 +166,14 @@ public class EcheanceService {
                     .findFirst().orElse(null);
 
             if (echeanceEnRetard != null) {
-                retards.add(new MembreRetardDTO(
+                MembreRetardDTO dto = new MembreRetardDTO(
                         nom,
                         totalRestant,
                         echeanceEnRetard.getDateEcheance(),
                         echeanceEnRetard.getMontant()
-                ));
+                );
+                dto.setUtilisateurId(entry.getKey());
+                retards.add(dto);
             }
         }
 

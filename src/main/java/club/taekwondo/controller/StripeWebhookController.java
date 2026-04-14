@@ -10,7 +10,11 @@ import com.stripe.net.Webhook;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.service.jpa.PaiementService;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +28,34 @@ import java.util.*;
 @RequestMapping("/api/stripe")
 public class StripeWebhookController {
 
+    private static final Logger log = LoggerFactory.getLogger(StripeWebhookController.class);
+
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
 
     private final PaiementService paiementService;
+    private final Environment environment;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public StripeWebhookController(PaiementService paiementService) {
+    public StripeWebhookController(PaiementService paiementService, Environment environment) {
         this.paiementService = paiementService;
+        this.environment = environment;
+    }
+
+    @PostConstruct
+    public void validateWebhookSecret() {
+        boolean missing = endpointSecret == null || endpointSecret.isBlank()
+                || endpointSecret.toLowerCase().contains("dummy")
+                || endpointSecret.toLowerCase().contains("fake");
+        if (!missing) return;
+
+        boolean isProd = List.of(environment.getActiveProfiles()).contains("docker");
+        if (isProd) {
+            throw new IllegalStateException(
+                    "STRIPE_WEBHOOK_SECRET est absent ou factice. " +
+                    "Définissez STRIPE_WEBHOOK_SECRET (whsec_...) dans vos variables d'environnement.");
+        }
+        log.warn("[STRIPE] ⚠️ STRIPE_WEBHOOK_SECRET non configuré (mode dev/local). Les webhooks Stripe seront rejetés.");
     }
 
     @PostMapping("/webhook")

@@ -9,6 +9,7 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.model.Charge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +42,7 @@ public class PaiementService {
     private final ProduitService produitService;
     private final LigneCommandeService ligneCommandeService;
     private final CommandeRepository commandeRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public PaiementService(
             PaiementRepository paiementRepository,
@@ -49,7 +51,8 @@ public class PaiementService {
             MembreService membreService,
             ProduitService produitService,
             LigneCommandeService ligneCommandeService,
-            CommandeRepository commandeRepository
+            CommandeRepository commandeRepository,
+            PasswordEncoder passwordEncoder
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
@@ -58,6 +61,7 @@ public class PaiementService {
         this.produitService = produitService;
         this.ligneCommandeService = ligneCommandeService;
         this.commandeRepository = commandeRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /* ===========================
@@ -249,13 +253,16 @@ public class PaiementService {
         return paiements;
     }
 
-    public DashboardStatsDTO buildDashboardStats() {
+    public DashboardStatsDTO buildDashboardStats(Long clubId) {
         try {
             LocalDate today = LocalDate.now();
             LocalDate firstDayMonth = today.withDayOfMonth(1);
             LocalDate minus30 = today.minusDays(30);
 
-            List<Paiement> paiements = paiementRepository.findAll();
+            // Paiements filtrés par club (ADMIN) ou tous (SUPER_ADMIN)
+            List<Paiement> paiements = (clubId != null)
+                    ? paiementRepository.findByClubIdAny(clubId)
+                    : paiementRepository.findAll();
 
             double totalPayes = 0.0;
             double totalAttente = 0.0;
@@ -297,23 +304,70 @@ public class PaiementService {
                 }
             }
 
-            Double montantTotalMois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
-            Double montantPayesMois = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
+            // Statistiques mensuelles et courbe journalière
+            double montantTotalMois;
+            double montantPayesMois;
+            List<DaySumDTO> courbe;
 
-            montantTotalMois = (montantTotalMois != null) ? montantTotalMois : 0.0;
-            montantPayesMois = (montantPayesMois != null) ? montantPayesMois : 0.0;
+            if (clubId == null) {
+                // SUPER_ADMIN : requêtes SQL directes (plus performantes)
+                Double mois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
+                Double payes = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
+                montantTotalMois = (mois != null) ? mois : 0.0;
+                montantPayesMois = (payes != null) ? payes : 0.0;
+                List<DaySumDTO> raw = paiementRepository.sumByDay(minus30, today);
+                courbe = (raw != null) ? raw : new ArrayList<>();
+            } else {
+                // ADMIN : calcul depuis la liste filtrée
+                montantTotalMois = paiements.stream()
+                        .filter(p -> p.getDatePaiement() != null
+                                && !p.getDatePaiement().isBefore(firstDayMonth)
+                                && !p.getDatePaiement().isAfter(today))
+                        .mapToDouble(p -> safeMontant(p.getMontantTotal()))
+                        .sum();
+                montantPayesMois = paiements.stream()
+                        .filter(p -> "payé".equalsIgnoreCase(p.getStatut())
+                                && p.getDatePaiement() != null
+                                && !p.getDatePaiement().isBefore(firstDayMonth)
+                                && !p.getDatePaiement().isAfter(today))
+                        .mapToDouble(p -> safeMontant(p.getMontantTotal()))
+                        .sum();
+                Map<LocalDate, Double> dayMap = new TreeMap<>();
+                for (Paiement p : paiements) {
+                    if (p.getDatePaiement() != null
+                            && !p.getDatePaiement().isBefore(minus30)
+                            && !p.getDatePaiement().isAfter(today)) {
+                        dayMap.merge(p.getDatePaiement(), safeMontant(p.getMontantTotal()), Double::sum);
+                    }
+                }
+                courbe = dayMap.entrySet().stream()
+                        .map(e -> new DaySumDTO(e.getKey(), e.getValue()))
+                        .collect(Collectors.toList());
+            }
 
             double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
 
-            List<DaySumDTO> courbe = paiementRepository.sumByDay(minus30, today);
-            List<MembreRetardDTO> top = echeanceService.getMembresEnRetard();
+            // Membres en retard filtrés par club
+            List<MembreRetardDTO> allRetards = echeanceService.getMembresEnRetard();
+            List<MembreRetardDTO> top;
+            if (clubId != null) {
+                Set<Long> clubUserIds = paiements.stream()
+                        .filter(p -> p.getUtilisateur() != null)
+                        .map(p -> p.getUtilisateur().getId())
+                        .collect(Collectors.toSet());
+                top = allRetards.stream()
+                        .filter(r -> r.getUtilisateurId() != null && clubUserIds.contains(r.getUtilisateurId()))
+                        .collect(Collectors.toList());
+            } else {
+                top = allRetards;
+            }
 
             return new DashboardStatsDTO(
                     totalPayes,
                     totalAttente,
                     totalAnnules,
                     pctMois,
-                    courbe != null ? courbe : new ArrayList<>(),
+                    courbe,
                     top != null ? top : new ArrayList<>()
             );
         } catch (Exception e) {
@@ -351,7 +405,7 @@ public class PaiementService {
                 nouveau.setNom(nom);
                 nouveau.setPrenom(prenom);
                 nouveau.setEmail(email != null && !email.isEmpty() ? email : generateUniquePlaceholderEmail());
-                nouveau.setPassword("defaultPassword");
+                nouveau.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 nouveau.setRole(Role.PARENT);
                 utilisateurOpt = Optional.of(utilisateurService.save(nouveau));
             }
