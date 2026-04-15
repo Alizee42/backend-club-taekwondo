@@ -43,6 +43,9 @@ public class PaiementService {
     private final LigneCommandeService ligneCommandeService;
     private final CommandeRepository commandeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PaiementMapper paiementMapper;
+    private final PaiementStatsService paiementStatsService;
+    private final PaiementStripeService paiementStripeService;
 
     public PaiementService(
             PaiementRepository paiementRepository,
@@ -52,7 +55,10 @@ public class PaiementService {
             ProduitService produitService,
             LigneCommandeService ligneCommandeService,
             CommandeRepository commandeRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            PaiementMapper paiementMapper,
+            PaiementStatsService paiementStatsService,
+            PaiementStripeService paiementStripeService
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
@@ -62,6 +68,9 @@ public class PaiementService {
         this.ligneCommandeService = ligneCommandeService;
         this.commandeRepository = commandeRepository;
         this.passwordEncoder = passwordEncoder;
+        this.paiementMapper = paiementMapper;
+        this.paiementStatsService = paiementStatsService;
+        this.paiementStripeService = paiementStripeService;
     }
 
     /* ===========================
@@ -253,127 +262,9 @@ public class PaiementService {
         return paiements;
     }
 
+    /** Délègue au PaiementStatsService — conservé pour compatibilité avec les controllers existants. */
     public DashboardStatsDTO buildDashboardStats(Long clubId) {
-        try {
-            LocalDate today = LocalDate.now();
-            LocalDate firstDayMonth = today.withDayOfMonth(1);
-            LocalDate minus30 = today.minusDays(30);
-
-            // Paiements filtrés par club (ADMIN) ou tous (SUPER_ADMIN)
-            List<Paiement> paiements = (clubId != null)
-                    ? paiementRepository.findByClubIdAny(clubId)
-                    : paiementRepository.findAll();
-
-            double totalPayes = 0.0;
-            double totalAttente = 0.0;
-            double totalAnnules = 0.0;
-
-            for (Paiement paiement : paiements) {
-                double montantPaye = 0.0;
-                double montantRestant = 0.0;
-
-                if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
-                    for (Echeance e : paiement.getEcheances()) {
-                        if ("payé".equalsIgnoreCase(e.getStatut())) {
-                            montantPaye += safeMontant(e.getMontant());
-                        } else if ("en attente".equalsIgnoreCase(e.getStatut())) {
-                            montantRestant += safeMontant(e.getMontant());
-                        } else if ("annulé".equalsIgnoreCase(e.getStatut())) {
-                            totalAnnules += safeMontant(e.getMontant());
-                        }
-                    }
-                } else {
-                    if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                        montantPaye = safeMontant(paiement.getMontantTotal());
-                    } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
-                        montantRestant = safeMontant(paiement.getMontantRestant());
-                        montantPaye = safeMontant(paiement.getMontantTotal()) - montantRestant;
-                    } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
-                        totalAnnules += Math.max(0.0, safeMontant(paiement.getMontantTotal()) - safeMontant(paiement.getMontantPaye()));
-                        montantPaye = safeMontant(paiement.getMontantPaye());
-                    }
-                }
-
-                if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-                    totalPayes += montantPaye;
-                } else if ("en attente".equalsIgnoreCase(paiement.getStatut())) {
-                    totalPayes += montantPaye;
-                    totalAttente += montantRestant;
-                } else if ("annulé".equalsIgnoreCase(paiement.getStatut())) {
-                    totalPayes += montantPaye;
-                }
-            }
-
-            // Statistiques mensuelles et courbe journalière
-            double montantTotalMois;
-            double montantPayesMois;
-            List<DaySumDTO> courbe;
-
-            if (clubId == null) {
-                // SUPER_ADMIN : requêtes SQL directes (plus performantes)
-                Double mois = paiementRepository.sumByDatePaiementBetween(firstDayMonth, today);
-                Double payes = paiementRepository.sumByStatutAndDatePaiementBetween("payé", firstDayMonth, today);
-                montantTotalMois = (mois != null) ? mois : 0.0;
-                montantPayesMois = (payes != null) ? payes : 0.0;
-                List<DaySumDTO> raw = paiementRepository.sumByDay(minus30, today);
-                courbe = (raw != null) ? raw : new ArrayList<>();
-            } else {
-                // ADMIN : calcul depuis la liste filtrée
-                montantTotalMois = paiements.stream()
-                        .filter(p -> p.getDatePaiement() != null
-                                && !p.getDatePaiement().isBefore(firstDayMonth)
-                                && !p.getDatePaiement().isAfter(today))
-                        .mapToDouble(p -> safeMontant(p.getMontantTotal()))
-                        .sum();
-                montantPayesMois = paiements.stream()
-                        .filter(p -> "payé".equalsIgnoreCase(p.getStatut())
-                                && p.getDatePaiement() != null
-                                && !p.getDatePaiement().isBefore(firstDayMonth)
-                                && !p.getDatePaiement().isAfter(today))
-                        .mapToDouble(p -> safeMontant(p.getMontantTotal()))
-                        .sum();
-                Map<LocalDate, Double> dayMap = new TreeMap<>();
-                for (Paiement p : paiements) {
-                    if (p.getDatePaiement() != null
-                            && !p.getDatePaiement().isBefore(minus30)
-                            && !p.getDatePaiement().isAfter(today)) {
-                        dayMap.merge(p.getDatePaiement(), safeMontant(p.getMontantTotal()), Double::sum);
-                    }
-                }
-                courbe = dayMap.entrySet().stream()
-                        .map(e -> new DaySumDTO(e.getKey(), e.getValue()))
-                        .collect(Collectors.toList());
-            }
-
-            double pctMois = montantTotalMois == 0 ? 0 : (montantPayesMois / montantTotalMois) * 100;
-
-            // Membres en retard filtrés par club
-            List<MembreRetardDTO> allRetards = echeanceService.getMembresEnRetard();
-            List<MembreRetardDTO> top;
-            if (clubId != null) {
-                Set<Long> clubUserIds = paiements.stream()
-                        .filter(p -> p.getUtilisateur() != null)
-                        .map(p -> p.getUtilisateur().getId())
-                        .collect(Collectors.toSet());
-                top = allRetards.stream()
-                        .filter(r -> r.getUtilisateurId() != null && clubUserIds.contains(r.getUtilisateurId()))
-                        .collect(Collectors.toList());
-            } else {
-                top = allRetards;
-            }
-
-            return new DashboardStatsDTO(
-                    totalPayes,
-                    totalAttente,
-                    totalAnnules,
-                    pctMois,
-                    courbe,
-                    top != null ? top : new ArrayList<>()
-            );
-        } catch (Exception e) {
-            log.error("Erreur buildDashboardStats", e);
-            return new DashboardStatsDTO(0, 0, 0, 0, new ArrayList<>(), new ArrayList<>());
-        }
+        return paiementStatsService.buildDashboardStats(clubId);
     }
 
     @Transactional
@@ -677,85 +568,9 @@ public class PaiementService {
         return out;
     }
 
+    /** Délègue au PaiementMapper — conservé pour compatibilité avec les controllers existants. */
     public PaiementDTO toPaiementDTO(Paiement paiement) {
-        PaiementDTO dto = new PaiementDTO();
-        dto.setId(paiement.getId());
-        dto.setType(paiement.getType());
-        dto.setDatePaiement(paiement.getDatePaiement() != null ? paiement.getDatePaiement().toString() : null);
-        dto.setStatut(paiement.getStatut());
-        dto.setModePaiement(paiement.getModePaiement());
-        dto.setMontantTotal(paiement.getMontantTotal());
-        dto.setMotifAnnulation(paiement.getMotifAnnulation());
-        dto.setDateAnnulation(paiement.getDateAnnulation());
-        dto.setAdminResponsable(paiement.getAdminResponsable());
-
-        // Détermine le club: priorité commande.club > membre.club > utilisateur.club
-        Long clubId = null;
-        if (paiement.getCommande() != null
-                && paiement.getCommande().getClub() != null) {
-            clubId = paiement.getCommande().getClub().getId();
-        } else if (paiement.getMembre() != null
-                && paiement.getMembre().getClub() != null) {
-            clubId = paiement.getMembre().getClub().getId();
-        } else if (paiement.getUtilisateur() != null
-                && paiement.getUtilisateur().getClub() != null) {
-            clubId = paiement.getUtilisateur().getClub().getId();
-        }
-        dto.setClubId(clubId);
-
-        if (paiement.getUtilisateur() != null) {
-            dto.setUtilisateurId(paiement.getUtilisateur().getId());
-            dto.setUtilisateurNom(paiement.getUtilisateur().getNom());
-            dto.setUtilisateurPrenom(paiement.getUtilisateur().getPrenom());
-            dto.setUtilisateurEmail(paiement.getUtilisateur().getEmail());
-        }
-
-        if (paiement.getMembre() != null) {
-            dto.setMembreId(paiement.getMembre().getId());
-            dto.setMembreNom(paiement.getMembre().getNom());
-            dto.setMembrePrenom(paiement.getMembre().getPrenom());
-            dto.setEnfantNomComplet(
-                    (Optional.ofNullable(paiement.getMembre().getPrenom()).orElse("") + " " +
-                            Optional.ofNullable(paiement.getMembre().getNom()).orElse("")).trim()
-            );
-        }
-
-        double montantPaye = 0.0;
-
-if (paiement.getEcheances() != null && !paiement.getEcheances().isEmpty()) {
-    List<EcheanceDTO> liste = new ArrayList<>();
-    for (Echeance e : paiement.getEcheances()) {
-        EcheanceDTO edto = new EcheanceDTO();
-        edto.setId(e.getId());
-        edto.setNumero(e.getNumero());
-        // DTO externe -> LocalDate
-        edto.setDateEcheance(e.getDateEcheance());
-        edto.setMontant(e.getMontant());
-        edto.setStatut(e.getStatut());
-
-        // champs supplémentaires de ton DTO externe
-        edto.setModePaiement(e.getModePaiement());
-        edto.setDatePaiementReel(e.getDatePaiementReel());
-        edto.setReference(e.getReference());
-
-        if ("payé".equalsIgnoreCase(e.getStatut())) {
-            montantPaye += safeMontant(e.getMontant());
-        }
-
-        liste.add(edto);
-    }
-    dto.setEcheances(liste);
-} else {
-    if ("payé".equalsIgnoreCase(paiement.getStatut())) {
-        montantPaye = safeMontant(paiement.getMontantTotal());
-    }
-}
-
-double total = safeMontant(paiement.getMontantTotal());
-dto.setMontantPaye(montantPaye);
-dto.setMontantRestant(Math.max(0.0, total - montantPaye));
-
-        return dto;
+        return paiementMapper.toDTO(paiement);
     }
 
     @Transactional
@@ -1244,10 +1059,6 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
         return updated;
     }
 
-    /* =========================================================
-       =========  Méthodes Stripe / Échéances (BDD)  ==========
-       ========================================================= */
-
     private void marquerCommandePayee(Commande cmd, String mode) {
         if (cmd == null) return;
         cmd.setStatut("PAYEE");
@@ -1256,75 +1067,19 @@ dto.setMontantRestant(Math.max(0.0, total - montantPaye));
         commandeRepository.save(cmd);
     }
 
-    @Transactional
+    /* =========================================================
+       =========  Méthodes Stripe / Échéances (BDD)  ==========
+       ========================================================= */
+
+    /** Délègue au PaiementStripeService. */
     public void saveEcheanceReference(Long echeanceId, String paymentIntentId) {
-        if (echeanceId == null || paymentIntentId == null || paymentIntentId.isBlank()) {
-            throw new IllegalArgumentException("Paramètres invalides pour saveEcheanceReference");
-        }
-        Echeance e = echeanceService.getEcheanceEntityById(echeanceId)
-                .orElseThrow(() -> new NoSuchElementException("Échéance introuvable id=" + echeanceId));
-        e.setReference(paymentIntentId);
-        echeanceService.save(e);
-        log.info("💾 Référence PaymentIntent {} enregistrée sur échéance {}", paymentIntentId, echeanceId);
+        paiementStripeService.saveEcheanceReference(echeanceId, paymentIntentId);
     }
 
-    @Transactional
-    public void marquerEcheancePayeeParStripe(Long paiementId, Long echeanceId, String paymentIntentId, Long amountCents) {
-        if (echeanceId == null) {
-            if (paiementId == null) return;
-            Paiement p = paiementRepository.findById(paiementId)
-                    .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + paiementId));
-
-            p.setModePaiement("CB");
-            p.setStatut("payé");
-            p.setMontantPaye(safeMontant(p.getMontantTotal()));
-            p.setMontantRestant(0.0);
-            p.setDatePaiement(LocalDate.now());
-            p.setPaymentIntentId(paymentIntentId);
-            paiementRepository.save(p);
-
-            // ✅ commande -> PAYEE
-            marquerCommandePayee(p.getCommande(), "CB");
-
-            log.info("✅ Paiement unique {} marqué payé via Stripe (PI={})", p.getId(), paymentIntentId);
-            return;
-        }
-
-        Echeance e = echeanceService.getEcheanceEntityById(echeanceId)
-                .orElseThrow(() -> new NoSuchElementException("Échéance introuvable id=" + echeanceId));
-        Paiement p = e.getPaiement();
-        if (paiementId != null && (p == null || !Objects.equals(p.getId(), paiementId))) {
-            log.warn("⚠️ Incohérence webhook: paiementId={} ne matche pas la paiements de l'échéance ({}).",
-                    paiementId, (p != null ? p.getId() : null));
-        }
-
-        if (amountCents != null && e.getMontant() != null) {
-            long expected = Math.round(e.getMontant() * 100.0);
-            if (!Objects.equals(expected, amountCents)) {
-                log.warn("⚠️ Montant Stripe ({}) différent du montant échéance attendu ({}).", amountCents, expected);
-            }
-        }
-
-        e.setStatut("payé");
-        e.setDatePaiementReel(LocalDate.now());
-        e.setReference(paymentIntentId);
-        e.setModePaiement("CB");
-        echeanceService.save(e);
-
-        if (p != null) {
-            p.setModePaiement("CB");
-            recomputeAggregates(p);
-            paiementRepository.save(p);
-
-            // ✅ si tout payé → commande PAYEE
-            if ("payé".equalsIgnoreCase(p.getStatut())
-                    || p.getMontantRestant() == null
-                    || p.getMontantRestant() <= 0.0) {
-                marquerCommandePayee(p.getCommande(), "CB");
-            }
-
-            log.info("✅ Échéance {} du paiement {} marquée payée (PI={})", echeanceId, p.getId(), paymentIntentId);
-        }
+    /** Délègue au PaiementStripeService. */
+    public void marquerEcheancePayeeParStripe(Long paiementId, Long echeanceId,
+                                              String paymentIntentId, Long amountCents) {
+        paiementStripeService.marquerEcheancePayeeParStripe(paiementId, echeanceId, paymentIntentId, amountCents);
     }
 
     @Transactional

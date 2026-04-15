@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EntityScan(basePackages = "club.taekwondo.entity.jpa")
+@EnableScheduling
 public class ClubTaekwondoApplication {
 
     private static final Logger log = LoggerFactory.getLogger(ClubTaekwondoApplication.class);
