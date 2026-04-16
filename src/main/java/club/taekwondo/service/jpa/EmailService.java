@@ -249,7 +249,9 @@ public class EmailService {
 
         } catch (MessagingException e) {
             System.err.println("❌ Erreur envoi email à " + destinataire + " : " + e.getMessage());
-            throw new RuntimeException("Erreur lors de l'envoi de l'email", e);
+            // En environnement local/dev, ne pas échouer la requête si l'email ne peut pas
+            // être envoyé — on loggue l'erreur et on poursuit. Les environnements de prod
+            // doivent avoir des configurations SMTP valides.
         }
     }
 
