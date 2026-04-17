@@ -1,7 +1,7 @@
 package club.taekwondo.controller.mongo;
 
 import club.taekwondo.dto.ActualiteDTO;
-import club.taekwondo.service.mongo.ActualiteService;
+import club.taekwondo.service.jpa.ActualiteService;
 import club.taekwondo.service.common.FileUploadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -5,15 +5,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
-import club.taekwondo.service.mongo.ActualiteService;
-import club.taekwondo.service.mongo.GalerieService;
+import club.taekwondo.service.jpa.ActualiteService;
+import club.taekwondo.service.jpa.GalerieService;
 
-@SpringBootTest(properties = {
-		"spring.autoconfigure.exclude="
-				+ "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,"
-				+ "org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,"
-				+ "org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration"
-})
+@SpringBootTest
 @ActiveProfiles("test")
 class ClubTaekwondoApplicationTests {
 

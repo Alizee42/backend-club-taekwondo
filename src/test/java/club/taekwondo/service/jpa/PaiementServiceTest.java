@@ -23,15 +23,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import club.taekwondo.service.mongo.ActualiteService;
-import club.taekwondo.service.mongo.GalerieService;
-
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude="
-                + "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,"
-                + "org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,"
-                + "org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration"
-})
+@SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class PaiementServiceTest {

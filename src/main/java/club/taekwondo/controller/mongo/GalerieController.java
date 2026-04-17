@@ -2,8 +2,8 @@ package club.taekwondo.controller.mongo;
 
 import club.taekwondo.dto.GalerieDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.service.jpa.GalerieService;
 import club.taekwondo.service.jpa.UtilisateurService;
-import club.taekwondo.service.mongo.GalerieService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;

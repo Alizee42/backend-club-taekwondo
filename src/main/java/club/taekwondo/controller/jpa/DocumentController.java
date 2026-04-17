@@ -166,9 +166,6 @@ public class DocumentController {
         assertCanAccessMemberDocuments(authentication, membreId);
 
         List<DocumentDTO> documents = documentService.getDocumentsByMembreId(membreId);
-        if (documents.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Aucun document trouve pour ce membre.");
-        }
         return ResponseEntity.ok(documents);
     }
 
