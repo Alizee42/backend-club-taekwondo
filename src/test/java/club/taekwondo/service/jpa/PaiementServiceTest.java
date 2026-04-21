@@ -137,6 +137,38 @@ class PaiementServiceTest {
     }
 
     @Test
+    void testGetByIdChargeLesEcheances() {
+        PaiementDTO dto = new PaiementDTO();
+        dto.setUtilisateurId(parent.getId());
+        dto.setUtilisateurNom(parent.getNom());
+        dto.setUtilisateurPrenom(parent.getPrenom());
+        dto.setUtilisateurEmail(parent.getEmail());
+        dto.setMembreId(enfant.getId());
+        dto.setType("ECHELONNE");
+        dto.setModePaiement("CB");
+        dto.setDatePaiement(LocalDate.now().toString());
+
+        EcheanceDTO e1 = new EcheanceDTO();
+        e1.setNumero(1);
+        e1.setDateEcheance(LocalDate.now().plusDays(30));
+        e1.setMontant(50.0);
+
+        EcheanceDTO e2 = new EcheanceDTO();
+        e2.setNumero(2);
+        e2.setDateEcheance(LocalDate.now().plusDays(60));
+        e2.setMontant(50.0);
+
+        dto.setEcheances(List.of(e1, e2));
+
+        Paiement created = paiementService.ajouterPaiementManuel(dto);
+        Paiement loaded = paiementService.getById(created.getId()).orElseThrow();
+
+        assertEquals(2, loaded.getEcheances().size());
+        assertEquals(1, loaded.getEcheances().get(0).getNumero());
+        assertEquals(2, loaded.getEcheances().get(1).getNumero());
+    }
+
+    @Test
     void testValiderPaiementAdmin() {
         PaiementDTO dto = new PaiementDTO();
         dto.setUtilisateurId(parent.getId());

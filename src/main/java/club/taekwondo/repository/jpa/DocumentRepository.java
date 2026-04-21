@@ -34,7 +34,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
            SELECT d
            FROM Document d
            LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH u.club
            LEFT JOIN FETCH d.membre m
+           LEFT JOIN FETCH m.parent
            """)
     List<Document> findAllWithUtilisateurAndMembre();
 
@@ -43,7 +45,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
            SELECT d
            FROM Document d
            LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH u.club
            LEFT JOIN FETCH d.membre m
+           LEFT JOIN FETCH m.parent
            WHERE u.id = :utilisateurId
            """)
     List<Document> findByUtilisateurIdWithFetch(Long utilisateurId);
@@ -53,8 +57,32 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
            SELECT d
            FROM Document d
            LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH u.club
            LEFT JOIN FETCH d.membre m
+           LEFT JOIN FETCH m.parent
            WHERE m.id = :membreId
            """)
     List<Document> findByMembreIdWithFetch(Long membreId);
+
+    @Query("""
+           SELECT d
+           FROM Document d
+           LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH u.club
+           LEFT JOIN FETCH d.membre m
+           LEFT JOIN FETCH m.parent
+           WHERE d.id = :id
+           """)
+    java.util.Optional<Document> findByIdWithFetch(Long id);
+
+    @Query("""
+           SELECT d
+           FROM Document d
+           LEFT JOIN FETCH d.utilisateur u
+           LEFT JOIN FETCH u.club
+           LEFT JOIN FETCH d.membre m
+           LEFT JOIN FETCH m.parent
+           WHERE d.status = :status
+           """)
+    List<Document> findByStatusWithFetch(String status);
 }

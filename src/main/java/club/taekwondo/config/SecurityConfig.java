@@ -44,7 +44,7 @@ public class SecurityConfig {
                     "/api/uploads/**",
                     "/api/stripe/webhook",
                     "/api/stripe/public-key",
-                    "/api/stripe/create-payment-intent",
+                    "/api/stripe/config-status",
                     "/api/utilisateurs/login",
                     "/api/utilisateurs/register",
                     "/api/parametres-paiement/public",

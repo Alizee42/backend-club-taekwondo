@@ -37,28 +37,28 @@ public class StripeService {
     public void init() {
         Stripe.apiKey = stripeApiKey;
         if (stripeApiKey == null || stripeApiKey.isBlank() || stripeApiKey.toLowerCase().contains("dummy")) {
-            System.err.println("❌ Stripe API Key absente ou factice. Définissez STRIPE_API_KEY (sk_test_...) dans vos variables d'environnement.");
+            log.warn("[STRIPE] cle API absente ou factice. Definissez STRIPE_API_KEY pour les tests locaux.");
         } else {
-            System.out.println("✅ Stripe API Key initialized.");
+            log.info("[STRIPE] cle API configuree.");
         }
     }
 
     public String getPublicKey() {
-        System.out.println("ℹ️ Getting public key for Stripe.");
+        log.debug("[STRIPE] lecture de la cle publique.");
         return stripePublicKey;
     }
 
-    /** Crée un PaymentIntent avec metadata + idempotency key fournie */
     public PaymentIntent createPaymentIntentWithMetadata(Map<String, Object> req, String idempotencyKey) throws StripeException {
-        System.out.println("===============================");
-        System.out.println("🚀 Création d'un PaymentIntent avec idempotencyKey: " + idempotencyKey);
+        log.info("[STRIPE] creation PaymentIntent idempotencyKey={}", idempotencyKey);
 
         long amount = parseLongStrict(req.get("amount"), "amount (centimes)");
-        if (amount <= 0) throw new IllegalArgumentException("Montant invalide (centimes).");
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Montant invalide (centimes).");
+        }
 
         String currency = Objects.toString(req.getOrDefault("currency", defaultCurrency), defaultCurrency).toLowerCase();
         if (!List.of("eur", "usd").contains(currency)) {
-            throw new IllegalArgumentException("Devise non supportée : " + currency);
+            throw new IllegalArgumentException("Devise non supportee : " + currency);
         }
 
         PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
@@ -68,7 +68,6 @@ public class StripeService {
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
                 );
 
-        // Copier metadata si fournie
         Object mdObj = req.get("metadata");
         if (mdObj instanceof Map<?, ?> md) {
             for (Map.Entry<?, ?> e : md.entrySet()) {
@@ -78,56 +77,59 @@ public class StripeService {
             }
         }
 
-        System.out.println("ℹ️ Requête PaymentIntent avec montant : " + amount + " et devise : " + currency);
+        log.debug("[STRIPE] requete PaymentIntent amount={} currency={}", amount, currency);
 
         RequestOptions opts = RequestOptions.builder()
-                .setIdempotencyKey(idempotencyKey) // clé passée par le controller (inclut échéance)
+                .setIdempotencyKey(idempotencyKey)
                 .build();
 
         PaymentIntent paymentIntent = PaymentIntent.create(builder.build(), opts);
-        System.out.println("✅ PaymentIntent créé avec succès : " + paymentIntent.getId());
+        log.info("[STRIPE] PaymentIntent cree id={}", paymentIntent.getId());
         return paymentIntent;
     }
 
-    /** Utilitaire : récupère le client_secret (non utilisé si on check le statut côté controller) */
     public String retrieveClientSecret(String paymentIntentId) {
-        System.out.println("ℹ️ Récupération du clientSecret pour PaymentIntent : " + paymentIntentId);
+        log.debug("[STRIPE] recuperation clientSecret pour PaymentIntent={}", paymentIntentId);
         try {
-            if (paymentIntentId == null || paymentIntentId.isBlank()) return null;
+            if (paymentIntentId == null || paymentIntentId.isBlank()) {
+                return null;
+            }
             PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
             return intent != null ? intent.getClientSecret() : null;
         } catch (Exception e) {
-            System.out.println("⚠️ Erreur lors de la récupération du clientSecret : " + e.getMessage());
+            log.warn("[STRIPE] erreur recuperation clientSecret: {}", e.getMessage());
             return null;
         }
     }
 
-    /** Indique si une clé Stripe exploitable est présente (sans divulguer la clé). */
     public boolean isConfigured() {
         return stripeApiKey != null && !stripeApiKey.isBlank() && !stripeApiKey.toLowerCase().contains("dummy");
     }
 
-    /**
-     * Récupère l'URL du reçu Stripe pour un paiement donné.
-     * Utilise l'URL mise en cache si disponible, sinon interroge l'API Stripe.
-     */
     public Optional<String> getReceiptUrl(Paiement p) {
         if (p.getReceiptUrl() != null && !p.getReceiptUrl().isBlank()) {
             return Optional.of(p.getReceiptUrl());
         }
+
         String piId = null;
         if (p.getEcheances() != null) {
             for (int i = p.getEcheances().size() - 1; i >= 0; i--) {
                 Echeance e = p.getEcheances().get(i);
-                if ("payé".equalsIgnoreCase(e.getStatut())
+                if ("paye".equalsIgnoreCase(normalize(e.getStatut()))
                         && e.getReference() != null && !e.getReference().isBlank()) {
                     piId = e.getReference();
                     break;
                 }
             }
         }
-        if (piId == null) piId = p.getPaymentIntentId();
-        if (piId == null || piId.isBlank()) return Optional.empty();
+
+        if (piId == null) {
+            piId = p.getPaymentIntentId();
+        }
+        if (piId == null || piId.isBlank()) {
+            return Optional.empty();
+        }
+
         try {
             PaymentIntent pi = PaymentIntent.retrieve(piId);
             String latestChargeId = pi.getLatestCharge();
@@ -137,24 +139,38 @@ public class StripeService {
                     return Optional.of(charge.getReceiptUrl());
                 }
             }
+
             Object latestObj = pi.getLatestChargeObject();
             if (latestObj instanceof Charge charge) {
                 String url = charge.getReceiptUrl();
-                if (url != null && !url.isBlank()) return Optional.of(url);
+                if (url != null && !url.isBlank()) {
+                    return Optional.of(url);
+                }
             }
         } catch (Exception e) {
-            log.warn("[STRIPE] Erreur récupération receiptUrl pour paiement {}: {}", p.getId(), e.getMessage());
+            log.warn("[STRIPE] erreur recuperation receiptUrl pour paiement {}: {}", p.getId(), e.getMessage());
         }
+
         return Optional.empty();
     }
 
-    // Helpers
-    private static long parseLongStrict(Object o, String fieldName) {
+    private static String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace('\u00e9', 'e')
+                .replace('\u00c9', 'E');
+    }
+
+    private long parseLongStrict(Object o, String fieldName) {
         try {
-            if (o instanceof Number n) return n.longValue();
+            if (o instanceof Number n) {
+                return n.longValue();
+            }
             return Long.parseLong(String.valueOf(o));
         } catch (Exception e) {
-            System.out.println("⚠️ Champ invalide '" + fieldName + "': " + o);
+            log.warn("[STRIPE] champ invalide {}={}", fieldName, o);
             throw new IllegalArgumentException("Champ invalide '" + fieldName + "': " + o);
         }
     }

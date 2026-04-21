@@ -192,7 +192,7 @@ public class EvenementController {
     }
 
     @GetMapping("/club/{clubId}")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     public ResponseEntity<List<EvenementDTO>> getEvenementsByClub(@PathVariable Long clubId,
                                                                   Authentication authentication) {
         Long scopedClubId = resolveScopedClubId(authentication, clubId);

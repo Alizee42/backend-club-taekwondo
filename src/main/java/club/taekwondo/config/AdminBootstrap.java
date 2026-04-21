@@ -35,12 +35,12 @@ public class AdminBootstrap {
                     superAdmin.setPassword(passwordEncoder.encode(superAdminPassword));
                     superAdmin.setRole(Role.SUPER_ADMIN);
                     utilisateurRepository.save(superAdmin);
-                    log.info("[BOOTSTRAP] Compte super-admin créé : {}", superAdminEmail);
+                    log.info("[BOOTSTRAP] compte super-admin cree: {}", superAdminEmail);
                 } else {
-                    log.info("[BOOTSTRAP] Compte super-admin déjà présent : {}", superAdminEmail);
+                    log.info("[BOOTSTRAP] compte super-admin deja present: {}", superAdminEmail);
                 }
             } else {
-                log.info("[BOOTSTRAP] BOOTSTRAP_SUPER_ADMIN_EMAIL / BOOTSTRAP_SUPER_ADMIN_PASSWORD non définis, bootstrap super-admin ignoré.");
+                log.info("[BOOTSTRAP] variables super-admin absentes, bootstrap ignore.");
             }
 
             if (adminEmail != null && !adminEmail.isBlank()
@@ -53,12 +53,12 @@ public class AdminBootstrap {
                     admin.setPassword(passwordEncoder.encode(adminPassword));
                     admin.setRole(Role.ADMIN);
                     utilisateurRepository.save(admin);
-                    log.info("[BOOTSTRAP] Compte admin créé : {}", adminEmail);
+                    log.info("[BOOTSTRAP] compte admin cree: {}", adminEmail);
                 } else {
-                    log.info("[BOOTSTRAP] Compte admin déjà présent : {}", adminEmail);
+                    log.info("[BOOTSTRAP] compte admin deja present: {}", adminEmail);
                 }
             } else {
-                log.info("[BOOTSTRAP] BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD non définis, bootstrap admin ignoré.");
+                log.info("[BOOTSTRAP] variables admin absentes, bootstrap ignore.");
             }
         };
     }

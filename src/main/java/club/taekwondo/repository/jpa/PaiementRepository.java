@@ -25,6 +25,10 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     @Query("SELECT p FROM Paiement p")
     List<Paiement> findAllWithEcheances();
 
+    @EntityGraph(attributePaths = {"echeances", "utilisateur", "membre"})
+    @Query("SELECT p FROM Paiement p WHERE p.id = :id")
+    Optional<Paiement> findByIdWithDetails(@Param("id") Long id);
+
     // 🔹 Somme par statut (insensible à la casse, évite NULL via COALESCE)
     @Query("""
         SELECT new club.taekwondo.dto.StatutCountDTO(

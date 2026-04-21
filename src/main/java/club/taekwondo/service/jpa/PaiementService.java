@@ -26,6 +26,7 @@ public class PaiementService {
     /**
      * Récupérer tous les paiements d'un club
      */
+    @Transactional(readOnly = true)
     public List<PaiementDTO> getPaiementsByClubId(Long clubId) {
         return paiementRepository.findByClubIdAny(clubId)
                 .stream()
@@ -155,9 +156,11 @@ public class PaiementService {
         return dtos;
     }
 
-    public Optional<Paiement> findById(Long id) { return paiementRepository.findById(id); }
+    @Transactional(readOnly = true)
+    public Optional<Paiement> findById(Long id) { return paiementRepository.findByIdWithDetails(id); }
 
-    public Optional<Paiement> getById(Long id) { return paiementRepository.findById(id); }
+    @Transactional(readOnly = true)
+    public Optional<Paiement> getById(Long id) { return paiementRepository.findByIdWithDetails(id); }
 
     public List<Paiement> getByMembreId(Long membreId) {
         return paiementRepository.findAll().stream()
@@ -169,6 +172,7 @@ public class PaiementService {
         return paiementRepository.findPaiementByUtilisateurAndMontantAndStatut(utilisateurId, montantTotal, modePaiement, statut);
     }
 
+    @Transactional(readOnly = true)
     public List<PaiementDTO> getPaiementsParMembres(List<Long> membresIds) {
         return paiementRepository.findByMembreIdIn(membresIds)
                 .stream()
@@ -1228,6 +1232,7 @@ public class PaiementService {
 
         return saved;
     }
+    @Transactional(readOnly = true)
     public List<PaiementDTO> getPaiementsParMembre(Long membreId) {
         if (membreId == null) return Collections.emptyList();
 
@@ -1237,6 +1242,7 @@ public class PaiementService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<PaiementDTO> getPaiementsParUtilisateur(Long utilisateurId) {
         if (utilisateurId == null) return Collections.emptyList();
         return paiementRepository.findByUtilisateurId(utilisateurId).stream()

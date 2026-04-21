@@ -60,7 +60,7 @@ public class StripeController {
         return ResponseEntity.ok(Map.of("publicKey", publishableKey));
     }
 
-    @PreAuthorize("hasAnyRole(‘ADMIN’,’SUPER_ADMIN’,’PARENT’,’MEMBRE’)")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     @PostMapping({"/payment-intent", "/create-payment-intent"})
     public ResponseEntity<?> createPaymentIntent(@RequestBody Map<String, Object> body,
                                                  Authentication authentication) {

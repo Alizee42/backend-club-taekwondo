@@ -1,83 +1,100 @@
-# Stripe – Configuration locale (Windows)
+# Stripe - configuration locale
 
-Ce projet utilise Stripe pour générer des PaymentIntent. En environnement local, vous devez fournir des clés de TEST valides.
+Ce projet lit les cles Stripe de dev depuis `src/main/resources/application-local.properties`.
+La convention locale retenue pour les ecrans de paiement est donc simple :
 
-## 1) Clés nécessaires (mode test)
-- Clé secrète (serveur) – commence par `sk_test_...`
-- Clé publique (front) – commence par `pk_test_...`
-- (Optionnel) Secret de webhook – `whsec_...`
+- le backend local doit etre lance avec `SPRING_PROFILES_ACTIVE=local`
+- le profil par defaut ne suffit pas pour le montage Stripe du front
+- le point de controle rapide est `GET /api/stripe/config-status`
 
-Récupérez-les dans Stripe: Developers → API keys.
+## Demarrage local recommande
 
-## 2) Définir les variables d'environnement (PowerShell)
-Ouvrez un terminal PowerShell et définissez vos variables pour la session:
-
-```powershell
-$env:STRIPE_API_KEY = "sk_test_VOTRE_CLE_ICI"
-$env:STRIPE_PUBLIC_KEY = "pk_test_VOTRE_CLE_ICI"
-# Optionnel si vous testez les webhooks
-# $env:STRIPE_WEBHOOK_SECRET = "whsec_VOTRE_SECRET_ICI"
-```
-
-Ensuite, démarrez le backend dans le même terminal:
+Depuis PowerShell :
 
 ```powershell
 cd backend-club-taekwondo
-./mvnw.cmd spring-boot:run
+.\bin\start-backend-local.ps1
 ```
 
-Astuce: pour des variables persistantes (hors session), utilisez les variables système Windows (Panneau de configuration → Système → Paramètres avancés → Variables d'environnement).
+Le script :
 
-## 3) Vérifier la configuration
-- Clé publique: `GET http://localhost:8080/api/stripe/public-key`
-  - Doit renvoyer `{ "publicKey": "pk_test_..." }`.
-  - Si 204 No Content: la clé publique n'est pas configurée (ou factice).
-- Statut global: `GET http://localhost:8080/api/stripe/config-status`
-  - Réponse `{ publishableKeyConfigured: bool, secretKeyConfigured: bool }`.
-- Création PI: déclenchée par le front sur `/api/stripe/create-payment-intent`.
+- active `SPRING_PROFILES_ACTIVE=local`
+- garde un niveau de logs lisible pour le dev
+- rappelle les endpoints de diagnostic Stripe
 
-## 4) Points d'attention
-- Ne mélangez pas les clés live/test.
-- Les valeurs par défaut `pk_test_dummy` / `sk_test_dummy` sont factices et provoquent `Invalid API Key provided`.
-- Relancez l'IDE/terminal si vous avez modifié des variables d'environnement système.
+Si vous preferez lancer Maven vous-meme :
 
-## 5) Dépannage rapide
-- 400 avec `Invalid API Key provided`: la clé secrète n'est pas injectée (ou factice). Vérifiez `STRIPE_API_KEY` et redémarrez.
-- `/public-key` renvoie pk_test_dummy: la clé publique n'est pas injectée. Définissez `STRIPE_PUBLIC_KEY`.
-- Réseau/Proxy: vérifiez l'accès à `https://api.stripe.com`.
-
-## 6) Alternative: config via application-local.properties (Eclipse)
-
-Si vous lancez le backend depuis Eclipse, vous pouvez stocker vos clés de TEST dans `src/main/resources/application-local.properties` et activer le profil `local` pour éviter de dépendre des variables d'environnement.
-
-1) Ouvrez `backend-club-taekwondo/src/main/resources/application-local.properties` et remplacez les valeurs Stripe:
-
-```properties
-stripe.api.key=sk_test_VOTRE_CLE_ICI
-stripe.public.key=pk_test_VOTRE_CLE_ICI
-# Optionnel pour les webhooks
-stripe.webhook.secret=whsec_VOTRE_SECRET_ICI
+```powershell
+cd backend-club-taekwondo
+$env:SPRING_PROFILES_ACTIVE = "local"
+.\mvnw.cmd spring-boot:run
 ```
 
-2) Activez le profil `local` dans Eclipse:
-- Run > Run Configurations… > Spring Boot App > ClubTaekwondoApplication
-- Onglet "Arguments" → VM arguments: `-Dspring.profiles.active=local`
-  - (ou onglet "Environment" → New… → Name: `SPRING_PROFILES_ACTIVE`, Value: `local`)
+## Ou sont lues les cles Stripe de dev
 
-3) Démarrez l’application depuis Eclipse et vérifiez:
-- `GET http://localhost:8080/api/stripe/config-status` → doit afficher `publishableKeyConfigured: true` et `secretKeyConfigured: true`.
-- `GET http://localhost:8080/api/stripe/public-key` → doit renvoyer `pk_test_...`.
+Le profil `local` charge :
 
-4) Sécurité / bonnes pratiques
-- Évitez d’ajouter des clés réelles dans `application.properties` (profil par défaut) pour ne pas les committer.
-- Préférez `application-local.properties` + profil `local` activé via les arguments d’exécution d’Eclipse.
-- Si vous avez déjà committé des clés, remplacez-les par des valeurs factices, forcez un rotate dans le Dashboard Stripe, et repoussez.
+- `src/main/resources/application-local.properties`
+- optionnellement `src/main/resources/application-local-secrets.properties`
 
-## 7) Ne pas exposer les clés sur GitHub
+En pratique, les cles suivantes doivent y etre disponibles :
 
-Pour éviter toute fuite en poussant sur GitHub:
+- `stripe.api.key=sk_test_...`
+- `stripe.public.key=pk_test_...`
+- `stripe.webhook.secret=whsec_...` (optionnel pour les webhooks)
 
-- Un fichier local de secrets est prévu et ignoré par Git: `src/main/resources/application-local-secrets.properties`.
-- Il est automatiquement importé quand le profil `local` est actif: `spring.config.import=optional:classpath:application-local-secrets.properties` (ajouté dans `application-local.properties`).
-- Utilisez l’exemple fourni: `application-local-secrets.properties.example` → renommez-le en `application-local-secrets.properties` et mettez vos vraies valeurs de TEST.
-- Ne versionnez jamais le fichier sans l’extension `.example`.
+Important :
+
+- si vous lancez le backend sans profil `local`, le profil par defaut retombe sur des valeurs `*_dummy`
+- dans ce cas `GET /api/stripe/public-key` renvoie `204 No Content`
+- le frontend ne peut alors pas monter Stripe Elements
+
+## Verification rapide
+
+Une fois le backend demarre :
+
+```text
+GET http://localhost:8080/api/stripe/config-status
+GET http://localhost:8080/api/stripe/public-key
+```
+
+Resultat attendu pour `config-status` en local :
+
+```json
+{
+  "publishableKeyConfigured": true,
+  "secretKeyConfigured": true
+}
+```
+
+Resultat attendu pour `public-key` :
+
+```json
+{
+  "publicKey": "pk_test_..."
+}
+```
+
+Si `public-key` renvoie `204`, le backend n'est pas lance avec `SPRING_PROFILES_ACTIVE=local` ou les cles Stripe ne sont pas disponibles.
+
+## Eclipse / STS
+
+Si vous demarrez depuis Eclipse ou STS :
+
+1. Ouvrez la configuration d'execution de `ClubTaekwondoApplication`
+2. Ajoutez `SPRING_PROFILES_ACTIVE=local` dans les variables d'environnement
+3. Demarrez l'application
+4. Verifiez ensuite `/api/stripe/config-status`
+
+Vous pouvez aussi passer par les VM arguments :
+
+```text
+-Dspring.profiles.active=local
+```
+
+## Bonnes pratiques
+
+- Ne mettez pas de vraies cles dans `application.properties`
+- Preferez `application-local.properties` ou `application-local-secrets.properties`
+- Ne versionnez jamais `application-local-secrets.properties`
+- Si une cle a deja ete exposee, faites une rotation dans Stripe

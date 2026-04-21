@@ -36,8 +36,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_PREFIXES = List.of(
         "/error",
         "/api/stripe/public-key",
+        "/api/stripe/config-status",
         "/api/stripe/webhook",
-        "/api/stripe/create-payment-intent",
         "/api/utilisateurs/login",
         "/api/utilisateurs/register",
         "/api/parametres-paiement/public",

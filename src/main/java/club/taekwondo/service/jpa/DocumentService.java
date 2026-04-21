@@ -11,6 +11,7 @@ import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,7 @@ public class DocumentService {
     // ====================== READ ======================
 
     /** Tous les documents (+ mapping utilisateur & membre/enfant) */
+    @Transactional(readOnly = true)
     public List<DocumentDTO> getAllDocumentsWithUtilisateur() {
         System.out.println("Récupération de tous les documents...");
         List<DocumentDTO> documents = documentRepository
@@ -44,11 +46,12 @@ public class DocumentService {
     }
 
     /** Par utilisateur (parent ou adulte) */
+    @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByUtilisateurId(Long utilisateurId) {
         System.out.println("Récupération des documents pour l'utilisateur ID: " + utilisateurId);
         validatePositiveId(utilisateurId, "L'ID de l'utilisateur doit être valide et supérieur à 0.");
         List<DocumentDTO> documents = documentRepository
-                .findByUtilisateurId(utilisateurId) // idéalement annoté @EntityGraph(utilisateur,membre)
+                .findByUtilisateurIdWithFetch(utilisateurId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -57,11 +60,12 @@ public class DocumentService {
     }
 
     /** Par enfant (membre) */
+    @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByMembreId(Long membreId) {
         System.out.println("Récupération des documents pour le membre ID: " + membreId);
         validatePositiveId(membreId, "L'ID du membre doit être valide et supérieur à 0.");
         List<DocumentDTO> documents = documentRepository
-                .findByMembreId(membreId) // idéalement annoté @EntityGraph(utilisateur,membre)
+                .findByMembreIdWithFetch(membreId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -69,19 +73,21 @@ public class DocumentService {
         return documents;
     }
 
+    @Transactional(readOnly = true)
     public Optional<DocumentDTO> getDocumentById(Long id) {
         System.out.println("Récupération du document avec l'ID: " + id);
         validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
-        return documentRepository.findById(id).map(this::toDTO);
+        return documentRepository.findByIdWithFetch(id).map(this::toDTO);
     }
 
+    @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByStatus(String status) {
         System.out.println("Récupération des documents avec le statut: " + status);
         if (status == null || status.isEmpty()) {
             throw new IllegalArgumentException("Le statut ne peut pas être null ou vide.");
         }
         List<DocumentDTO> documents = documentRepository
-                .findByStatus(status) // idéalement annoté @EntityGraph(utilisateur,membre)
+                .findByStatusWithFetch(status)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -90,6 +96,7 @@ public class DocumentService {
     }
 
     /** Par club (admin ou staff) */
+    @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByClubId(Long clubId) {
         System.out.println("Récupération des documents pour le club ID: " + clubId);
         validatePositiveId(clubId, "L'ID du club doit être valide et supérieur à 0.");
