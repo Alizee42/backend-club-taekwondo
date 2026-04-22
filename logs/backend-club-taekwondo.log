@@ -1,0 +1,1277 @@
+2026-04-22 08:24:23.427 INFO  [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2026-04-22 08:24:23.468 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 26592 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-22 08:24:23.469 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-22 08:24:23.507 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-22 08:24:23.508 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-22 08:24:24.115 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-22 08:24:24.205 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 74 ms. Found 21 JPA repository interfaces.
+2026-04-22 08:24:24.698 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-04-22 08:24:24.698 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-04-22 08:24:24.711 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-22 08:24:24.711 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-22 08:24:24.747 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-22 08:24:24.748 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1240 ms
+2026-04-22 08:24:24.815 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-04-22 08:24:24.994 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@df27f74
+2026-04-22 08:24:24.994 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-04-22 08:24:25.052 INFO  [restartedMain] org.flywaydb.core.internal.license.VersionPrinter - Flyway Community Edition 9.22.3 by Redgate
+2026-04-22 08:24:25.052 INFO  [restartedMain] org.flywaydb.core.internal.license.VersionPrinter - See release notes here: https://rd.gt/416ObMi
+2026-04-22 08:24:25.052 INFO  [restartedMain] org.flywaydb.core.internal.license.VersionPrinter - 
+2026-04-22 08:24:25.069 INFO  [restartedMain] org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:5432/taekwondodb (PostgreSQL 18.0)
+2026-04-22 08:24:25.069 WARN  [restartedMain] org.flywaydb.core.internal.database.base.Database - Flyway upgrade recommended: PostgreSQL 18.0 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 15.
+2026-04-22 08:24:25.106 INFO  [restartedMain] org.flywaydb.core.internal.command.DbValidate - Successfully validated 2 migrations (execution time 00:00.022s)
+2026-04-22 08:24:25.152 INFO  [restartedMain] org.flywaydb.core.internal.command.DbMigrate - Current version of schema "public": 1
+2026-04-22 08:24:25.153 INFO  [restartedMain] org.flywaydb.core.internal.command.DbMigrate - Schema "public" is up to date. No migration necessary.
+2026-04-22 08:24:25.214 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-22 08:24:25.268 INFO  [restartedMain] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.10.Final
+2026-04-22 08:24:25.298 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-22 08:24:25.512 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-22 08:24:26.551 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-22 08:24:26.553 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-22 08:24:26.714 INFO  [restartedMain] org.springframework.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-22 08:24:27.531 WARN  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API absente ou factice. Definissez STRIPE_API_KEY pour les tests locaux.
+2026-04-22 08:24:27.631 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-22 08:24:27.681 WARN  [restartedMain] org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration - 
+
+Using generated security password: f669b9ff-7df0-45cd-a0e0-0967497471b8
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-04-22 08:24:27.899 INFO  [restartedMain] org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@f14d08e, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5c5f3c54, org.springframework.security.web.context.SecurityContextHolderFilter@2d97d339, org.springframework.security.web.header.HeaderWriterFilter@2590557d, org.springframework.web.filter.CorsFilter@340fde0b, org.springframework.security.web.authentication.logout.LogoutFilter@1584f8b8, club.taekwondo.config.AuthRateLimitFilter@449f83a1, club.taekwondo.config.JwtAuthFilter@1d6a8d6c, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@33608f2b, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@775c855b, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@29f7e238, org.springframework.security.web.session.SessionManagementFilter@4e817f14, org.springframework.security.web.access.ExceptionTranslationFilter@44a8ce0c, org.springframework.security.web.access.intercept.AuthorizationFilter@43721d4d]
+2026-04-22 08:24:28.131 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-22 08:24:28.133 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-04-22 08:24:28.168 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path ''
+2026-04-22 08:24:28.175 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 5.108 seconds (process running for 5.454)
+2026-04-22 08:24:28.232 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-22 08:24:28.232 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-22 08:24:28.232 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-22 08:24:28.232 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-22 08:25:08.709 INFO  [SpringApplicationShutdownHook] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-22 08:25:08.728 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-04-22 08:25:08.730 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-04-22 08:35:28.525 INFO  [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2026-04-22 08:35:28.557 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 31928 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-22 08:35:28.558 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-22 08:35:28.593 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-22 08:35:28.593 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-22 08:35:29.118 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-22 08:35:29.192 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 68 ms. Found 21 JPA repository interfaces.
+2026-04-22 08:35:29.631 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-04-22 08:35:29.639 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-04-22 08:35:29.640 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-22 08:35:29.641 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-22 08:35:29.674 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-22 08:35:29.675 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1081 ms
+2026-04-22 08:35:29.769 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-22 08:35:29.811 INFO  [restartedMain] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.10.Final
+2026-04-22 08:35:29.838 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-22 08:35:30.010 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-22 08:35:30.030 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-04-22 08:35:30.171 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4d0f1e84
+2026-04-22 08:35:30.173 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-04-22 08:35:31.134 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-22 08:35:31.335 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-22 08:35:31.526 INFO  [restartedMain] org.springframework.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-22 08:35:32.278 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-22 08:35:32.378 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-22 08:35:32.824 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-22 08:35:32.834 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-04-22 08:35:32.847 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path ''
+2026-04-22 08:35:32.854 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 4.654 seconds (process running for 4.974)
+2026-04-22 08:35:32.909 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-22 08:35:32.909 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-22 08:35:32.909 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-22 08:35:32.910 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-22 08:35:56.343 INFO  [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-22 08:35:56.343 INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-22 08:35:56.345 INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-22 08:35:56.401 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 08:35:56.482 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 08:37:07.396 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:37:07.396 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:37:07.396 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:37:31.244 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:37:36.931 INFO  [http-nio-8080-exec-6] club.taekwondo.controller.jpa.PaiementParentController - [PARENT] mes-paiements parentId=10 -> 0 paiements (0 via enfants, 0 via user)
+2026-04-22 08:37:45.862 INFO  [http-nio-8080-exec-10] club.taekwondo.controller.StripeController - [STRIPE] /public-key
+2026-04-22 08:37:56.925 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService - === [PaiementService] Début ajout paiement parent ===
+2026-04-22 08:37:56.926 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService - [Request reçu] club.taekwondo.dto.PaiementRequestDTO@709c32a8
+2026-04-22 08:37:56.927 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService - [Parent connecté ID] 10
+2026-04-22 08:37:57.346 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService - [Paiement enregistré] ID=6 | MembreID=14 | UtilisateurID=10 | Total=100.0 | Payé=0.0 | Restant=100.0 | Statut=en attente
+2026-04-22 08:37:57.348 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService -    • ech#1 id=3 montant=50.0 statut=en attente dateEch=2026-04-22 ref=null
+2026-04-22 08:37:57.348 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService -    • ech#2 id=4 montant=50.0 statut=en attente dateEch=2026-05-22 ref=null
+2026-04-22 08:37:57.348 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.PaiementService - === [PaiementService] Fin ajout paiement parent ===
+2026-04-22 08:37:57.446 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - ==================================================
+2026-04-22 08:37:57.447 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - 🚀 [STRIPE] createPaymentIntent déclenché
+2026-04-22 08:37:57.447 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] Payload: {paiementId=6, sendReceiptEmail=false, echeanceId=3}
+2026-04-22 08:37:57.451 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] Auth OK → agueye1403@gmail.com
+2026-04-22 08:37:57.473 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] Autorisation OK pour paiementId=6
+2026-04-22 08:37:57.474 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] Montant échéance #1 = 5000 cents
+2026-04-22 08:37:57.477 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] Création/MAJ PaymentIntent → amount=5000 cents, idemKey=paiement-6-ech-1-3-5000
+2026-04-22 08:37:57.478 INFO  [http-nio-8080-exec-1] club.taekwondo.service.StripeService - [STRIPE] creation PaymentIntent idempotencyKey=paiement-6-ech-1-3-5000
+2026-04-22 08:37:59.890 INFO  [http-nio-8080-exec-1] club.taekwondo.service.StripeService - [STRIPE] PaymentIntent cree id=pi_3TOuQ7PjErJpyQFX1CKi9JJ8
+2026-04-22 08:37:59.913 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.PaiementStripeService - Référence PaymentIntent pi_3TOuQ7PjErJpyQFX1CKi9JJ8 enregistrée sur échéance 3
+2026-04-22 08:37:59.930 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] PaymentIntent ID sauvegardé sur l'échéance 3 → pi_3TOuQ7PjErJpyQFX1CKi9JJ8
+2026-04-22 08:37:59.930 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - [STRIPE] ✅ ClientSecret renvoyé au front
+2026-04-22 08:37:59.930 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.StripeController - ==================================================
+2026-04-22 08:38:00.948 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.StripeController - ==================================================
+2026-04-22 08:38:00.949 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.StripeController - 🔁 [STRIPE] sync-payment déclenché: {paymentIntentId=pi_3TOuQ7PjErJpyQFX1CKi9JJ8}
+2026-04-22 08:38:01.280 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.StripeController - [STRIPE] ✅ sync OK → paiementId=6 statut=en attente restant=50.0 nbEchRestantes=1 
+2026-04-22 08:38:01.282 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.StripeController - ==================================================
+2026-04-22 08:38:01.363 INFO  [http-nio-8080-exec-6] club.taekwondo.controller.jpa.PaiementParentController - [PARENT] mes-paiements parentId=10 -> 1 paiements (1 via enfants, 1 via user)
+2026-04-22 08:38:22.202 INFO  [http-nio-8080-exec-3] club.taekwondo.controller.StripeController - 🧾 [STRIPE] receipt pour paiementId=6
+2026-04-22 08:38:22.993 INFO  [http-nio-8080-exec-3] club.taekwondo.controller.StripeController - [STRIPE] ✅ receiptUrl trouvée pour paiementId=6
+2026-04-22 08:38:36.090 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:38:42.898 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:38:48.012 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:38:48.013 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:38:48.016 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:39:09.494 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:39:09.510 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 08:39:19.631 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 08:40:00.961 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:11:05.219 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 09:11:05.224 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:11:05.233 INFO  [http-nio-8080-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 09:14:31.737 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Utilisateur#9] - no Session]
+2026-04-22 09:14:32.823 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Utilisateur#9] - no Session]
+2026-04-22 09:14:34.145 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Utilisateur#9] - no Session]
+2026-04-22 09:14:57.055 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:15:18.735 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:15:18.780 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:03.120 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:34:03.123 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:06.752 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:34:06.770 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:10.186 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:34:10.210 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:15.367 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 09:34:15.368 INFO  [http-nio-8080-exec-6] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 09:34:15.378 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:34:16.490 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:34:16.520 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:18.126 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:18.126 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:34:18.129 ERROR [http-nio-8080-exec-9] club.taekwondo.service.jpa.PaiementStatsService - Erreur buildDashboardStats
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: club.taekwondo.entity.jpa.Paiement.echeances: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:634)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:217)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:148)
+	at org.hibernate.collection.spi.PersistentBag.isEmpty(PersistentBag.java:360)
+	at club.taekwondo.service.jpa.PaiementStatsService.buildDashboardStats(PaiementStatsService.java:53)
+	at club.taekwondo.service.jpa.PaiementService.buildDashboardStats(PaiementService.java:271)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:716)
+	at club.taekwondo.service.jpa.PaiementService$$SpringCGLIB$$0.buildDashboardStats(<generated>)
+	at club.taekwondo.controller.jpa.PaiementCommonController.getDashboardStats(PaiementCommonController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:198)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:720)
+	at club.taekwondo.controller.jpa.PaiementCommonController$$SpringCGLIB$$0.getDashboardStats(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at club.taekwondo.config.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:184)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-22 09:34:20.813 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:34:20.819 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:45:54.698 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:45:54.721 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:07.289 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:54:07.305 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:15.780 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:54:15.802 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:21.993 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:54:22.018 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:30.641 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:54:30.652 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:31.517 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:31.519 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:54:31.519 ERROR [http-nio-8080-exec-2] club.taekwondo.service.jpa.PaiementStatsService - Erreur buildDashboardStats
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: club.taekwondo.entity.jpa.Paiement.echeances: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:634)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:217)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:148)
+	at org.hibernate.collection.spi.PersistentBag.isEmpty(PersistentBag.java:360)
+	at club.taekwondo.service.jpa.PaiementStatsService.buildDashboardStats(PaiementStatsService.java:53)
+	at club.taekwondo.service.jpa.PaiementService.buildDashboardStats(PaiementService.java:271)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:716)
+	at club.taekwondo.service.jpa.PaiementService$$SpringCGLIB$$0.buildDashboardStats(<generated>)
+	at club.taekwondo.controller.jpa.PaiementCommonController.getDashboardStats(PaiementCommonController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:198)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:720)
+	at club.taekwondo.controller.jpa.PaiementCommonController$$SpringCGLIB$$0.getDashboardStats(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at club.taekwondo.config.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:184)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-22 09:54:36.908 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:54:36.921 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:55:07.025 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:55:07.225 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:55:37.021 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:55:37.029 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:56:07.029 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:56:07.043 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:56:37.495 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:56:37.506 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:57:07.520 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:57:07.532 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:57:37.564 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:57:37.578 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:58:07.607 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:58:07.616 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:58:37.645 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:58:37.654 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:59:07.694 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:59:07.701 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:59:15.516 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:59:15.588 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 09:59:45.612 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 09:59:45.623 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:00:15.725 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:00:15.742 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:00:45.734 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:00:45.749 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:00:56.679 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:00:56.761 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:27.521 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:01:27.536 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:52.012 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:01:52.018 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:54.908 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:01:54.916 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:57.809 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:01:57.815 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:58.647 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:58.649 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:01:58.649 ERROR [http-nio-8080-exec-9] club.taekwondo.service.jpa.PaiementStatsService - Erreur buildDashboardStats
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: club.taekwondo.entity.jpa.Paiement.echeances: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:634)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:217)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:148)
+	at org.hibernate.collection.spi.PersistentBag.isEmpty(PersistentBag.java:360)
+	at club.taekwondo.service.jpa.PaiementStatsService.buildDashboardStats(PaiementStatsService.java:53)
+	at club.taekwondo.service.jpa.PaiementService.buildDashboardStats(PaiementService.java:271)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:716)
+	at club.taekwondo.service.jpa.PaiementService$$SpringCGLIB$$0.buildDashboardStats(<generated>)
+	at club.taekwondo.controller.jpa.PaiementCommonController.getDashboardStats(PaiementCommonController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:198)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:720)
+	at club.taekwondo.controller.jpa.PaiementCommonController$$SpringCGLIB$$0.getDashboardStats(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at club.taekwondo.config.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:184)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-22 10:02:01.118 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:02:01.125 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:02:31.132 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:02:31.139 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:03:01.130 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:03:01.139 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:03:31.147 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:03:31.156 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:04:01.150 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:04:01.159 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:04:31.149 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:04:31.159 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:05:01.151 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:05:01.161 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:05:31.152 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:05:31.159 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:06:01.170 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:06:01.207 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:06:31.176 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:06:31.198 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:07:01.174 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:07:01.179 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:07:31.920 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:07:31.930 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:08:01.941 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:08:01.952 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:08:31.963 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:08:31.985 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:09:01.996 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:09:02.010 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:09:32.052 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:09:32.070 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:10:02.540 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:10:02.549 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:10:32.567 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:10:32.581 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 10:11:02.568 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 10:11:02.581 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 12:55:48.679 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=4m14s630ms966µs100ns).
+2026-04-22 13:33:18.632 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m59s439ms930µs900ns).
+2026-04-22 13:37:21.349 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m2s711ms191µs100ns).
+2026-04-22 13:45:48.510 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m11s12ms717µs800ns).
+2026-04-22 13:50:04.440 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m15s921ms844µs300ns).
+2026-04-22 13:55:25.590 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3m21s133ms689µs500ns).
+2026-04-22 13:57:40.571 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 13:57:40.573 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 13:57:40.603 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 13:57:43.039 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 13:57:43.124 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 13:57:47.796 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 13:57:47.803 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:12:02.741 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:12:02.780 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:12:07.968 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:12:08.001 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:12:37.966 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:12:37.978 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:13:07.963 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:13:07.983 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:13:37.980 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:13:38.002 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:14:07.976 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:14:07.987 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:14:37.981 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:14:37.993 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:15:07.980 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:15:07.997 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:15:37.996 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:15:38.014 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:16:07.992 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:16:08.004 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:16:11.402 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:19:56.546 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:19:56.548 INFO  [http-nio-8080-exec-10] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:19:56.581 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:20:11.282 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:20:11.283 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:20:11.283 INFO  [http-nio-8080-exec-9] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:25:38.027 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:25:38.030 INFO  [http-nio-8080-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:27:23.264 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:27:23.268 INFO  [http-nio-8080-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:27:23.275 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:27:25.988 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:27:26.048 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:27:35.883 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:27:35.924 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:27:41.187 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:27:41.290 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:27:57.007 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:27:57.011 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:27:58.736 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:27:58.861 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:28:00.485 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:28:00.485 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:29:49.598 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:29:49.678 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:29:50.871 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:29:50.873 INFO  [http-nio-8080-exec-8] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:31:09.311 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:31:09.804 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:31:09.839 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:31:17.363 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:31:17.485 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:31:26.266 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:31:26.268 INFO  [http-nio-8080-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:31:57.565 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:31:57.654 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:32:04.251 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:32:04.287 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:32:05.197 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:32:05.198 INFO  [http-nio-8080-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:32:05.217 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:36:38.174 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:36:38.176 INFO  [http-nio-8080-exec-9] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:36:38.182 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:36:42.018 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:36:42.057 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:39:16.411 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:39:16.429 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:39:46.437 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:39:46.480 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:40:16.431 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:40:16.449 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:40:46.464 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:40:46.509 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:41:14.030 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:41:14.032 INFO  [http-nio-8080-exec-10] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:41:14.045 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:41:18.661 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 14:41:18.662 INFO  [http-nio-8080-exec-4] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-22 14:41:18.668 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:41:19.719 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:41:20.452 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:41:20.483 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:41:28.649 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:41:28.712 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:41:36.060 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:41:36.102 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:42:06.052 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:42:06.070 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:42:36.045 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:42:36.057 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:43:06.199 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:43:06.212 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:43:36.183 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:43:36.195 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:44:06.207 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:44:06.226 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:44:36.210 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:44:36.225 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:45:06.226 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:45:06.264 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:45:36.213 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:45:36.233 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:46:06.227 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:46:06.245 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:46:36.232 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:46:36.247 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:47:06.248 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:47:06.289 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:47:36.235 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:47:36.248 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:48:06.248 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:48:06.263 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:48:36.260 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:48:36.278 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:49:06.279 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:49:06.318 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:49:36.295 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:49:36.340 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:50:06.259 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:50:06.270 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:50:36.275 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:50:36.288 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:51:06.284 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:51:06.300 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:51:36.299 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:51:36.321 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:52:01.853 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:52:01.951 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:52:06.633 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:52:06.656 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:52:53.682 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:52:53.710 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:52:58.278 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:52:58.321 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:53:09.888 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:53:09.890 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:53:09.889 ERROR [http-nio-8080-exec-8] club.taekwondo.service.jpa.PaiementStatsService - Erreur buildDashboardStats
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: club.taekwondo.entity.jpa.Paiement.echeances: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:634)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:217)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:148)
+	at org.hibernate.collection.spi.PersistentBag.isEmpty(PersistentBag.java:360)
+	at club.taekwondo.service.jpa.PaiementStatsService.buildDashboardStats(PaiementStatsService.java:53)
+	at club.taekwondo.service.jpa.PaiementService.buildDashboardStats(PaiementService.java:271)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:716)
+	at club.taekwondo.service.jpa.PaiementService$$SpringCGLIB$$0.buildDashboardStats(<generated>)
+	at club.taekwondo.controller.jpa.PaiementCommonController.getDashboardStats(PaiementCommonController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:198)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:720)
+	at club.taekwondo.controller.jpa.PaiementCommonController$$SpringCGLIB$$0.getDashboardStats(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at club.taekwondo.config.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:184)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-22 14:53:11.508 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:53:11.517 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:53:35.923 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:53:35.960 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:53:51.428 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:53:51.438 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:53:53.629 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:53:53.642 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:54:00.032 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:54:00.037 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:54:30.031 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:54:30.047 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:55:00.068 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:55:00.110 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:55:27.436 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:55:27.497 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:55:27.801 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:55:27.802 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:55:27.802 ERROR [http-nio-8080-exec-8] club.taekwondo.service.jpa.PaiementStatsService - Erreur buildDashboardStats
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: club.taekwondo.entity.jpa.Paiement.echeances: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:634)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:217)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:148)
+	at org.hibernate.collection.spi.PersistentBag.isEmpty(PersistentBag.java:360)
+	at club.taekwondo.service.jpa.PaiementStatsService.buildDashboardStats(PaiementStatsService.java:53)
+	at club.taekwondo.service.jpa.PaiementService.buildDashboardStats(PaiementService.java:271)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:716)
+	at club.taekwondo.service.jpa.PaiementService$$SpringCGLIB$$0.buildDashboardStats(<generated>)
+	at club.taekwondo.controller.jpa.PaiementCommonController.getDashboardStats(PaiementCommonController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:198)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:720)
+	at club.taekwondo.controller.jpa.PaiementCommonController$$SpringCGLIB$$0.getDashboardStats(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at club.taekwondo.config.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:184)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-22 14:55:38.962 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:55:39.014 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:56:08.976 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:56:08.997 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:56:38.991 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:56:39.041 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:57:08.999 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:57:09.042 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:57:38.982 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:57:38.997 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 14:57:45.532 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 14:57:45.601 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:05.963 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:02:06.396 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:08.645 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:08.658 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:08.667 ERROR [http-nio-8080-exec-4] club.taekwondo.service.jpa.PaiementStatsService - Erreur buildDashboardStats
+org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: club.taekwondo.entity.jpa.Paiement.echeances: could not initialize proxy - no Session
+	at org.hibernate.collection.spi.AbstractPersistentCollection.throwLazyInitializationException(AbstractPersistentCollection.java:634)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.withTemporarySessionIfNeeded(AbstractPersistentCollection.java:217)
+	at org.hibernate.collection.spi.AbstractPersistentCollection.readSize(AbstractPersistentCollection.java:148)
+	at org.hibernate.collection.spi.PersistentBag.isEmpty(PersistentBag.java:360)
+	at club.taekwondo.service.jpa.PaiementStatsService.buildDashboardStats(PaiementStatsService.java:53)
+	at club.taekwondo.service.jpa.PaiementService.buildDashboardStats(PaiementService.java:271)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:716)
+	at club.taekwondo.service.jpa.PaiementService$$SpringCGLIB$$0.buildDashboardStats(<generated>)
+	at club.taekwondo.controller.jpa.PaiementCommonController.getDashboardStats(PaiementCommonController.java:148)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:198)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:768)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:720)
+	at club.taekwondo.controller.jpa.PaiementCommonController$$SpringCGLIB$$0.getDashboardStats(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at club.taekwondo.config.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:184)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1741)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-04-22 15:02:12.543 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:13.353 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:15.846 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:02:15.886 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:02:45.894 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:02:45.955 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:03:15.819 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:03:15.859 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:03:45.869 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:03:45.876 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:04:15.824 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:04:15.838 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:04:45.963 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:04:45.981 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:05:15.843 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:05:15.849 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:05:45.901 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:05:45.948 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:05:53.783 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:05:53.861 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:05:59.553 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:05:59.597 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:06:18.688 INFO  [http-nio-8080-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:06:18.772 WARN  [http-nio-8080-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:06:28.790 INFO  [http-nio-8080-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:06:28.820 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:06:36.547 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:06:36.588 WARN  [http-nio-8080-exec-10] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:06:53.808 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:06:53.822 WARN  [http-nio-8080-exec-5] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:07:23.823 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:07:23.864 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:07:53.838 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:07:53.886 WARN  [http-nio-8080-exec-2] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:08:23.838 INFO  [http-nio-8080-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:08:23.858 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:08:54.072 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:08:54.087 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:09:24.069 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:09:24.085 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:09:54.095 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:09:54.144 WARN  [http-nio-8080-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:10:24.106 INFO  [http-nio-8080-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:10:24.121 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:10:36.102 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:10:36.191 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:10:41.115 INFO  [http-nio-8080-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:10:41.137 WARN  [http-nio-8080-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:10:45.956 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:10:46.039 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:11:15.724 INFO  [http-nio-8080-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:11:15.748 WARN  [http-nio-8080-exec-8] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:11:46.496 INFO  [http-nio-8080-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:11:46.503 WARN  [http-nio-8080-exec-1] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:12:16.506 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:12:16.514 WARN  [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:12:46.543 INFO  [http-nio-8080-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:12:46.554 WARN  [http-nio-8080-exec-4] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Membre#5] - no Session]
+2026-04-22 15:56:01.088 INFO  [http-nio-8080-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-22 15:56:01.211 INFO  [http-nio-8080-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-22 15:56:01.334 INFO  [http-nio-8080-exec-10] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
