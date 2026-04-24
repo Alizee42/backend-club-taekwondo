@@ -147,6 +147,7 @@ public class PaiementService {
      *  Queries
      * =========================== */
 
+    @Transactional(readOnly = true)
     public List<PaiementDTO> getAllWithEcheances() {
         List<Paiement> paiements = paiementRepository.findAllWithEcheances();
         List<PaiementDTO> dtos = new ArrayList<>();

@@ -1,8 +1,11 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.ParametresPaiementDTO;
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.ParametresPaiement;
 import club.taekwondo.repository.jpa.ParametresPaiementRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +15,9 @@ public class ParametresPaiementService {
 
     @Autowired
     private ParametresPaiementRepository parametresPaiementRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /** ✅ Lecture avec fallback (utilisé par ADMIN et par le GET public) */
        // ...existing code...
@@ -41,8 +47,8 @@ public class ParametresPaiementService {
         ParametresPaiement entity = parametresPaiementRepository.findByClub_Id(clubId);
         if (entity == null) {
             entity = new ParametresPaiement();
-            entity.setClub(new club.taekwondo.entity.jpa.Club());
-            entity.getClub().setId(clubId);
+            entity.setId(clubId);
+            entity.setClub(entityManager.getReference(Club.class, clubId));
         }
         entity.setMontantCotisation(dto.getMontantCotisation());
         entity.setVirement(dto.isVirement());

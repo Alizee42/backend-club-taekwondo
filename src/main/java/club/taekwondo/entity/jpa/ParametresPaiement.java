@@ -14,7 +14,7 @@ import jakarta.persistence.JoinColumn;
 public class ParametresPaiement {
 
     @Id
-    private Long id; // Identifiant unique
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id", nullable = false)
@@ -26,7 +26,6 @@ public class ParametresPaiement {
     @Column(nullable = false)
     private boolean virement;
 
-    @Column(nullable = false)
     public Club getClub() {
         return club;
     }
