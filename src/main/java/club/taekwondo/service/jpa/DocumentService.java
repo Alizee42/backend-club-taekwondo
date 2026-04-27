@@ -119,6 +119,15 @@ public class DocumentService {
         return toDTO(saved);
     }
 
+    @Transactional
+    public void updateDocumentStatus(Long id, String status) {
+        validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
+        Document doc = documentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Document introuvable: " + id));
+        doc.setStatus(status);
+        documentRepository.save(doc);
+    }
+
     public DocumentDTO updateDocument(Long id, DocumentDTO documentDTO) {
         System.out.println("Mise à jour du document avec l'ID: " + id);
         validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");

@@ -358,31 +358,37 @@ public class DocumentController {
     @PutMapping("/{id}/valider")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<?> validerDocument(@PathVariable Long id, Authentication authentication) {
-        Optional<DocumentDTO> document = documentService.getDocumentById(id);
-        if (document.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
+        try {
+            Optional<DocumentDTO> document = documentService.getDocumentById(id);
+            if (document.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
+            }
+            assertCanAccessDocument(authentication, document.get());
+            documentService.updateDocumentStatus(id, "validé");
+            return ResponseEntity.ok().build();
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        DocumentDTO dto = document.get();
-        assertCanAccessDocument(authentication, dto);
-        dto.setStatus("validé");
-        documentService.updateDocument(id, dto);
-        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/refuser")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<?> refuserDocument(@PathVariable Long id, Authentication authentication) {
-        Optional<DocumentDTO> document = documentService.getDocumentById(id);
-        if (document.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
+        try {
+            Optional<DocumentDTO> document = documentService.getDocumentById(id);
+            if (document.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
+            }
+            assertCanAccessDocument(authentication, document.get());
+            documentService.updateDocumentStatus(id, "refusé");
+            return ResponseEntity.ok().build();
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        DocumentDTO dto = document.get();
-        assertCanAccessDocument(authentication, dto);
-        dto.setStatus("refusé");
-        documentService.updateDocument(id, dto);
-        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
