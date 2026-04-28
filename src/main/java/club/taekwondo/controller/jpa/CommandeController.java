@@ -1,11 +1,14 @@
 package club.taekwondo.controller.jpa;
 
+import club.taekwondo.dto.BonCommandeRequestDTO;
 import club.taekwondo.dto.CommandeDTO;
 import club.taekwondo.dto.CommandeUpdateDTO;
+import club.taekwondo.entity.jpa.CampagneCommande;
 import club.taekwondo.entity.jpa.Commande;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.service.jpa.CampagneCommandeService;
 import club.taekwondo.service.jpa.CommandeService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import jakarta.validation.Valid;
@@ -38,13 +41,16 @@ public class CommandeController {
     private final CommandeService commandeService;
     private final UtilisateurService utilisateurService;
     private final MembreRepository membreRepository;
+    private final CampagneCommandeService campagneService;
 
     public CommandeController(CommandeService commandeService,
                               UtilisateurService utilisateurService,
-                              MembreRepository membreRepository) {
+                              MembreRepository membreRepository,
+                              CampagneCommandeService campagneService) {
         this.commandeService = commandeService;
         this.utilisateurService = utilisateurService;
         this.membreRepository = membreRepository;
+        this.campagneService = campagneService;
     }
 
     @GetMapping
@@ -113,6 +119,42 @@ public class CommandeController {
         }
 
         return ResponseEntity.ok(commandeService.getCommandesParParent(parentId));
+    }
+
+    @PostMapping("/bon-de-commande")
+    @PreAuthorize("hasAnyRole('MEMBRE','PARENT')")
+    public ResponseEntity<?> soumettreEvenementCommande(@RequestBody BonCommandeRequestDTO req,
+                                                        Authentication authentication) {
+        Utilisateur caller = requireCaller(authentication);
+        Long clubId = getClubId(caller);
+        if (clubId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Aucun club associe au compte"));
+        }
+
+        CampagneCommande campagne;
+        if (req.getCampagneId() != null) {
+            campagne = campagneService.findById(req.getCampagneId())
+                    .orElse(null);
+            if (campagne == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Campagne introuvable"));
+            }
+            if (!campagne.isActif()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cette campagne est fermee"));
+            }
+        } else {
+            campagne = campagneService.getActiveEntity(clubId).orElse(null);
+            if (campagne == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Aucune campagne de commande active pour votre club"));
+            }
+        }
+
+        try {
+            CommandeDTO result = commandeService.createCommandeForCampagne(req, caller, campagne);
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } catch (Exception e) {
+            logger.error("Erreur creation bon de commande : {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping

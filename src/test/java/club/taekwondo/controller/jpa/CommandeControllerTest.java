@@ -9,6 +9,7 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.service.jpa.CommandeService;
 import club.taekwondo.service.jpa.UtilisateurService;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.service.jpa.CampagneCommandeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,11 +41,14 @@ class CommandeControllerTest {
     @Mock
     private MembreRepository membreRepository;
 
+    @Mock
+    private CampagneCommandeService campagneCommandeService;
+
     private CommandeController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new CommandeController(commandeService, utilisateurService, membreRepository);
+        controller = new CommandeController(commandeService, utilisateurService, membreRepository, campagneCommandeService);
     }
 
     @Test

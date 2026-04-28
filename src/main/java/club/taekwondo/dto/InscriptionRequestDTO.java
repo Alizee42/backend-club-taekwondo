@@ -13,6 +13,7 @@ public class InscriptionRequestDTO {
     private Long parentId;        // le parent connecté
     private Long evenementId;     // l'événement ciblé
     private List<Long> enfantsIds;
+    private List<Long> membreIds;
     private String commentaire;   // commentaire pour l'inscription
 
     // --- Getters & Setters ---
@@ -39,6 +40,14 @@ public class InscriptionRequestDTO {
 
     public void setEnfantsIds(List<Long> enfantsIds) {
         this.enfantsIds = enfantsIds;
+    }
+
+    public List<Long> getMembreIds() {
+        return membreIds;
+    }
+
+    public void setMembreIds(List<Long> membreIds) {
+        this.membreIds = membreIds;
     }
 
     public String getCommentaire() {

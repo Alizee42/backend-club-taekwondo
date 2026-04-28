@@ -31,6 +31,9 @@ public class CommandeDTO {
 
     private UtilisateurCommandeDTO utilisateur;
 
+    private Long campagneId;
+    private String campagneTitre;
+
     private Long beneficiaireId;
     private String beneficiairePrenom;
     private String beneficiaireNom;
@@ -105,6 +108,12 @@ public class CommandeDTO {
     }
 
     
+    public Long getCampagneId() { return campagneId; }
+    public void setCampagneId(Long campagneId) { this.campagneId = campagneId; }
+
+    public String getCampagneTitre() { return campagneTitre; }
+    public void setCampagneTitre(String campagneTitre) { this.campagneTitre = campagneTitre; }
+
     public Long getBeneficiaireId() {
 		return beneficiaireId;
 	}

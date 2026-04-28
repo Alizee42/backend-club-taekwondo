@@ -197,7 +197,7 @@ public class EvenementService {
         dto.setActif(evenement.getActif());
 
         // 🔹 Calculer le nombre d'inscrits confirmés
-        long nbInscrits = inscriptionRepository.countByEvenementId(evenement.getId());
+        long nbInscrits = inscriptionRepository.countActiveByEvenementId(evenement.getId());
         dto.setNbInscrits((int) nbInscrits);
 
         if (evenement.getImageFilename() != null) {
@@ -225,6 +225,10 @@ public class EvenementService {
 
     // 📦 Enregistrement du fichier image
     public String saveImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
         try {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
             String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();

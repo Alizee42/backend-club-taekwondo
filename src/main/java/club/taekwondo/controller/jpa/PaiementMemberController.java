@@ -1,9 +1,7 @@
 package club.taekwondo.controller.jpa;
 
-import club.taekwondo.dto.CartCheckoutRequest;
 import club.taekwondo.dto.PaiementDTO;
 import club.taekwondo.dto.PaiementRequestDTO;
-import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.service.jpa.PaiementAccessService;
 import club.taekwondo.service.jpa.PaiementService;
@@ -132,31 +130,6 @@ public class PaiementMemberController {
         } catch (Exception e) {
             log.error("[PAY] Erreur ajout paiement membre", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PreAuthorize("hasAnyRole('MEMBRE','PARENT','ADMIN')")
-    @PostMapping(value = "/from-cart", consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> creerDepuisPanier(Authentication authentication,
-                                                                @RequestBody CartCheckoutRequest req) {
-        try {
-            Utilisateur user = paiementAccessService.requireAuthenticatedUser(authentication);
-            if (req.getItems() == null || req.getItems().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Aucun article dans le panier"));
-            }
-
-            Paiement paiement = paiementService.creerPaiementDepuisPanier(user, req);
-            Map<String, Object> response = new HashMap<>();
-            response.put("paiementId", paiement.getId());
-            response.put("statut", paiement.getStatut());
-            response.put("modePaiement", paiement.getModePaiement());
-            response.put("montantTotal", paiement.getMontantTotal());
-            return created("/api/paiements/" + paiement.getId(), response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erreur lors de la création du paiement depuis le panier"));
         }
     }
 

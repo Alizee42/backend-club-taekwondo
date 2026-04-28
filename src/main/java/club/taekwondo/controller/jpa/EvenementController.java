@@ -53,15 +53,22 @@ public class EvenementController {
         return ResponseEntity.ok(evenementService.getAllEvenements());
     }
 
+    @GetMapping("/actifs")
+    public ResponseEntity<List<EvenementDTO>> getEvenementsActifs() {
+        return ResponseEntity.ok(evenementService.getEvenementsActifs());
+    }
+
+    @GetMapping("/mon-club")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
+    public ResponseEntity<List<EvenementDTO>> getEvenementsMonClub(Authentication authentication) {
+        Long scopedClubId = resolveScopedClubId(authentication, null);
+        return ResponseEntity.ok(evenementService.getEvenementsByClubId(scopedClubId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<EvenementDTO> getEvenementById(@PathVariable Long id) {
         Optional<EvenementDTO> evenement = evenementService.getEvenementById(id);
         return evenement.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/actifs")
-    public ResponseEntity<List<EvenementDTO>> getEvenementsActifs() {
-        return ResponseEntity.ok(evenementService.getEvenementsActifs());
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -72,7 +79,7 @@ public class EvenementController {
                                                          @RequestParam("lieu") String lieu,
                                                          @RequestParam("capacite") int capacite,
                                                          @RequestParam("description") String description,
-                                                         @RequestParam("image") MultipartFile image,
+                                                         @RequestParam(value = "image", required = false) MultipartFile image,
                                                          @RequestParam(value = "clubId", required = false) Long clubId,
                                                          Authentication authentication) {
         try {

@@ -40,8 +40,6 @@ public class PaiementService {
     private final EcheanceService echeanceService;
     private final UtilisateurService utilisateurService;
     private final MembreService membreService;
-    private final ProduitService produitService;
-    private final LigneCommandeService ligneCommandeService;
     private final CommandeRepository commandeRepository;
     private final PasswordEncoder passwordEncoder;
     private final PaiementMapper paiementMapper;
@@ -53,8 +51,6 @@ public class PaiementService {
             EcheanceService echeanceService,
             UtilisateurService utilisateurService,
             MembreService membreService,
-            ProduitService produitService,
-            LigneCommandeService ligneCommandeService,
             CommandeRepository commandeRepository,
             PasswordEncoder passwordEncoder,
             PaiementMapper paiementMapper,
@@ -65,8 +61,6 @@ public class PaiementService {
         this.echeanceService = echeanceService;
         this.utilisateurService = utilisateurService;
         this.membreService = membreService;
-        this.produitService = produitService;
-        this.ligneCommandeService = ligneCommandeService;
         this.commandeRepository = commandeRepository;
         this.passwordEncoder = passwordEncoder;
         this.paiementMapper = paiementMapper;
@@ -1087,152 +1081,6 @@ public class PaiementService {
         paiementStripeService.marquerEcheancePayeeParStripe(paiementId, echeanceId, paymentIntentId, amountCents);
     }
 
-    @Transactional
-    public Paiement creerPaiementDepuisPanier(Utilisateur user, CartCheckoutRequest req) {
-        if (user == null) throw new IllegalArgumentException("Utilisateur manquant.");
-        if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
-            throw new IllegalArgumentException("Panier vide.");
-        }
-
-        // 1) Calcul du total ET stockage des prix unitaires calculés
-        double total = 0.0;
-        Map<CartItemDTO, Double> prixUnitairesCalcules = new HashMap<>();
-        
-        for (CartItemDTO it : req.getItems()) {
-            if (it.getProduitId() == null || it.getQuantite() == null || it.getQuantite() <= 0) {
-                throw new IllegalArgumentException("Ligne panier invalide (produitId/quantite).");
-            }
-            Produit produit = produitService.getProduitEntityById(it.getProduitId())
-                    .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
-
-            // 🔹 Calcul automatique du prix unitaire (produit + flocage) - UNE SEULE FOIS
-            double prixBase = produit.getPrix() != null ? produit.getPrix().doubleValue() : 0.0;
-            double unit = prixBase;
-            
-            // Ajouter le coût du flocage si activé (10€)
-            if (Boolean.TRUE.equals(it.getFlocageActif())) {
-                unit += 10.0; // Coût fixe du flocage
-                log.info("💰 Produit '{}' - Prix base: {}€ + Flocage: 10€ = {}€", 
-                    produit.getNom(), prixBase, unit);
-            } else {
-                log.info("💰 Produit '{}' - Prix base: {}€ (sans flocage)", 
-                    produit.getNom(), prixBase);
-            }
-
-            // 🔹 STOCKAGE du prix calculé pour réutilisation
-            prixUnitairesCalcules.put(it, unit);
-            
-            total += unit * it.getQuantite();
-            log.info("📊 Ligne: {}x {}€ = {}€", it.getQuantite(), unit, unit * it.getQuantite());
-        }
-        total = round2(total);
-        log.info("💳 TOTAL CALCULÉ PANIER: {}€", total);
-        if (total <= 0.0) throw new IllegalArgumentException("Montant total invalide.");
-
-        // 2) Commande (LocalDate) + logique mode/statut/date
-        final String mode = normalizeMode(req.getModePaiement()); // "CB", "CLUB", "CHEQUE", "VIREMENT", ...
-    Commande commande = new Commande();
-        commande.setDateCommande(LocalDate.now());
-        commande.setModePaiement(mode);
-        if ("CB".equalsIgnoreCase(mode)) {
-            commande.setStatut("PAYEE");
-            commande.setDatePaiement(LocalDate.now());
-        } else {
-            commande.setStatut("EN_ATTENTE");
-            commande.setDatePaiement(null);
-        }
-        commande.setMontantTotal(BigDecimal.valueOf(total));
-        commande.setUtilisateur(user);
-        // 📌 Rattache le club côté commande pour la boutique
-        if (user.getClub() != null) {
-            commande.setClub(user.getClub());
-        }
-        commande = commandeRepository.save(commande);
-        log.info("📋 Commande créée id={} statut={} mode={} datePaiement={}",
-                commande.getId(), commande.getStatut(), commande.getModePaiement(), commande.getDatePaiement());
-
-        // 3) Paiement lié
-    Paiement p = new Paiement();
-        p.setUtilisateur(user);
-
-        // Membre : si absent → créer un "adulte" rattaché pour ne pas bloquer
-        Membre membreCible;
-        if (req.getMembreId() != null) {
-            membreCible = membreService.getMembreEntityById(req.getMembreId())
-                    .orElseThrow(() -> new IllegalArgumentException("Membre introuvable"));
-        } else {
-            Membre adulte = new Membre();
-            adulte.setPrenom(Optional.ofNullable(user.getPrenom()).orElse("Adulte"));
-            adulte.setNom(Optional.ofNullable(user.getNom()).orElse("Inconnu"));
-            adulte.setParent(user);
-            membreCible = membreService.save(adulte);
-        }
-        p.setMembre(membreCible);
-        // 📌 Rattache le club côté paiement (priorité commande > membre > utilisateur)
-        if (commande.getClub() != null) {
-            p.setClub(commande.getClub());
-        } else if (membreCible != null && membreCible.getClub() != null) {
-            p.setClub(membreCible.getClub());
-        } else if (user.getClub() != null) {
-            p.setClub(user.getClub());
-        }
-
-        p.setType("BOUTIQUE");
-        p.setModePaiement(mode);
-        p.setMontantTotal(total);
-        if ("CB".equalsIgnoreCase(mode)) {
-            // CB : paiement réglé immédiatement
-            p.setStatut("payé");
-            p.setMontantPaye(total);
-            p.setMontantRestant(0.0);
-            p.setDatePaiement(LocalDate.now());
-        } else {
-            // Club / chèque / virement
-            p.setStatut("en attente");
-            p.setMontantPaye(0.0);
-            p.setMontantRestant(total);
-            p.setDatePaiement(null);
-        }
-        p.setEcheancesTotales(0);
-        p.setEcheancesRestantes(0);
-        p.setEcheances(Collections.emptyList());
-        p.setCommande(commande);
-
-        Paiement saved = paiementRepository.save(p);
-        log.info("💳 Paiement créé id={} lié à commande={}", saved.getId(), commande.getId());
-
-        // 4) Lignes de commande (avec bénéficiaire par ligne)
-        for (CartItemDTO it : req.getItems()) {
-            Produit produit = produitService.getProduitEntityById(it.getProduitId())
-                    .orElseThrow(() -> new IllegalArgumentException("Produit introuvable id=" + it.getProduitId()));
-
-            // 🔹 Récupération du prix déjà calculé dans la boucle précédente (PLUS DE RECALCUL !)
-            double unit = prixUnitairesCalcules.get(it);
-            log.info("💰 Réutilisation prix calculé pour '{}': {}€", produit.getNom(), unit);
-
-            Long lineBenefId = (it.getBeneficiaireId() != null) ? it.getBeneficiaireId()
-                    : (req.getMembreId() != null ? req.getMembreId()
-                    : (membreCible != null ? membreCible.getId() : null));
-
-            // ⚠️ Assure-toi que cette signature existe côté service des lignes
-            ligneCommandeService.creerPourPaiement(
-                    saved,
-                    produit,
-                    unit,
-                    it.getQuantite(),
-                    it.getTaille(),
-                    it.getCouleur(),
-                    it.getFlocageActif() != null && it.getFlocageActif(),
-                    it.getFlocage(),
-                    lineBenefId
-            );
-        }
-
-        log.info("🧾 Paiement depuis panier -> id={} commandeId={} total={} mode={} statutPaiement={}",
-                saved.getId(), commande.getId(), saved.getMontantTotal(), saved.getModePaiement(), saved.getStatut());
-
-        return saved;
-    }
     @Transactional(readOnly = true)
     public List<PaiementDTO> getPaiementsParMembre(Long membreId) {
         if (membreId == null) return Collections.emptyList();

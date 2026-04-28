@@ -1,154 +1,781 @@
-2026-04-27 08:49:46.066 INFO  [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
-2026-04-27 08:49:46.141 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 20332 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
-2026-04-27 08:49:46.141 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
-2026-04-27 08:49:46.197 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-04-27 08:49:46.197 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-04-27 08:49:46.977 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-04-27 08:49:47.070 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 84 ms. Found 21 JPA repository interfaces.
-2026-04-27 08:49:47.653 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
-2026-04-27 08:49:47.665 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
-2026-04-27 08:49:47.667 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2026-04-27 08:49:47.667 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
-2026-04-27 08:49:47.713 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-04-27 08:49:47.713 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1510 ms
-2026-04-27 08:49:47.844 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-04-27 08:49:47.911 INFO  [restartedMain] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.10.Final
-2026-04-27 08:49:47.942 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-04-27 08:49:48.184 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-04-27 08:49:48.205 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-04-27 08:49:48.392 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@400c5160
-2026-04-27 08:49:48.392 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-04-27 08:49:49.593 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-04-27 08:49:49.850 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-04-27 08:49:50.041 INFO  [restartedMain] org.springframework.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-04-27 08:49:51.004 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
-2026-04-27 08:49:51.123 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
-2026-04-27 08:49:51.713 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-04-27 08:49:51.732 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
-2026-04-27 08:49:51.747 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
-2026-04-27 08:49:51.764 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 6.137 seconds (process running for 6.532)
-2026-04-27 08:49:51.815 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
-2026-04-27 08:49:51.815 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
-2026-04-27 08:49:51.815 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
-2026-04-27 08:49:51.815 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
-2026-04-27 08:49:58.518 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-04-27 08:49:58.519 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2026-04-27 08:49:58.523 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 4 ms
-2026-04-27 08:49:58.617 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 08:49:58.690 INFO  [http-nio-8081-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 08:50:02.358 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:50:02.358 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:50:02.358 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:51:43.955 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:51:50.397 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:51:52.129 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:51:56.849 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:52:14.533 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 08:52:16.410 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:01:35.940 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:01:38.253 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:01:40.857 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:35:23.896 INFO  [http-nio-8081-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 09:35:23.907 INFO  [http-nio-8081-exec-7] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 09:35:23.910 INFO  [http-nio-8081-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:35:38.814 INFO  [http-nio-8081-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:36:11.300 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:36:25.917 INFO  [http-nio-8081-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:40:02.763 WARN  [http-nio-8081-exec-7] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Utilisateur#6] - no Session]
-2026-04-27 09:40:12.997 WARN  [http-nio-8081-exec-9] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.hibernate.LazyInitializationException: could not initialize proxy [club.taekwondo.entity.jpa.Utilisateur#10] - no Session]
-2026-04-27 09:45:38.092 INFO  [SpringApplicationShutdownHook] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
-2026-04-27 09:45:38.105 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
-2026-04-27 09:45:38.107 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
-2026-04-27 09:45:53.728 INFO  [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
-2026-04-27 09:45:53.789 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 10688 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
-2026-04-27 09:45:53.789 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
-2026-04-27 09:45:53.842 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-04-27 09:45:53.842 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-04-27 09:45:54.624 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-04-27 09:45:54.724 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 95 ms. Found 21 JPA repository interfaces.
-2026-04-27 09:45:55.346 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
-2026-04-27 09:45:55.352 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
-2026-04-27 09:45:55.361 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
-2026-04-27 09:45:55.361 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
-2026-04-27 09:45:55.411 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
-2026-04-27 09:45:55.411 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1568 ms
-2026-04-27 09:45:55.547 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-04-27 09:45:55.622 INFO  [restartedMain] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.10.Final
-2026-04-27 09:45:55.656 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
-2026-04-27 09:45:55.922 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-04-27 09:45:55.953 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
-2026-04-27 09:45:56.259 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@17b13bbb
-2026-04-27 09:45:56.259 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
-2026-04-27 09:45:57.546 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-04-27 09:45:57.850 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-04-27 09:45:58.124 INFO  [restartedMain] org.springframework.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-04-27 09:45:59.202 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
-2026-04-27 09:45:59.335 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
-2026-04-27 09:45:59.922 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
-2026-04-27 09:45:59.936 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
-2026-04-27 09:45:59.954 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
-2026-04-27 09:45:59.957 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 6.696 seconds (process running for 7.186)
-2026-04-27 09:46:00.032 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
-2026-04-27 09:46:00.032 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
-2026-04-27 09:46:00.032 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
-2026-04-27 09:46:00.033 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
-2026-04-27 09:46:06.960 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-04-27 09:46:06.960 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
-2026-04-27 09:46:06.962 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
-2026-04-27 09:48:35.748 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 09:48:35.748 INFO  [http-nio-8081-exec-8] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 09:48:35.773 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:49:04.204 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 09:49:22.376 INFO  [http-nio-8081-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 10:54:52.913 INFO  [http-nio-8081-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 10:54:52.913 INFO  [http-nio-8081-exec-4] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 10:54:52.934 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 11:32:10.520 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 11:32:10.525 INFO  [http-nio-8081-exec-8] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 11:32:30.052 INFO  [http-nio-8081-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 11:32:51.597 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:06:53.906 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:06:53.906 INFO  [http-nio-8081-exec-6] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:06:53.929 INFO  [http-nio-8081-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:06:58.516 INFO  [http-nio-8081-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:07:25.607 INFO  [http-nio-8081-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:07:25.609 INFO  [http-nio-8081-exec-7] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:07:25.612 INFO  [http-nio-8081-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:07:40.960 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:07:40.962 INFO  [http-nio-8081-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:07:40.970 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:07:54.710 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:07:54.711 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:07:54.712 INFO  [http-nio-8081-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:08:27.184 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:08:27.186 INFO  [http-nio-8081-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:08:27.191 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:09:12.482 INFO  [http-nio-8081-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:09:12.485 INFO  [http-nio-8081-exec-10] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:09:12.505 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:10:10.344 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:10:10.345 INFO  [http-nio-8081-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:10:10.360 INFO  [http-nio-8081-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:11:01.839 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:11:01.840 INFO  [http-nio-8081-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:11:01.862 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:11:39.789 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:11:39.791 INFO  [http-nio-8081-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:11:39.815 INFO  [http-nio-8081-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:12:09.007 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:12:09.009 INFO  [http-nio-8081-exec-5] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:12:09.027 INFO  [http-nio-8081-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:13:43.807 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:13:43.809 INFO  [http-nio-8081-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:13:43.822 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 12:14:19.312 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 12:14:19.313 INFO  [http-nio-8081-exec-8] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 12:14:19.336 INFO  [http-nio-8081-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 13:15:54.604 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m24s738ms690µs799ns).
-2026-04-27 13:18:48.026 WARN  [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=53s418ms603µs).
-2026-04-27 14:15:03.080 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 14:15:03.110 INFO  [http-nio-8081-exec-8] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 14:15:56.007 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
-2026-04-27 14:23:02.546 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
-2026-04-27 14:23:02.548 INFO  [http-nio-8081-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
-2026-04-27 14:23:02.585 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 14:25:34.829 INFO  [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2026-04-28 14:25:34.878 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 14:25:34.878 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 14:25:34.940 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-28 14:25:34.941 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-28 14:25:35.780 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 14:25:35.881 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 92 ms. Found 21 JPA repository interfaces.
+2026-04-28 14:25:36.548 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 14:25:36.564 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 14:25:36.567 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 14:25:36.567 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 14:25:36.618 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 14:25:36.621 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1680 ms
+2026-04-28 14:25:36.758 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 14:25:36.840 INFO  [restartedMain] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.10.Final
+2026-04-28 14:25:36.887 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 14:25:37.163 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 14:25:37.194 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-04-28 14:25:37.403 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4be1d51d
+2026-04-28 14:25:37.403 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-04-28 14:25:39.014 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 14:25:39.292 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 14:25:39.565 INFO  [restartedMain] org.springframework.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-28 14:25:40.587 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 14:25:40.739 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 14:25:41.339 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 14:25:41.350 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 14:25:41.370 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 14:25:41.378 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 7.022 seconds (process running for 7.51)
+2026-04-28 14:25:41.453 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 14:25:41.453 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 14:25:41.453 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 14:25:41.455 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 14:25:41.521 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 14:25:41.522 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 14:25:41.523 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-28 14:47:42.985 INFO  [http-nio-8081-exec-1] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 14:47:42.992 INFO  [http-nio-8081-exec-1] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 14:47:42.997 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 14:49:57.102 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 14:49:57.107 INFO  [http-nio-8081-exec-8] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 14:49:57.139 INFO  [http-nio-8081-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 14:59:21.896 INFO  [http-nio-8081-exec-3] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 14:59:21.901 INFO  [http-nio-8081-exec-3] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 14:59:21.920 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 14:59:40.900 WARN  [http-nio-8081-exec-3] org.hibernate.engine.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-04-28 14:59:40.904 ERROR [http-nio-8081-exec-3] org.hibernate.engine.jdbc.spi.SqlExceptionHelper - ERREUR: la valeur d'une clé dupliquée rompt la contrainte unique « uksam6du569g187ohjlfxg9qjj9 »
+  Détail : La clé « (membre_id, evenement_id)=(14, 1) » existe déjà.
+2026-04-28 14:59:44.460 WARN  [http-nio-8081-exec-4] org.hibernate.engine.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQLState: 23505
+2026-04-28 14:59:44.460 ERROR [http-nio-8081-exec-4] org.hibernate.engine.jdbc.spi.SqlExceptionHelper - ERREUR: la valeur d'une clé dupliquée rompt la contrainte unique « uksam6du569g187ohjlfxg9qjj9 »
+  Détail : La clé « (membre_id, evenement_id)=(13, 1) » existe déjà.
+2026-04-28 15:03:58.133 INFO  [http-nio-8081-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 15:03:58.135 INFO  [http-nio-8081-exec-7] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 15:03:58.143 INFO  [http-nio-8081-exec-4] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:04:06.874 INFO  [http-nio-8081-exec-8] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:04:16.934 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:04:18.504 INFO  [http-nio-8081-exec-9] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:11:09.067 WARN  [http-nio-8081-exec-3] org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.method.annotation.MethodArgumentTypeMismatchException: Method parameter 'id': Failed to convert value of type 'java.lang.String' to required type 'java.lang.Long'; For input string: "mon-club"]
+2026-04-28 15:12:15.767 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (0 additions, 152 deletions, 0 modifications)
+2026-04-28 15:12:15.775 INFO  [Thread-5] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:12:15.791 INFO  [Thread-5] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:12:15.797 INFO  [Thread-5] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-04-28 15:12:15.800 INFO  [Thread-5] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-04-28 15:12:15.946 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:12:15.946 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:12:16.281 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:12:16.284 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2026-04-28 15:12:16.446 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:12:16.446 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:12:16.446 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:12:16.446 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:12:16.477 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:12:16.478 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 522 ms
+2026-04-28 15:12:16.528 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:12:16.532 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:12:16.538 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:12:16.540 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2026-04-28 15:12:16.623 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@7b18c8e3
+2026-04-28 15:12:16.623 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2026-04-28 15:12:16.659 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:12:16.659 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:12:16.954 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:12:16.959 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:12:16.966 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:12:16.969 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 1.087 seconds (process running for 2803.068)
+2026-04-28 15:12:16.975 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration matched:
+      - AllNestedConditions 2 matched 0 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) did not find any beans; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Negative matches:
+-----------------
+
+    None
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:12:16.976 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:12:20.593 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (152 additions, 0 deletions, 0 modifications)
+2026-04-28 15:12:20.594 INFO  [Thread-7] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:12:20.600 INFO  [Thread-7] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:12:20.600 INFO  [Thread-7] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2026-04-28 15:12:20.601 INFO  [Thread-7] com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2026-04-28 15:12:20.677 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:12:20.677 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:12:20.879 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:12:20.934 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 47 ms. Found 21 JPA repository interfaces.
+2026-04-28 15:12:21.063 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:12:21.063 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:12:21.063 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:12:21.072 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:12:21.083 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:12:21.083 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 404 ms
+2026-04-28 15:12:21.128 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:12:21.128 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:12:21.143 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:12:21.145 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Starting...
+2026-04-28 15:12:21.224 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@7b43fdea
+2026-04-28 15:12:21.224 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Start completed.
+2026-04-28 15:12:21.592 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:12:21.816 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:12:22.335 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 15:12:22.463 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 15:12:22.701 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:12:22.709 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:12:22.712 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:12:22.715 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 2.069 seconds (process running for 2808.812)
+2026-04-28 15:12:22.715 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 15:12:22.715 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 15:12:22.715 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 15:12:22.715 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+    None
+
+
+Negative matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration:
+      Did not match:
+         - AllNestedConditions 1 matched 1 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) found beans of type 'org.springframework.security.web.SecurityFilterChain' securityFilterChain; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:12:22.715 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:12:26.201 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 15:12:26.201 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 15:12:26.202 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-28 15:13:38.247 INFO  [http-nio-8081-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 15:13:38.256 INFO  [http-nio-8081-exec-10] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 15:13:38.258 INFO  [http-nio-8081-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:13:47.293 INFO  [http-nio-8081-exec-5] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:14:16.022 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (0 additions, 152 deletions, 0 modifications)
+2026-04-28 15:14:16.024 INFO  [Thread-11] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:14:16.033 INFO  [Thread-11] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:14:16.034 INFO  [Thread-11] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown initiated...
+2026-04-28 15:14:16.036 INFO  [Thread-11] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown completed.
+2026-04-28 15:14:16.154 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:14:16.154 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:14:16.430 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:14:16.436 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 JPA repository interfaces.
+2026-04-28 15:14:16.589 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:14:16.592 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:14:16.592 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:14:16.592 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:14:16.615 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:14:16.615 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 457 ms
+2026-04-28 15:14:16.650 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:14:16.661 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:14:16.663 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:14:16.663 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Starting...
+2026-04-28 15:14:16.764 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@fbb4ffe
+2026-04-28 15:14:16.764 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Start completed.
+2026-04-28 15:14:16.796 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:14:16.796 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:14:17.118 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:14:17.126 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:14:17.136 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:14:17.144 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 1.04 seconds (process running for 2923.241)
+2026-04-28 15:14:17.150 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration matched:
+      - AllNestedConditions 2 matched 0 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) did not find any beans; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Negative matches:
+-----------------
+
+    None
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:14:17.150 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:14:17.381 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 15:14:17.381 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 15:14:17.383 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-04-28 15:14:19.919 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (152 additions, 0 deletions, 0 modifications)
+2026-04-28 15:14:19.922 INFO  [Thread-15] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:14:19.931 INFO  [Thread-15] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:14:19.933 INFO  [Thread-15] com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Shutdown initiated...
+2026-04-28 15:14:19.936 INFO  [Thread-15] com.zaxxer.hikari.HikariDataSource - HikariPool-4 - Shutdown completed.
+2026-04-28 15:14:20.024 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:14:20.024 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:14:20.248 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:14:20.294 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 42 ms. Found 21 JPA repository interfaces.
+2026-04-28 15:14:20.420 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:14:20.421 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:14:20.421 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:14:20.421 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:14:20.449 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:14:20.449 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 421 ms
+2026-04-28 15:14:20.492 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:14:20.493 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:14:20.498 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:14:20.500 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Starting...
+2026-04-28 15:14:20.569 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-5 - Added connection org.postgresql.jdbc.PgConnection@262c8024
+2026-04-28 15:14:20.569 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Start completed.
+2026-04-28 15:14:20.967 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:14:21.157 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:14:21.722 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 15:14:21.857 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 15:14:22.137 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:14:22.145 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:14:22.152 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:14:22.158 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 2.159 seconds (process running for 2928.254)
+2026-04-28 15:14:22.162 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 15:14:22.164 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 15:14:22.164 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 15:14:22.165 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+    None
+
+
+Negative matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration:
+      Did not match:
+         - AllNestedConditions 1 matched 1 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) found beans of type 'org.springframework.security.web.SecurityFilterChain' securityFilterChain; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:14:22.165 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:14:23.963 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 15:14:23.963 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 15:14:23.964 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-28 15:18:42.099 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (0 additions, 152 deletions, 0 modifications)
+2026-04-28 15:18:42.103 INFO  [Thread-19] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:18:42.113 INFO  [Thread-19] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:18:42.114 INFO  [Thread-19] com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Shutdown initiated...
+2026-04-28 15:18:42.115 INFO  [Thread-19] com.zaxxer.hikari.HikariDataSource - HikariPool-5 - Shutdown completed.
+2026-04-28 15:18:42.232 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:18:42.232 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:18:42.474 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:18:42.477 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 4 ms. Found 0 JPA repository interfaces.
+2026-04-28 15:18:42.618 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:18:42.620 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:18:42.620 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:18:42.620 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:18:42.656 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:18:42.657 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 419 ms
+2026-04-28 15:18:42.693 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:18:42.698 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:18:42.704 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:18:42.705 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-6 - Starting...
+2026-04-28 15:18:42.813 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-6 - Added connection org.postgresql.jdbc.PgConnection@329ee689
+2026-04-28 15:18:42.813 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-6 - Start completed.
+2026-04-28 15:18:42.839 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:18:42.839 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:18:43.013 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:18:43.019 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:18:43.025 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:18:43.031 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 0.849 seconds (process running for 3189.127)
+2026-04-28 15:18:43.033 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration matched:
+      - AllNestedConditions 2 matched 0 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) did not find any beans; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Negative matches:
+-----------------
+
+    None
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:18:43.033 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:18:45.813 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (152 additions, 0 deletions, 0 modifications)
+2026-04-28 15:18:45.814 INFO  [Thread-23] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:18:45.820 INFO  [Thread-23] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:18:45.820 INFO  [Thread-23] com.zaxxer.hikari.HikariDataSource - HikariPool-6 - Shutdown initiated...
+2026-04-28 15:18:45.821 INFO  [Thread-23] com.zaxxer.hikari.HikariDataSource - HikariPool-6 - Shutdown completed.
+2026-04-28 15:18:45.901 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:18:45.901 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:18:46.144 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:18:46.198 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 54 ms. Found 21 JPA repository interfaces.
+2026-04-28 15:18:46.314 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:18:46.315 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:18:46.315 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:18:46.315 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:18:46.335 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:18:46.335 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 433 ms
+2026-04-28 15:18:46.409 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:18:46.410 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:18:46.415 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:18:46.416 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-7 - Starting...
+2026-04-28 15:18:46.497 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-7 - Added connection org.postgresql.jdbc.PgConnection@61df88ae
+2026-04-28 15:18:46.498 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-7 - Start completed.
+2026-04-28 15:18:46.963 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:18:47.231 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:18:47.767 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 15:18:47.903 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 15:18:48.147 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:18:48.147 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:18:48.160 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:18:48.164 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 2.299 seconds (process running for 3194.261)
+2026-04-28 15:18:48.171 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 15:18:48.172 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 15:18:48.172 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 15:18:48.173 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+    None
+
+
+Negative matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration:
+      Did not match:
+         - AllNestedConditions 1 matched 1 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) found beans of type 'org.springframework.security.web.SecurityFilterChain' securityFilterChain; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:18:48.173 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:19:56.666 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 15:19:56.666 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 15:19:56.668 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-28 15:26:32.828 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (0 additions, 152 deletions, 0 modifications)
+2026-04-28 15:26:32.828 INFO  [Thread-27] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:26:32.840 INFO  [Thread-27] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:26:32.841 INFO  [Thread-27] com.zaxxer.hikari.HikariDataSource - HikariPool-7 - Shutdown initiated...
+2026-04-28 15:26:32.842 INFO  [Thread-27] com.zaxxer.hikari.HikariDataSource - HikariPool-7 - Shutdown completed.
+2026-04-28 15:26:32.992 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:26:32.993 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:26:33.186 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:26:33.190 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 3 ms. Found 0 JPA repository interfaces.
+2026-04-28 15:26:33.307 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:26:33.309 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:26:33.310 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:26:33.310 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:26:33.345 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:26:33.345 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 350 ms
+2026-04-28 15:26:33.411 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:26:33.416 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:26:33.421 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:26:33.424 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-8 - Starting...
+2026-04-28 15:26:33.613 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-8 - Added connection org.postgresql.jdbc.PgConnection@52a30519
+2026-04-28 15:26:33.613 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-8 - Start completed.
+2026-04-28 15:26:33.682 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:26:33.734 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:26:33.951 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:26:33.955 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:26:33.962 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:26:33.965 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 1.052 seconds (process running for 3660.06)
+2026-04-28 15:26:33.966 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration matched:
+      - AllNestedConditions 2 matched 0 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) did not find any beans; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Negative matches:
+-----------------
+
+    None
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:26:33.966 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:26:36.280 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (152 additions, 0 deletions, 0 modifications)
+2026-04-28 15:26:36.280 INFO  [Thread-31] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:26:36.280 INFO  [Thread-31] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:26:36.280 INFO  [Thread-31] com.zaxxer.hikari.HikariDataSource - HikariPool-8 - Shutdown initiated...
+2026-04-28 15:26:36.288 INFO  [Thread-31] com.zaxxer.hikari.HikariDataSource - HikariPool-8 - Shutdown completed.
+2026-04-28 15:26:36.361 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:26:36.362 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:26:36.572 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:26:36.616 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 46 ms. Found 21 JPA repository interfaces.
+2026-04-28 15:26:36.731 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:26:36.732 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:26:36.732 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:26:36.733 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:26:36.756 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:26:36.756 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 393 ms
+2026-04-28 15:26:36.803 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:26:36.804 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:26:36.808 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:26:36.809 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-9 - Starting...
+2026-04-28 15:26:36.875 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-9 - Added connection org.postgresql.jdbc.PgConnection@6c538c5b
+2026-04-28 15:26:36.875 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-9 - Start completed.
+2026-04-28 15:26:37.124 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:26:37.306 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:26:37.837 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 15:26:37.952 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 15:26:38.131 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:26:38.138 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:26:38.143 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:26:38.146 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 1.811 seconds (process running for 3664.241)
+2026-04-28 15:26:38.150 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 15:26:38.150 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 15:26:38.150 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 15:26:38.150 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+    None
+
+
+Negative matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration:
+      Did not match:
+         - AllNestedConditions 1 matched 1 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) found beans of type 'org.springframework.security.web.SecurityFilterChain' securityFilterChain; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:26:38.150 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:27:36.208 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 15:27:36.208 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 15:27:36.209 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-28 15:28:07.131 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (0 additions, 152 deletions, 0 modifications)
+2026-04-28 15:28:07.134 INFO  [Thread-35] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:28:07.139 INFO  [Thread-35] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:28:07.139 INFO  [Thread-35] com.zaxxer.hikari.HikariDataSource - HikariPool-9 - Shutdown initiated...
+2026-04-28 15:28:07.145 INFO  [Thread-35] com.zaxxer.hikari.HikariDataSource - HikariPool-9 - Shutdown completed.
+2026-04-28 15:28:07.254 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:28:07.255 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:28:07.473 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:28:07.478 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 4 ms. Found 0 JPA repository interfaces.
+2026-04-28 15:28:07.600 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:28:07.600 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:28:07.600 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:28:07.603 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:28:07.627 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:28:07.628 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 371 ms
+2026-04-28 15:28:07.659 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:28:07.664 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:28:07.669 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:28:07.671 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-10 - Starting...
+2026-04-28 15:28:07.781 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-10 - Added connection org.postgresql.jdbc.PgConnection@7236d5a5
+2026-04-28 15:28:07.782 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-10 - Start completed.
+2026-04-28 15:28:07.811 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:28:07.811 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:28:08.016 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:28:08.024 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:28:08.029 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:28:08.034 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 0.826 seconds (process running for 3754.128)
+2026-04-28 15:28:08.036 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration matched:
+      - AllNestedConditions 2 matched 0 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) did not find any beans; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Negative matches:
+-----------------
+
+    None
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:28:08.037 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:28:11.190 INFO  [File Watcher] org.springframework.boot.devtools.autoconfigure.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 152 class path changes (152 additions, 0 deletions, 0 modifications)
+2026-04-28 15:28:11.192 INFO  [Thread-39] org.apache.coyote.http11.Http11NioProtocol - Stopping ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:28:11.198 INFO  [Thread-39] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:28:11.199 INFO  [Thread-39] com.zaxxer.hikari.HikariDataSource - HikariPool-10 - Shutdown initiated...
+2026-04-28 15:28:11.200 INFO  [Thread-39] com.zaxxer.hikari.HikariDataSource - HikariPool-10 - Shutdown completed.
+2026-04-28 15:28:11.320 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 6456 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 15:28:11.320 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 15:28:11.656 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 15:28:11.712 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 54 ms. Found 21 JPA repository interfaces.
+2026-04-28 15:28:11.850 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 15:28:11.851 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:28:11.851 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 15:28:11.852 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 15:28:11.876 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 15:28:11.876 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 553 ms
+2026-04-28 15:28:11.928 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 15:28:11.931 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 15:28:11.935 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 15:28:11.937 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-11 - Starting...
+2026-04-28 15:28:12.031 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-11 - Added connection org.postgresql.jdbc.PgConnection@3ecdf70b
+2026-04-28 15:28:12.031 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-11 - Start completed.
+2026-04-28 15:28:12.465 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 15:28:12.670 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 15:28:13.195 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 15:28:13.349 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 15:28:13.604 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 15:28:13.611 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 15:28:13.615 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 15:28:13.621 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 2.349 seconds (process running for 3759.714)
+2026-04-28 15:28:13.624 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 15:28:13.624 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 15:28:13.624 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 15:28:13.624 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.ConditionEvaluationDeltaLoggingListener - Condition evaluation delta:
+
+
+==========================
+CONDITION EVALUATION DELTA
+==========================
+
+
+Positive matches:
+-----------------
+
+    None
+
+
+Negative matches:
+-----------------
+
+   SpringBootWebSecurityConfiguration.SecurityFilterChainConfiguration:
+      Did not match:
+         - AllNestedConditions 1 matched 1 did not; NestedCondition on DefaultWebSecurityCondition.Beans @ConditionalOnMissingBean (types: org.springframework.security.web.SecurityFilterChain; SearchStrategy: all) found beans of type 'org.springframework.security.web.SecurityFilterChain' securityFilterChain; NestedCondition on DefaultWebSecurityCondition.Classes @ConditionalOnClass found required classes 'org.springframework.security.web.SecurityFilterChain', 'org.springframework.security.config.annotation.web.builders.HttpSecurity' (DefaultWebSecurityCondition)
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    None
+
+
+
+2026-04-28 15:28:13.624 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 15:29:30.544 INFO  [http-nio-8081-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 15:29:30.544 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 15:29:30.547 INFO  [http-nio-8081-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 3 ms
+2026-04-28 15:32:35.599 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 15:32:35.610 INFO  [http-nio-8081-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 15:32:35.664 INFO  [http-nio-8081-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 15:40:18.350 INFO  [http-nio-8081-exec-2] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 15:40:18.350 INFO  [http-nio-8081-exec-2] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 15:40:18.362 INFO  [http-nio-8081-exec-6] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 16:17:06.597 INFO  [SpringApplicationShutdownHook] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 16:17:06.601 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-11 - Shutdown initiated...
+2026-04-28 16:17:06.605 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-11 - Shutdown completed.
+2026-04-28 16:23:32.318 INFO  [background-preinit] org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2026-04-28 16:23:32.371 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Starting ClubTaekwondoApplication using Java 21.0.8 with PID 18844 (C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo\target\classes started by AG in C:\Users\ag\Desktop\autre\ProjetTaekwondo\backend-club-taekwondo)
+2026-04-28 16:23:32.372 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - The following 1 profile is active: "local"
+2026-04-28 16:23:32.428 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-28 16:23:32.428 INFO  [restartedMain] org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-28 16:23:33.255 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-28 16:23:33.359 INFO  [restartedMain] org.springframework.data.repository.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 97 ms. Found 22 JPA repository interfaces.
+2026-04-28 16:23:34.038 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-04-28 16:23:34.056 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8081"]
+2026-04-28 16:23:34.059 INFO  [restartedMain] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-28 16:23:34.059 INFO  [restartedMain] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-04-28 16:23:34.105 INFO  [restartedMain] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-28 16:23:34.105 INFO  [restartedMain] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1676 ms
+2026-04-28 16:23:34.238 INFO  [restartedMain] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-28 16:23:34.322 INFO  [restartedMain] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.10.Final
+2026-04-28 16:23:34.375 INFO  [restartedMain] org.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-04-28 16:23:34.657 INFO  [restartedMain] org.springframework.orm.jpa.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-28 16:23:34.688 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-04-28 16:23:34.897 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@37aa7207
+2026-04-28 16:23:34.898 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-04-28 16:23:36.375 INFO  [restartedMain] org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-28 16:23:36.657 INFO  [restartedMain] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 16:23:36.943 INFO  [restartedMain] org.springframework.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-04-28 16:23:38.014 INFO  [restartedMain] club.taekwondo.service.StripeService - [STRIPE] cle API configuree.
+2026-04-28 16:23:38.157 WARN  [restartedMain] club.taekwondo.controller.StripeWebhookController - [STRIPE] secret webhook non configure en local. Les webhooks seront rejetes.
+2026-04-28 16:23:38.747 INFO  [restartedMain] org.springframework.boot.devtools.autoconfigure.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-04-28 16:23:38.768 INFO  [restartedMain] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8081"]
+2026-04-28 16:23:38.785 INFO  [restartedMain] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path ''
+2026-04-28 16:23:38.795 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - Started ClubTaekwondoApplication in 7.008 seconds (process running for 7.514)
+2026-04-28 16:23:38.863 INFO  [restartedMain] club.taekwondo.config.ClubDataBootstrap - [ClubBootstrap] 2 club(s) deja presents, seed ignore.
+2026-04-28 16:23:38.864 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables super-admin absentes, bootstrap ignore.
+2026-04-28 16:23:38.864 INFO  [restartedMain] club.taekwondo.config.AdminBootstrap - [BOOTSTRAP] variables admin absentes, bootstrap ignore.
+2026-04-28 16:23:38.865 INFO  [restartedMain] club.taekwondo.ClubTaekwondoApplication - ClubTaekwondoApplication demarre.
+2026-04-28 16:32:24.269 INFO  [http-nio-8081-exec-2] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-28 16:32:24.270 INFO  [http-nio-8081-exec-2] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-28 16:32:24.272 INFO  [http-nio-8081-exec-2] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-28 16:32:26.966 INFO  [http-nio-8081-exec-10] club.taekwondo.service.jpa.ActualiteService - Recuperation de toutes les actualites.
+2026-04-28 16:32:26.973 INFO  [http-nio-8081-exec-10] club.taekwondo.controller.mongo.ActualiteController - [CTRL] Actualités récupérées: 0
+2026-04-28 16:32:26.981 INFO  [http-nio-8081-exec-7] club.taekwondo.service.jpa.ActualiteService - Recuperation des actualites pour le club : 1
+2026-04-28 16:41:39.812 INFO  [SpringApplicationShutdownHook] org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-28 16:41:39.818 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-04-28 16:41:39.819 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

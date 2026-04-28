@@ -19,6 +19,9 @@ public interface InscriptionEvenementRepository extends JpaRepository<Inscriptio
     // 🔹 Compter seulement les inscriptions actives (non annulées)
     long countByEvenementIdAndStatutNot(Long evenementId, StatutInscription statut);
 
+    @Query("SELECT COUNT(i) FROM InscriptionEvenement i WHERE i.evenement.id = :evenementId AND i.statut IN ('EN_ATTENTE', 'VALIDEE')")
+    long countActiveByEvenementId(@Param("evenementId") Long evenementId);
+
     // 🔹 Vérifier si un membre est déjà inscrit à un événement
     boolean existsByEvenementIdAndMembreId(Long evenementId, Long membreId);
 
@@ -26,11 +29,11 @@ public interface InscriptionEvenementRepository extends JpaRepository<Inscriptio
     boolean existsByMembreIdAndEvenementIdAndStatutNot(Long membreId, Long evenementId, StatutInscription statut);
 
     // 🔹 Récupérer toutes les inscriptions d'un événement AVEC les données du membre
-    @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre JOIN FETCH i.evenement WHERE i.evenement.id = :evenementId")
+    @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre m JOIN FETCH i.evenement LEFT JOIN FETCH m.compteUtilisateur LEFT JOIN FETCH m.parent WHERE i.evenement.id = :evenementId")
     List<InscriptionEvenement> findByEvenementIdWithMembre(@Param("evenementId") Long evenementId);
 
     // 🔹 Récupérer les inscriptions d'un événement filtrées par statut AVEC les données du membre
-    @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre JOIN FETCH i.evenement WHERE i.evenement.id = :evenementId AND i.statut = :statut")
+    @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre m JOIN FETCH i.evenement LEFT JOIN FETCH m.compteUtilisateur LEFT JOIN FETCH m.parent WHERE i.evenement.id = :evenementId AND i.statut = :statut")
     List<InscriptionEvenement> findByEvenementIdAndStatutWithMembre(@Param("evenementId") Long evenementId, @Param("statut") StatutInscription statut);
 
     // 🔹 Récupérer toutes les inscriptions d'un événement (méthode originale pour compatibilité)
@@ -41,6 +44,9 @@ public interface InscriptionEvenementRepository extends JpaRepository<Inscriptio
 
     // 🔹 Récupérer toutes les inscriptions d'un membre
     List<InscriptionEvenement> findByMembreId(Long membreId);
+
+    @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre JOIN FETCH i.evenement WHERE i.membre.id = :membreId AND i.statut != 'ANNULEE'")
+    List<InscriptionEvenement> findActiveByMembreIdWithEvenement(@Param("membreId") Long membreId);
 
     // 🔹 Supprimer une inscription spécifique (rarement utilisé car on fait un soft delete → statut ANNULEE)
     @Transactional

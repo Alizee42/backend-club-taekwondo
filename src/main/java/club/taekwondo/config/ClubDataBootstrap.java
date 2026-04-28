@@ -25,29 +25,15 @@ public class ClubDataBootstrap {
                 return;
             }
 
-            List<Club> clubs = List.of(
-                    buildClub(
-                            "Olympique TKD Villeurbannais",
-                            "12 rue des Sports, 69100 Villeurbanne",
-                            "04 72 00 00 01",
-                            "contact@otk-villeurbanne.fr"
-                    ),
-                    buildClub(
-                            "Club TKD Grenoble",
-                            "5 avenue du Stade, 38000 Grenoble",
-                            "04 76 00 00 02",
-                            "contact@tkd-grenoble.fr"
-                    ),
-                    buildClub(
-                            "Acad\u00e9mie TKD Lyon 3",
-                            "47 cours Gambetta, 69003 Lyon",
-                            "04 78 00 00 03",
-                            "contact@academie-tkd-lyon.fr"
-                    )
+            Club club = buildClub(
+                    "Villeurbanne",
+                    "",
+                    "",
+                    ""
             );
 
-            clubRepository.saveAll(clubs);
-            log.info("[ClubBootstrap] {} clubs de test crees.", clubs.size());
+            clubRepository.save(club);
+            log.info("[ClubBootstrap] Club Villeurbanne cree.");
         };
     }
 

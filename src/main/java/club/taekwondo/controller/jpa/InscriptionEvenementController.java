@@ -71,17 +71,19 @@ public class InscriptionEvenementController {
     public ResponseEntity<?> inscrireMembres(@RequestBody InscriptionRequestDTO request,
                                              Authentication authentication) {
         try {
-            if (request.getEnfantsIds() == null || request.getEnfantsIds().isEmpty()) {
+            List<Long> membreIds = resolveMembreIds(request);
+
+            if (membreIds == null || membreIds.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Aucun membre selectionne"));
             }
 
-            for (Long membreId : request.getEnfantsIds()) {
+            for (Long membreId : membreIds) {
                 assertCanAccessMember(authentication, membreId);
             }
 
             List<InscriptionEvenementDTO> inscriptions = inscriptionService.inscrireMembres(
                     request.getEvenementId(),
-                    request.getEnfantsIds(),
+                    membreIds,
                     request.getCommentaire()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(inscriptions);
@@ -90,6 +92,40 @@ public class InscriptionEvenementController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/me")
+    @PreAuthorize("hasRole('MEMBRE')")
+    public ResponseEntity<?> inscrireMembreConnecte(@RequestBody InscriptionRequestDTO request,
+                                                    Authentication authentication) {
+        try {
+            Utilisateur currentUser = requireAuthenticatedUser(authentication);
+            Long membreId = membreService.getMembreEntityByIdUtilisateur(currentUser.getId())
+                    .map(membre -> membre.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membre introuvable pour cet utilisateur"));
+
+            List<InscriptionEvenementDTO> inscriptions = inscriptionService.inscrireMembres(
+                    request.getEvenementId(),
+                    List.of(membreId),
+                    request.getCommentaire()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(inscriptions.get(0));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('MEMBRE')")
+    public ResponseEntity<List<InscriptionEvenementDTO>> getMesInscriptions(Authentication authentication) {
+        Utilisateur currentUser = requireAuthenticatedUser(authentication);
+        Long membreId = membreService.getMembreEntityByIdUtilisateur(currentUser.getId())
+                .map(membre -> membre.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membre introuvable pour cet utilisateur"));
+
+        return ResponseEntity.ok(inscriptionService.getInscriptionsByMembreId(membreId));
     }
 
     @PutMapping("/{id}")
@@ -218,6 +254,13 @@ public class InscriptionEvenementController {
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acces refuse");
+    }
+
+    private List<Long> resolveMembreIds(InscriptionRequestDTO request) {
+        if (request.getMembreIds() != null && !request.getMembreIds().isEmpty()) {
+            return request.getMembreIds();
+        }
+        return request.getEnfantsIds();
     }
 
     private boolean hasAnyRole(Authentication authentication, String... roles) {
