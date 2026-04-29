@@ -27,6 +27,7 @@ public class ClubService {
 
     public ClubDto createClub(ClubDto dto) {
         Club club = toEntity(dto);
+        club.setId(null);
         Club saved = clubRepository.save(club);
         return toDto(saved);
     }
@@ -35,11 +36,7 @@ public class ClubService {
         Optional<Club> clubOpt = clubRepository.findById(id);
         if (clubOpt.isEmpty()) return null;
         Club club = clubOpt.get();
-        club.setName(dto.getName());
-        club.setAdresse(dto.getAdresse());
-        club.setTelephone(dto.getTelephone());
-        club.setEmail(dto.getEmail());
-        club.setLogo(dto.getLogo());
+        applyDto(club, dto);
         Club saved = clubRepository.save(club);
         return toDto(saved);
     }
@@ -56,17 +53,28 @@ public class ClubService {
         dto.setTelephone(club.getTelephone());
         dto.setEmail(club.getEmail());
         dto.setLogo(club.getLogo());
+        dto.setRib(club.getRib());
         return dto;
     }
 
     private Club toEntity(ClubDto dto) {
         Club club = new Club();
-        club.setId(dto.getId());
-        club.setName(dto.getName());
-        club.setAdresse(dto.getAdresse());
-        club.setTelephone(dto.getTelephone());
-        club.setEmail(dto.getEmail());
-        club.setLogo(dto.getLogo());
+        applyDto(club, dto);
         return club;
+    }
+
+    private void applyDto(Club club, ClubDto dto) {
+        club.setName(clean(dto.getName()));
+        club.setAdresse(clean(dto.getAdresse()));
+        club.setTelephone(clean(dto.getTelephone()));
+        club.setEmail(clean(dto.getEmail()));
+        club.setLogo(clean(dto.getLogo()));
+        club.setRib(clean(dto.getRib()));
+    }
+
+    private String clean(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

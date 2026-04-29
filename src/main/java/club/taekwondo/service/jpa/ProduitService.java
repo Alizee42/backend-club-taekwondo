@@ -1,7 +1,9 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.ProduitDTO;
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Produit;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.ProduitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ public class ProduitService {
 
     @Autowired
     private ProduitRepository produitRepository;
+    @Autowired
+    private ClubRepository clubRepository;
 
     // 🔁 Récupérer tous les produits 
     public List<ProduitDTO> getAllProduits() {
@@ -95,6 +99,9 @@ public class ProduitService {
         produitDTO.setStock(produit.getStock());
         produitDTO.setCategorie(produit.getCategorie());
         produitDTO.setImageUrl(produit.getImageUrl());
+        if (produit.getClub() != null) {
+            produitDTO.setClubId(produit.getClub().getId());
+        }
         return produitDTO;
     }
 
@@ -108,6 +115,9 @@ public class ProduitService {
         produit.setStock(produitDTO.getStock());
         produit.setCategorie(produitDTO.getCategorie());
         produit.setImageUrl(produitDTO.getImageUrl());
+        if (produitDTO.getClubId() != null) {
+            clubRepository.findById(produitDTO.getClubId()).ifPresent(produit::setClub);
+        }
         return produit;
     }
 }

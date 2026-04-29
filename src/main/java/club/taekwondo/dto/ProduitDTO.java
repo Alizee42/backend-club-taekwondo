@@ -23,6 +23,7 @@ public class ProduitDTO {
 
     private String categorie;
     private String imageUrl;
+    private Long clubId;
 
     // Getters et Setters
 
@@ -81,4 +82,7 @@ public class ProduitDTO {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public Long getClubId() { return clubId; }
+    public void setClubId(Long clubId) { this.clubId = clubId; }
 }

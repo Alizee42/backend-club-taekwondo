@@ -3,8 +3,10 @@ package club.taekwondo.controller.jpa;
 import club.taekwondo.dto.ClubDto;
 import club.taekwondo.service.jpa.ClubService;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,18 +30,21 @@ public class ClubController {
     }
 
     @PostMapping
-    public ClubDto createClub(@RequestBody ClubDto dto) {
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ClubDto createClub(@Valid @RequestBody ClubDto dto) {
         return clubService.createClub(dto);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ClubDto> updateClub(@PathVariable Long id, @RequestBody ClubDto dto) {
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ClubDto> updateClub(@PathVariable Long id, @Valid @RequestBody ClubDto dto) {
         ClubDto updated = clubService.updateClub(id, dto);
         if (updated == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> deleteClub(@PathVariable Long id) {
         clubService.deleteClub(id);
         return ResponseEntity.noContent().build();

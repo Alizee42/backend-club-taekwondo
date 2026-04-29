@@ -16,6 +16,7 @@ public class Club {
     private String telephone;
     private String email;
     private String logo;
+    private String rib;
 
     // Getters & Setters
     public Long getId() { return id; }
@@ -30,4 +31,6 @@ public class Club {
     public void setEmail(String email) { this.email = email; }
     public String getLogo() { return logo; }
     public void setLogo(String logo) { this.logo = logo; }
+    public String getRib() { return rib; }
+    public void setRib(String rib) { this.rib = rib; }
 }

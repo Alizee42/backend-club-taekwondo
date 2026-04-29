@@ -1,6 +1,7 @@
 package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.BonCommandeRequestDTO;
+import club.taekwondo.dto.CartCheckoutRequestDTO;
 import club.taekwondo.dto.CommandeDTO;
 import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.dto.LigneCommandeDTO;
@@ -11,6 +12,7 @@ import club.taekwondo.entity.jpa.LigneCommande;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Produit;
 import club.taekwondo.entity.jpa.Club;
+import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.CommandeRepository;
@@ -55,6 +57,7 @@ public class CommandeService {
     // =========================
 
     // Récupérer toutes les commandes (non filtré par club)
+    @Transactional(readOnly = true)
     public List<CommandeDTO> getAllCommandes() {
         return commandeRepository.findAll()
                 .stream()
@@ -63,6 +66,7 @@ public class CommandeService {
     }
 
     // Récupérer toutes les commandes
+    @Transactional(readOnly = true)
     public List<CommandeDTO> getAllCommandesByClubId(Long clubId) {
         return commandeRepository.findByClub_Id(clubId)
                 .stream()
@@ -71,6 +75,7 @@ public class CommandeService {
     }
 
     // Récupérer une commande par son ID
+    @Transactional(readOnly = true)
     public Optional<CommandeDTO> getCommandeById(Long id) {
         return commandeRepository.findById(id).map(this::convertToDTO);
     }
@@ -79,11 +84,13 @@ public class CommandeService {
         return commandeRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public CommandeDTO toCommandeDTO(Commande commande) {
         return convertToDTO(commande);
     }
 
     // Récupérer les commandes d’un membre
+    @Transactional(readOnly = true)
     public List<CommandeDTO> getCommandesParMembre(Long membreId) {
         LinkedHashMap<Long, CommandeDTO> merged = new LinkedHashMap<>();
 
@@ -104,6 +111,7 @@ public class CommandeService {
     }
 
     // Récupérer les commandes d’un parent (lui + ses enfants)
+    @Transactional(readOnly = true)
     public List<CommandeDTO> getCommandesParParent(Long parentId) {
         LinkedHashMap<Long, CommandeDTO> merged = new LinkedHashMap<>();
 
@@ -163,6 +171,7 @@ public class CommandeService {
 
         BigDecimal total = BigDecimal.ZERO;
         List<LigneCommande> lignes = new ArrayList<>();
+        Membre defaultBeneficiaire = resolveDefaultBeneficiaire(commande.getUtilisateur());
 
         if (commandeDTO.getLignesCommande() != null) {
             for (LigneCommandeDTO ligneDTO : commandeDTO.getLignesCommande()) {
@@ -211,6 +220,8 @@ public class CommandeService {
                     Membre enfant = membreRepository.findById(ligneDTO.getBeneficiaireId())
                             .orElseThrow(() -> new RuntimeException("Bénéficiaire (membre) introuvable: " + ligneDTO.getBeneficiaireId()));
                     ligne.setBeneficiaire(enfant);
+                } else if (defaultBeneficiaire != null) {
+                    ligne.setBeneficiaire(defaultBeneficiaire);
                 }
 
                 total = total.add(ligneTotal);
@@ -251,6 +262,7 @@ public class CommandeService {
 
         BigDecimal total = BigDecimal.ZERO;
         List<LigneCommande> lignes = new ArrayList<>();
+        Membre defaultBeneficiaire = resolveDefaultBeneficiaire(utilisateur);
 
         for (LigneCommandeDTO ligneDTO : req.getLignesCommande()) {
             Produit produit = produitRepository.findById(ligneDTO.getProduitId())
@@ -281,6 +293,83 @@ public class CommandeService {
                 Membre enfant = membreRepository.findById(ligneDTO.getBeneficiaireId())
                         .orElseThrow(() -> new RuntimeException("Bénéficiaire introuvable id=" + ligneDTO.getBeneficiaireId()));
                 ligne.setBeneficiaire(enfant);
+            } else if (defaultBeneficiaire != null) {
+                ligne.setBeneficiaire(defaultBeneficiaire);
+            }
+
+            total = total.add(prixUnitaire.multiply(qte));
+            lignes.add(ligneCommandeRepository.save(ligne));
+        }
+
+        commande.setMontantTotal(total);
+        commande = commandeRepository.save(commande);
+
+        CommandeDTO resultDTO = convertToDTO(commande);
+        resultDTO.setLignesCommande(lignes.stream().map(this::convertLigneToDTO).collect(Collectors.toList()));
+        return resultDTO;
+    }
+
+    @Transactional
+    public CommandeDTO createCommandeFromCart(CartCheckoutRequestDTO req, Utilisateur utilisateur) {
+        if (req.getLignes() == null || req.getLignes().isEmpty()) {
+            throw new IllegalArgumentException("Le panier est vide.");
+        }
+
+        Commande commande = new Commande();
+        commande.setDateCommande(LocalDate.now());
+        commande.setMontantTotal(BigDecimal.ZERO);
+        commande.setUtilisateur(utilisateur);
+        if (utilisateur.getClub() != null) {
+            commande.setClub(utilisateur.getClub());
+        }
+
+        final String modeNorm = normalizeMode(req.getModePaiement());
+        commande.setModePaiement(modeNorm);
+        if ("CB".equals(modeNorm)) {
+            commande.setStatut("PAYEE");
+            commande.setDatePaiement(LocalDate.now());
+        } else {
+            commande.setStatut("EN_ATTENTE");
+            commande.setDatePaiement(null);
+        }
+
+        commande = commandeRepository.save(commande);
+
+        BigDecimal total = BigDecimal.ZERO;
+        List<LigneCommande> lignes = new ArrayList<>();
+        Membre defaultBeneficiaire = resolveDefaultBeneficiaire(utilisateur);
+
+        for (LigneCommandeDTO ligneDTO : req.getLignes()) {
+            Produit produit = produitRepository.findById(ligneDTO.getProduitId())
+                    .orElseThrow(() -> new RuntimeException("Produit non trouvé id=" + ligneDTO.getProduitId()));
+
+            BigDecimal prixUnitaire;
+            if (ligneDTO.getPrixUnitaire() != null && ligneDTO.getPrixUnitaire() > 0) {
+                prixUnitaire = BigDecimal.valueOf(ligneDTO.getPrixUnitaire());
+            } else {
+                prixUnitaire = produit.getPrix();
+                if (ligneDTO.getFlocage() != null && !ligneDTO.getFlocage().trim().isEmpty()) {
+                    prixUnitaire = prixUnitaire.add(COUT_FLOCAGE);
+                }
+            }
+
+            LigneCommande ligne = new LigneCommande();
+            ligne.setCommande(commande);
+            ligne.setProduit(produit);
+            ligne.setQuantite(ligneDTO.getQuantite());
+            ligne.setPrixUnitaire(prixUnitaire.doubleValue());
+            BigDecimal qte = BigDecimal.valueOf(ligneDTO.getQuantite() != null ? ligneDTO.getQuantite() : 0);
+            ligne.setSousTotal(prixUnitaire.multiply(qte).doubleValue());
+            ligne.setTaille(ligneDTO.getTaille());
+            ligne.setCouleur(ligneDTO.getCouleur());
+            ligne.setFlocage(ligneDTO.getFlocage());
+
+            if (ligneDTO.getBeneficiaireId() != null) {
+                Membre enfant = membreRepository.findById(ligneDTO.getBeneficiaireId())
+                        .orElseThrow(() -> new RuntimeException("Bénéficiaire introuvable id=" + ligneDTO.getBeneficiaireId()));
+                ligne.setBeneficiaire(enfant);
+            } else if (defaultBeneficiaire != null) {
+                ligne.setBeneficiaire(defaultBeneficiaire);
             }
 
             total = total.add(prixUnitaire.multiply(qte));
@@ -493,5 +582,22 @@ public class CommandeService {
             default:
                 return raw.trim().toUpperCase();
         }
+    }
+
+    private Membre resolveDefaultBeneficiaire(Utilisateur utilisateur) {
+        if (utilisateur == null || utilisateur.getId() == null || utilisateur.getRole() == null) {
+            return null;
+        }
+
+        if (Role.MEMBRE.equals(utilisateur.getRole())) {
+            return membreRepository.findByCompteUtilisateur_Id(utilisateur.getId()).orElse(null);
+        }
+
+        if (Role.PARENT.equals(utilisateur.getRole())) {
+            List<Membre> enfants = membreRepository.findByParentId(utilisateur.getId());
+            return enfants.size() == 1 ? enfants.get(0) : null;
+        }
+
+        return null;
     }
 }

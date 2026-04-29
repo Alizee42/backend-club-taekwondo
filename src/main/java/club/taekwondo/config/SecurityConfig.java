@@ -49,13 +49,13 @@ public class SecurityConfig {
                     "/api/utilisateurs/register",
                     "/api/parametres-paiement/public",
                     "/api/public/**",
-                    "/api/clubs/**",
                     "/api/galeries/club/**",
                     "/api/enseignants/club/**",
                     "/api/reinitialisation/**"
                 ).permitAll()
                 // Lecture publique : actualités, avis, produits, événements
                 .requestMatchers(HttpMethod.GET,
+                    "/api/clubs/**",
                     "/api/actualites/**",
                     "/api/avis/**",
                     "/api/produits/**",
@@ -64,9 +64,9 @@ public class SecurityConfig {
                     "/api/evenements/{id}"
                 ).permitAll()
                 // Restreindre la modification des clubs (création / modification / suppression)
-                .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/clubs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasRole("SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/clubs/**").hasRole("SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/clubs/**").hasRole("SUPER_ADMIN")
                 // Enseignants: création / modification / suppression restreintes
                 .requestMatchers(HttpMethod.POST, "/api/enseignants/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/enseignants/**").hasAnyRole("ADMIN", "SUPER_ADMIN")

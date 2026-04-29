@@ -1,6 +1,7 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.BonCommandeRequestDTO;
+import club.taekwondo.dto.CartCheckoutRequestDTO;
 import club.taekwondo.dto.CommandeDTO;
 import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.entity.jpa.CampagneCommande;
@@ -153,6 +154,27 @@ public class CommandeController {
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
         } catch (Exception e) {
             logger.error("Erreur creation bon de commande : {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/from-cart")
+    @PreAuthorize("hasAnyRole('MEMBRE','PARENT')")
+    public ResponseEntity<?> passerCommandeDepuisPanier(@RequestBody CartCheckoutRequestDTO req,
+                                                         Authentication authentication) {
+        Utilisateur caller = requireCaller(authentication);
+        Long clubId = getClubId(caller);
+        if (clubId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Aucun club associé au compte"));
+        }
+
+        try {
+            CommandeDTO result = commandeService.createCommandeFromCart(req, caller);
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Erreur création commande depuis panier : {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

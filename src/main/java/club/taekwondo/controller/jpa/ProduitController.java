@@ -1,14 +1,20 @@
 package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.ProduitDTO;
+import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.service.common.FileUploadService;
 import club.taekwondo.service.jpa.ProduitService;
+import club.taekwondo.service.jpa.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -22,6 +28,10 @@ public class ProduitController {
 
     @Autowired
     private ProduitService produitService;
+    @Autowired
+    private UtilisateurService utilisateurService;
+    @Autowired
+    private FileUploadService fileUploadService;
 
     // 🔁 Récupérer tous les produits
     @GetMapping
@@ -40,20 +50,53 @@ public class ProduitController {
     // ➕ Créer un nouveau produit
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<ProduitDTO> createProduit(@RequestBody ProduitDTO produitDTO) {
-        ProduitDTO createdProduit = produitService.createProduit(produitDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdProduit);
+    public ResponseEntity<ProduitDTO> createProduit(@RequestBody ProduitDTO produitDTO,
+                                                     Authentication authentication) {
+        if (produitDTO.getClubId() == null) {
+            utilisateurService.findByEmail(authentication.getName()).ifPresent(caller -> {
+                if (caller.getClub() != null) {
+                    produitDTO.setClubId(caller.getClub().getId());
+                }
+            });
+        }
+        try {
+            ProduitDTO createdProduit = produitService.createProduit(produitDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdProduit);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // 🔄 Mettre à jour un produit existant
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<ProduitDTO> updateProduit(@PathVariable Long id, @RequestBody ProduitDTO produitDTO) {
+    public ResponseEntity<ProduitDTO> updateProduit(@PathVariable Long id,
+                                                     @RequestBody ProduitDTO produitDTO,
+                                                     Authentication authentication) {
+        if (produitDTO.getClubId() == null) {
+            utilisateurService.findByEmail(authentication.getName()).ifPresent(caller -> {
+                if (caller.getClub() != null) {
+                    produitDTO.setClubId(caller.getClub().getId());
+                }
+            });
+        }
         try {
             ProduitDTO updatedProduit = produitService.updateProduit(id, produitDTO);
             return ResponseEntity.ok(updatedProduit);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // 🖼️ Upload d'image produit
+    @PostMapping("/upload-image")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("image") MultipartFile image) {
+        try {
+            String path = fileUploadService.uploadFile(image, "produits");
+            return ResponseEntity.ok(Map.of("url", "/uploads/" + path));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
