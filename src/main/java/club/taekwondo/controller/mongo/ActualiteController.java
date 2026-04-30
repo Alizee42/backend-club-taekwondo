@@ -122,6 +122,42 @@ public class ActualiteController {
         return (updated != null) ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
+    @PutMapping(value = "/{id}/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<?> updateWithImage(
+        @PathVariable String id,
+        @RequestParam String titre,
+        @RequestParam String contenu,
+        @RequestParam String typeActu,
+        @RequestParam boolean isFeatured,
+        @RequestParam String clubId,
+        @RequestParam(value = "complement", required = false) String complement,
+        @RequestParam(value = "image", required = false) MultipartFile imageFile
+    ) {
+        try {
+            String imageUrl = (imageFile != null && !imageFile.isEmpty())
+                ? fileUploadService.uploadFile(imageFile, "actualites")
+                : null;
+
+            ActualiteDTO actualiteDTO = new ActualiteDTO();
+            actualiteDTO.setTitre(titre);
+            actualiteDTO.setContenu(contenu);
+            actualiteDTO.setTypeActu(typeActu);
+            actualiteDTO.setFeatured(isFeatured);
+            actualiteDTO.setImageUrl(imageUrl);
+            actualiteDTO.setDatePublication(LocalDateTime.now());
+            actualiteDTO.setClubId(clubId);
+            actualiteDTO.setComplement(complement);
+
+            ActualiteDTO updated = actualiteService.update(id, actualiteDTO);
+            return (updated != null) ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+        } catch (IOException e) {
+            log.error("[CTRL] Erreur upload image", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ErrorResponse("Erreur lors de l'upload de l'image"));
+        }
+    }
+
     @PutMapping("/{id}/featured")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Void> setFeatured(@PathVariable String id) {
