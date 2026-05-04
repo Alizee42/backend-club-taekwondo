@@ -1,5 +1,6 @@
 package club.taekwondo.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,11 @@ import java.nio.file.Paths;
 @RequestMapping("/uploads")
 public class FileController {
 
-    private final Path uploadPath = Paths.get("uploads").toAbsolutePath().normalize();
+    private final Path uploadPath;
+
+    public FileController(@Value("${upload.dir:uploads}") String uploadDir) {
+        this.uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+    }
 
     // Accepte les sous-dossiers (ex: uploads/avis/image.jpg)
     @GetMapping("/{folder}/{filename:.+}")

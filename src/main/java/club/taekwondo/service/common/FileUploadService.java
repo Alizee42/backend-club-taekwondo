@@ -1,5 +1,6 @@
 package club.taekwondo.service.common;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,7 +10,11 @@ import java.nio.file.*;
 @Service
 public class FileUploadService {
 
-    private final String uploadDir = "uploads"; // Dossier racine
+    private final Path uploadRoot;
+
+    public FileUploadService(@Value("${upload.dir:uploads}") String uploadDir) {
+        this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+    }
 
     /**
      * Enregistre un fichier dans un sous-dossier spécifique (ex: "evenements", "photos", etc.).
@@ -22,7 +27,10 @@ public class FileUploadService {
         }
 
         // Crée le répertoire cible s’il n’existe pas
-        Path uploadPath = Paths.get(uploadDir, subFolder);
+        Path uploadPath = uploadRoot.resolve(subFolder).normalize();
+        if (!uploadPath.startsWith(uploadRoot)) {
+            throw new IllegalArgumentException("Sous-dossier d'upload invalide.");
+        }
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
