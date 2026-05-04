@@ -53,7 +53,7 @@ public class SecurityConfig {
                     "/api/enseignants/club/**",
                     "/api/reinitialisation/**"
                 ).permitAll()
-                // Lecture publique : actualités, avis, produits, événements
+                // Lecture publique : actualités, avis, produits, événements, hero
                 .requestMatchers(HttpMethod.GET,
                     "/api/clubs/**",
                     "/api/actualites/**",
@@ -61,7 +61,9 @@ public class SecurityConfig {
                     "/api/produits/**",
                     "/api/evenements",
                     "/api/evenements/actifs",
-                    "/api/evenements/{id}"
+                    "/api/evenements/{id}",
+                    "/api/hero-config",
+                    "/api/about-config"
                 ).permitAll()
                 // Restreindre la modification des clubs (création / modification / suppression)
                 .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasRole("SUPER_ADMIN")
