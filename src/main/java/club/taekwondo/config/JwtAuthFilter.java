@@ -41,6 +41,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         "/api/utilisateurs/login",
         "/api/utilisateurs/register",
         "/api/parametres-paiement/public",
+        "/api/hero-config",
+        "/api/about-config",
         "/api/public",
         "/api/uploads" // Ajouté : accès libre aux fichiers/documents
     );
