@@ -1,0 +1,75 @@
+name: Deploy backend to IONOS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ionos-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          IONOS_HOST: ${{ secrets.IONOS_HOST }}
+          IONOS_SSH_KEY: ${{ secrets.IONOS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$IONOS_SSH_KEY" > ~/.ssh/ionos_key
+          chmod 600 ~/.ssh/ionos_key
+          ssh-keyscan -H "$IONOS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload source to VPS
+        env:
+          IONOS_HOST: ${{ secrets.IONOS_HOST }}
+          IONOS_USER: ${{ secrets.IONOS_USER }}
+          APP_DIR: ${{ vars.IONOS_APP_DIR || '/opt/projects/taekwondo' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/ionos_key "$IONOS_USER@$IONOS_HOST" "mkdir -p '$APP_DIR'"
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='target' \
+            --exclude='logs' \
+            --exclude='uploads' \
+            --exclude='.m2' \
+            -czf - . \
+            | ssh -i ~/.ssh/ionos_key "$IONOS_USER@$IONOS_HOST" "tar -xzf - -C '$APP_DIR'"
+
+      - name: Rebuild and restart container
+        env:
+          IONOS_HOST: ${{ secrets.IONOS_HOST }}
+          IONOS_USER: ${{ secrets.IONOS_USER }}
+          APP_DIR: ${{ vars.IONOS_APP_DIR || '/opt/projects/taekwondo' }}
+          COMPOSE_FILE: ${{ vars.IONOS_COMPOSE_FILE || '/opt/projects/docker-compose.yml' }}
+          SERVICE_NAME: ${{ vars.IONOS_SERVICE_NAME || 'taekwondo-api' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/ionos_key "$IONOS_USER@$IONOS_HOST" \
+            "APP_DIR='$APP_DIR' COMPOSE_FILE='$COMPOSE_FILE' SERVICE_NAME='$SERVICE_NAME' bash -s" <<'EOF'
+          set -euo pipefail
+
+          if [ ! -f "$COMPOSE_FILE" ]; then
+            echo "Compose file not found: $COMPOSE_FILE"
+            echo "Set repository variable IONOS_COMPOSE_FILE to the correct path."
+            exit 1
+          fi
+
+          cd "$(dirname "$COMPOSE_FILE")"
+          docker compose -f "$COMPOSE_FILE" up -d --build "$SERVICE_NAME"
+          docker ps --filter "name=$SERVICE_NAME"
+          curl -fsS http://localhost:8080/api/hero-config >/dev/null
+          curl -fsS http://localhost:8080/api/about-config >/dev/null
+          EOF
