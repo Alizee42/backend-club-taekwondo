@@ -1,5 +1,6 @@
 package club.taekwondo.entity.jpa;
 
+import club.taekwondo.enums.Genre;
 import club.taekwondo.enums.Role;
 import jakarta.persistence.*;
 
@@ -52,6 +53,10 @@ public class Utilisateur {
     @Column(nullable = false)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "genre", length = 20)
+    private Genre genre;
+
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Paiement> paiements;
 
@@ -63,6 +68,9 @@ public class Utilisateur {
 
     @OneToOne(mappedBy = "compteUtilisateur", cascade = CascadeType.ALL)
     private Membre membre;
+
+    public Genre getGenre() { return genre; }
+    public void setGenre(Genre genre) { this.genre = genre; }
 
     public Club getClub() {
         return club;

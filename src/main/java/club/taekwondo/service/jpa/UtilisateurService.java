@@ -10,8 +10,10 @@ import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.repository.jpa.ClubRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import club.taekwondo.enums.Genre;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -26,16 +28,19 @@ public class UtilisateurService {
     private final PasswordEncoder passwordEncoder;
     private final MembreRepository membreRepository;
     private final ClubRepository clubRepository;
+    private final NotificationService notificationService;
 
     @Autowired
     public UtilisateurService(UtilisateurRepository utilisateurRepository, 
                               PasswordEncoder passwordEncoder,
                               MembreRepository membreRepository,
-                              ClubRepository clubRepository) {
+                              ClubRepository clubRepository,
+                              @Lazy NotificationService notificationService) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
         this.membreRepository = membreRepository;
         this.clubRepository = clubRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -111,6 +116,9 @@ public class UtilisateurService {
         if (utilisateur.getClub() != null) {
             dto.setClubId(utilisateur.getClub().getId());
         }
+        if (utilisateur.getGenre() != null) {
+            dto.setGenre(utilisateur.getGenre().name());
+        }
         
         // 🔧 Pour un parent, récupérer les vraies informations depuis le premier enfant
         if (utilisateur.getRole() == Role.PARENT) {
@@ -157,8 +165,9 @@ public class UtilisateurService {
     Role parsed = parseRoleOrDefault(dto.getRole()); // ✅ convertit String -> Role
     utilisateur.setRole(parsed);
     utilisateur.setPassword(dto.getPassword()); // déjà encodé si createUtilisateur()
-    utilisateur.setPasswordTemporaire(dto.isPasswordTemporaire());
-        if (dto.getClubId() != null) {
+    utilisateur.setPasswordTemporaire(dto.isPasswordTemporaire());        if (dto.getGenre() != null && !dto.getGenre().isBlank()) {
+            try { utilisateur.setGenre(Genre.valueOf(dto.getGenre())); } catch (IllegalArgumentException ignored) {}
+        }        if (dto.getClubId() != null) {
             Club club = clubRepository.findById(dto.getClubId()).orElse(null);
             utilisateur.setClub(club);
         }
@@ -357,6 +366,34 @@ public class UtilisateurService {
         }
         Utilisateur saved = utilisateurRepository.save(utilisateur);
         System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
+
+        // 🔔 Notifications
+        try {
+            Role savedRole = saved.getRole();
+            if (savedRole == Role.ADMIN) {
+                // Nouvel admin créé → notifier les super-admins
+                notificationService.envoyerNotificationAuxSuperAdmins(
+                        "Nouvel administrateur",
+                        "Un nouvel administrateur a été créé : " + saved.getPrenom() + " " + saved.getNom() + " (" + saved.getEmail() + ").",
+                        "utilisateur",
+                        "/super-admin/utilisateurs"
+                );
+            } else if (!adminCreation && savedRole != null && savedRole != Role.SUPER_ADMIN) {
+                // Auto-inscription d'un membre/parent → notifier les admins du club
+                if (saved.getClub() != null) {
+                    notificationService.envoyerNotificationAuxAdminsClub(
+                            saved.getClub().getId(),
+                            "Nouvelle inscription",
+                            saved.getPrenom() + " " + saved.getNom() + " vient de s'inscrire sur la plateforme.",
+                            "utilisateur",
+                            "/admin/membres"
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ⚠ notification échouée: " + ex.getMessage());
+        }
+
         return saved;
     }
 

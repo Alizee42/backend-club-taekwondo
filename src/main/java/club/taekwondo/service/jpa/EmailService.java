@@ -18,6 +18,9 @@ public class EmailService {
     @Value("${app.mail.from}")
     private String fromEmail;
 
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
     @Value("${app.mail.frontend-url}")
     private String frontendUrl;
 
@@ -234,7 +237,11 @@ public class EmailService {
     /* ============================================
        ⚙️ Méthode d’envoi d’email générique
        ============================================ */
-    private void envoyerEmailHtml(String destinataire, String sujet, String contenuHtml) {
+    public void envoyerEmailHtml(String destinataire, String sujet, String contenuHtml) {
+        if (mailUsername == null || mailUsername.isBlank()) {
+            System.out.println("[EmailService] EMAIL_USERNAME non configuré – email non envoyé à : " + destinataire);
+            return;
+        }
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

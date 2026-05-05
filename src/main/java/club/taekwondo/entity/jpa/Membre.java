@@ -1,5 +1,6 @@
 package club.taekwondo.entity.jpa;
 
+import club.taekwondo.enums.Genre;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -29,6 +30,10 @@ public class Membre {
 
     @Column(nullable = false)
     private boolean estAdulte;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "genre", length = 20)
+    private Genre genre;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
@@ -104,6 +109,9 @@ public class Membre {
 
     public boolean isEstAdulte() { return estAdulte; }
     public void setEstAdulte(boolean estAdulte) { this.estAdulte = estAdulte; }
+
+    public Genre getGenre() { return genre; }
+    public void setGenre(Genre genre) { this.genre = genre; }
 
     public Utilisateur getParent() { return parent; }
     public void setParent(Utilisateur parent) { this.parent = parent; }

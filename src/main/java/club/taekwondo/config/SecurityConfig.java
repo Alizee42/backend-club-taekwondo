@@ -47,7 +47,7 @@ public class SecurityConfig {
                     "/api/stripe/config-status",
                     "/api/utilisateurs/login",
                     "/api/utilisateurs/register",
-                    "/api/parametres-paiement/public",
+                    "/api/parametres-paiement/public/**",
                     "/api/public/**",
                     "/api/galeries/club/**",
                     "/api/enseignants/club/**",

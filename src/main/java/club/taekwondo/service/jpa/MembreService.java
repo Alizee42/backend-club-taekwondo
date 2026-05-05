@@ -8,6 +8,8 @@ import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import club.taekwondo.repository.jpa.ClubRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import club.taekwondo.enums.Genre;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,7 @@ public class MembreService {
     }
 
     // 🔹 Récupérer tous les membres (DTO)
+    @Transactional(readOnly = true)
     public List<MembreDTO> getAllMembres() {
         return membreRepository.findAll()
                 .stream()
@@ -35,6 +38,7 @@ public class MembreService {
     }
 
     // 🔹 Récupérer un membre par ID (DTO)
+    @Transactional(readOnly = true)
     public Optional<MembreDTO> getMembreById(Long id) {
         return membreRepository.findById(id)
                 .map(this::toMembreDTO);
@@ -51,6 +55,7 @@ public class MembreService {
     }
 
     // 🔹 Récupérer un membre (DTO) par email utilisateur (compte utilisateur adulte)
+    @Transactional(readOnly = true)
     public Optional<MembreDTO> getMembreByEmail(String email) {
         return membreRepository.findByCompteUtilisateur_Email(email)
                 .map(this::toMembreDTO);
@@ -61,6 +66,7 @@ public class MembreService {
     }
 
     // 🔹 Récupérer tous les membres d'un club (DTO)
+    @Transactional(readOnly = true)
     public List<MembreDTO> getMembresByClubId(Long clubId) {
         return membreRepository.findByClub_Id(clubId)
                 .stream()
@@ -180,6 +186,7 @@ public class MembreService {
     }
 
     // 🔹 Récupérer les membres liés à un utilisateur (parent) — DTO
+    @Transactional(readOnly = true)
     public List<MembreDTO> getMembresByUtilisateurId(Long utilisateurId) {
         List<Membre> membres = membreRepository.findByParentId(utilisateurId);
         return membres.stream()
@@ -188,6 +195,7 @@ public class MembreService {
     }
 
     // ✅ NOUVEAU : récupérer les enfants du parent via l'email (extrait du JWT)
+    @Transactional(readOnly = true)
     public List<MembreDTO> getMembresByParentEmail(String email) {
         Optional<Utilisateur> parentOpt = utilisateurRepository.findByEmailIgnoreCase(email);
         if (parentOpt.isEmpty()) {
@@ -215,11 +223,17 @@ public class MembreService {
 
         if (membre.getCompteUtilisateur() != null) {
             dto.setUtilisateurId(membre.getCompteUtilisateur().getId());
-        } else if (membre.getParent() != null) {
-            dto.setUtilisateurId(membre.getParent().getId());
+        }
+        if (membre.getParent() != null) {
+            dto.setParentId(membre.getParent().getId());
+            dto.setNomParent(membre.getParent().getNom());
+            dto.setPrenomParent(membre.getParent().getPrenom());
         }
         if (membre.getClub() != null) {
             dto.setClubId(membre.getClub().getId());
+        }
+        if (membre.getGenre() != null) {
+            dto.setGenre(membre.getGenre().name());
         }
         return dto;
     }
@@ -233,6 +247,9 @@ public class MembreService {
         membre.setNumeroLicence(dto.getNumeroLicence());
         membre.setCeinture(dto.getCeinture());
         membre.setEstAdulte(dto.isEstAdulte());
+        if (dto.getGenre() != null && !dto.getGenre().isBlank()) {
+            try { membre.setGenre(Genre.valueOf(dto.getGenre())); } catch (IllegalArgumentException ignored) {}
+        }
         // Ajout du club si présent dans le DTO (sera éventuellement écrasé par la règle parent/enfant plus haut)
         if (dto.getClubId() != null) {
             Club club = clubRepository.findById(dto.getClubId())

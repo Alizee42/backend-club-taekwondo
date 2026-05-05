@@ -11,6 +11,7 @@ public class NotificationDTO {
     private boolean lu;
     private LocalDateTime date; // Renommer pour correspondre au frontend
     private Long utilisateurId;
+    private String lienAction;
 
     // Getters et Setters
     public Long getId() {
@@ -67,5 +68,13 @@ public class NotificationDTO {
 
     public void setUtilisateurId(Long utilisateurId) {
         this.utilisateurId = utilisateurId;
+    }
+
+    public String getLienAction() {
+        return lienAction;
+    }
+
+    public void setLienAction(String lienAction) {
+        this.lienAction = lienAction;
     }
 }

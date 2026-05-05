@@ -13,6 +13,10 @@ public class MembreDTO {
     private Long utilisateurId;
     private boolean estAdulte;
     private Long clubId;
+    private Long parentId;
+    private String nomParent;
+    private String prenomParent;
+    private String genre;
     public Long getClubId() {
         return clubId;
     }
@@ -85,5 +89,17 @@ public class MembreDTO {
     public void setEstAdulte(boolean estAdulte) {
         this.estAdulte = estAdulte;
     }
+
+    public Long getParentId() { return parentId; }
+    public void setParentId(Long parentId) { this.parentId = parentId; }
+
+    public String getNomParent() { return nomParent; }
+    public void setNomParent(String nomParent) { this.nomParent = nomParent; }
+
+    public String getPrenomParent() { return prenomParent; }
+    public void setPrenomParent(String prenomParent) { this.prenomParent = prenomParent; }
+
+    public String getGenre() { return genre; }
+    public void setGenre(String genre) { this.genre = genre; }
 }
 

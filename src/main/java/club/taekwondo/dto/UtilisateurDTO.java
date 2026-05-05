@@ -31,6 +31,7 @@ public class UtilisateurDTO {
     // Informations supplémentaires pour les parents
     private String nomParent;
     private String prenomParent;
+    private String genre;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
@@ -125,4 +126,7 @@ public class UtilisateurDTO {
     public void setPrenomParent(String prenomParent) {
         this.prenomParent = prenomParent;
     }
+
+    public String getGenre() { return genre; }
+    public void setGenre(String genre) { this.genre = genre; }
 }

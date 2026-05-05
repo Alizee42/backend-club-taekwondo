@@ -21,6 +21,9 @@ public class Notification {
 
     private LocalDateTime dateEnvoi;
 
+    @Column(name = "lien_action")
+    private String lienAction;
+
     @ManyToOne
     @JoinColumn(name = "utilisateur_id")
     private Utilisateur utilisateur;
@@ -80,5 +83,13 @@ public class Notification {
 
     public void setUtilisateur(Utilisateur utilisateur) {
         this.utilisateur = utilisateur;
+    }
+
+    public String getLienAction() {
+        return lienAction;
+    }
+
+    public void setLienAction(String lienAction) {
+        this.lienAction = lienAction;
     }
 }

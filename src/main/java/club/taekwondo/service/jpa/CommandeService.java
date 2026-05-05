@@ -45,6 +45,7 @@ public class CommandeService {
     @Autowired private LigneCommandeRepository ligneCommandeRepository;
     @Autowired private MembreRepository membreRepository; // bénéficiaire (enfant) par ligne
     @Autowired private ClubRepository clubRepository;
+    @Autowired private NotificationService notificationService;
 
     // =========================
     //         CONFIGURATION
@@ -232,6 +233,21 @@ public class CommandeService {
         commande.setMontantTotal(total);
         logger.info("💳 MONTANT TOTAL COMMANDE: {}€", total);
         commande = commandeRepository.save(commande);
+
+        // 🔔 Notifier les admins du club qu'une nouvelle commande est à traiter
+        try {
+            if (commande.getClub() != null) {
+                notificationService.envoyerNotificationAuxAdminsClub(
+                        commande.getClub().getId(),
+                        "Nouvelle commande",
+                        "Une nouvelle commande de " + String.format("%.2f", total.doubleValue()) + " € a été passée et est en attente de traitement.",
+                        "commande",
+                        "/admin/commandes"
+                );
+            }
+        } catch (Exception ex) {
+            logger.warn("[COMMANDE] Impossible d'envoyer la notification de commande: {}", ex.getMessage());
+        }
 
         CommandeDTO resultDTO = convertToDTO(commande);
         resultDTO.setLignesCommande(lignes.stream().map(this::convertLigneToDTO).collect(Collectors.toList()));

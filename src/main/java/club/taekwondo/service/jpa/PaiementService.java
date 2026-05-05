@@ -45,6 +45,7 @@ public class PaiementService {
     private final PaiementMapper paiementMapper;
     private final PaiementStatsService paiementStatsService;
     private final PaiementStripeService paiementStripeService;
+    private final NotificationService notificationService;
 
     public PaiementService(
             PaiementRepository paiementRepository,
@@ -55,7 +56,8 @@ public class PaiementService {
             PasswordEncoder passwordEncoder,
             PaiementMapper paiementMapper,
             PaiementStatsService paiementStatsService,
-            PaiementStripeService paiementStripeService
+            PaiementStripeService paiementStripeService,
+            NotificationService notificationService
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
@@ -66,6 +68,7 @@ public class PaiementService {
         this.paiementMapper = paiementMapper;
         this.paiementStatsService = paiementStatsService;
         this.paiementStripeService = paiementStripeService;
+        this.notificationService = notificationService;
     }
 
     /* ===========================
@@ -622,20 +625,22 @@ public class PaiementService {
             throw new RuntimeException("Ce membre n'appartient pas au parent connecté !");
         }
 
-    // 🔒 Enforcer: parent et enfant doivent appartenir au même club
-    if (membre.getParent() == null || membre.getParent().getClub() == null || membre.getClub() == null) {
-        log.warn("[PaiementParent] Club manquant (parentClub={}, enfantClub={}) pour parentId={}, membreId={}",
-            membre.getParent() != null ? (membre.getParent().getClub() != null ? membre.getParent().getClub().getId() : null) : null,
-            membre.getClub() != null ? membre.getClub().getId() : null,
+    // 🔒 Enforcer: si le membre n'a pas de club, on utilise celui du parent
+    if (membre.getParent() == null || membre.getParent().getClub() == null) {
+        log.warn("[PaiementParent] Club du parent manquant pour parentId={}, membreId={}",
             parentId, membre.getId());
-        throw new IllegalStateException("Impossible d'initier le paiement: club parent ou enfant non renseigné.");
+        throw new IllegalStateException("Impossible d'initier le paiement: club du parent non renseigné.");
     }
-    if (!Objects.equals(membre.getParent().getClub().getId(), membre.getClub().getId())) {
+    // Si le membre n'a pas de club, on lui attribue celui du parent pour ce paiement
+    if (membre.getClub() == null) {
+        log.info("[PaiementParent] Membre {} sans club — utilisation du club parent (id={})",
+            membre.getId(), membre.getParent().getClub().getId());
+    } else if (!Objects.equals(membre.getParent().getClub().getId(), membre.getClub().getId())) {
         Long clubParentId = membre.getParent().getClub().getId();
         Long clubEnfantId = membre.getClub().getId();
         log.warn("[PaiementParent] Blocage club mismatch: parentClubId={} vs enfantClubId={} (parentId={}, membreId={})",
             clubParentId, clubEnfantId, parentId, membre.getId());
-        throw new IllegalStateException("Cet enfant appartient au club " + clubEnfantId + 
+        throw new IllegalStateException("Cet enfant appartient au club " + clubEnfantId +
             ", différent de votre club (" + clubParentId + "). Veuillez effectuer le paiement depuis le club de l'enfant.");
     }
 
@@ -746,6 +751,20 @@ public class PaiementService {
                     .sorted(Comparator.comparingInt(Echeance::getNumero))
                     .forEach(e -> log.info("   • ech#{} id={} montant={} statut={} dateEch={} ref={}",
                             e.getNumero(), e.getId(), e.getMontant(), e.getStatut(), e.getDateEcheance(), e.getReference()));
+        }
+        try {
+            if (saved.getClub() != null) {
+                String nomMembre = membre.getPrenom() + " " + membre.getNom();
+                notificationService.envoyerNotificationAuxAdminsClub(
+                        saved.getClub().getId(),
+                        "Nouveau paiement soumis",
+                        "Un paiement de " + saved.getMontantTotal() + " € a été soumis pour " + nomMembre + " (en attente de validation).",
+                        "paiement",
+                        "/admin/paiements"
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("[PaiementService] Erreur notif admin paiement parent: {}", ex.getMessage());
         }
         log.info("=== [PaiementService] Fin ajout paiement parent ===");
         return saved;
@@ -883,6 +902,20 @@ public class PaiementService {
                     .forEach(e -> log.info("   • ech#{} id={} montant={} statut={} dateEch={} ref={}",
                             e.getNumero(), e.getId(), e.getMontant(), e.getStatut(), e.getDateEcheance(), e.getReference()));
         }
+        try {
+            if (saved.getClub() != null) {
+                String nomMembre = membre.getPrenom() + " " + membre.getNom();
+                notificationService.envoyerNotificationAuxAdminsClub(
+                        saved.getClub().getId(),
+                        "Nouveau paiement soumis",
+                        "Un paiement de " + saved.getMontantTotal() + " € a été soumis pour " + nomMembre + " (en attente de validation).",
+                        "paiement",
+                        "/admin/paiements"
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("[PaiementService] Erreur notif admin paiement membre: {}", ex.getMessage());
+        }
         log.info("=== [PaiementService] Fin ajout paiement membre ===");
         return saved;
     }
@@ -911,6 +944,32 @@ public class PaiementService {
         // ✅ si un paiement (ex. au club) est validé manuellement, on marque la commande payée aussi
         if (saved.getCommande() != null) {
             marquerCommandePayee(saved.getCommande(), saved.getModePaiement());
+        }
+
+        // 🔔 Notifier le membre (ou l'utilisateur lié) que son paiement a été validé
+        try {
+            Utilisateur destinataire = saved.getUtilisateur();
+            if (destinataire == null && saved.getMembre() != null) {
+                // Adulte : compte utilisateur du membre
+                destinataire = saved.getMembre().getCompteUtilisateur();
+                // Enfant : parent du membre
+                if (destinataire == null) {
+                    destinataire = saved.getMembre().getParent();
+                }
+            }
+            if (destinataire != null) {
+                String role = destinataire.getRole() != null ? destinataire.getRole().name() : "MEMBRE";
+                String lien = role.equals("PARENT") ? "/parent/paiements" : "/membre/paiements";
+                notificationService.envoyerNotification(
+                        destinataire.getId(),
+                        "Paiement validé",
+                        "Votre paiement de " + String.format("%.2f", saved.getMontantTotal()) + " € a été validé.",
+                        "paiement",
+                        lien
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("[PAY] Impossible d'envoyer la notification de validation: {}", ex.getMessage());
         }
 
         log.info("✅ [PAY] Paiement validé id={} statut={} payé={} restant={}",

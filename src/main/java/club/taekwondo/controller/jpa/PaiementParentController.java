@@ -90,6 +90,7 @@ public class PaiementParentController {
             PaiementDTO out = paiementService.toPaiementDTO(paiement);
             return createdDTO("/api/paiements/" + out.getId(), out);
         } catch (Exception e) {
+            log.error("[PARENT] Erreur ajout paiement parent: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
