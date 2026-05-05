@@ -75,6 +75,22 @@ jobs:
           cd "$(dirname "$COMPOSE_FILE")"
           docker compose -f "$COMPOSE_FILE" up -d --build "$SERVICE_NAME"
           docker ps --filter "name=$SERVICE_NAME"
-          curl -fsS http://localhost:8080/api/hero-config >/dev/null
-          curl -fsS http://localhost:8080/api/about-config >/dev/null
+
+          for endpoint in /api/hero-config /api/about-config; do
+            echo "Waiting for $endpoint"
+            for attempt in $(seq 1 30); do
+              if curl -fsS "http://localhost:8080$endpoint" >/dev/null; then
+                echo "$endpoint is reachable"
+                break
+              fi
+
+              if [ "$attempt" -eq 30 ]; then
+                echo "$endpoint did not become reachable"
+                docker logs --tail 120 "$SERVICE_NAME" || true
+                exit 1
+              fi
+
+              sleep 3
+            done
+          done
           EOF
