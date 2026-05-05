@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS campagne_commande (
     date_ouverture   DATE NOT NULL,
     date_fermeture   DATE NOT NULL,
     actif            BOOLEAN NOT NULL DEFAULT TRUE,
-    club_id          BIGINT REFERENCES club(id)
+    club_id          BIGINT REFERENCES clubs(id)
 );
 
 ALTER TABLE commande
