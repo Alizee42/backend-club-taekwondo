@@ -32,6 +32,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // 🔓 Actuator health — public pour CI/CD et monitoring
+                .requestMatchers("/actuator/health").permitAll()
+                // 🔓 Swagger / OpenAPI — public (désactivé en prod via springdoc.*.enabled=false)
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 🔓 Endpoints publics
                 .requestMatchers(HttpMethod.GET, "/api/galeries/club/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/horaires/club/**").permitAll()
@@ -118,8 +122,7 @@ public class SecurityConfig {
             "http://localhost:5173",
             "http://127.0.0.1:5173",
             "https://frontend-club-taekwondo.netlify.app",
-            "https://club-taekwondo-*.netlify.app",
-            "https://*.netlify.app"
+            "https://club-taekwondo-*.netlify.app"
         ));
 
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

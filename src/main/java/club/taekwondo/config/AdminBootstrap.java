@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
@@ -15,15 +16,22 @@ public class AdminBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
+    @Value("${BOOTSTRAP_SUPER_ADMIN_EMAIL:}")
+    private String superAdminEmail;
+
+    @Value("${BOOTSTRAP_SUPER_ADMIN_PASSWORD:}")
+    private String superAdminPassword;
+
+    @Value("${BOOTSTRAP_ADMIN_EMAIL:}")
+    private String adminEmail;
+
+    @Value("${BOOTSTRAP_ADMIN_PASSWORD:}")
+    private String adminPassword;
+
     @Bean
     CommandLineRunner initAdmin(UtilisateurRepository utilisateurRepository,
                                 PasswordEncoder passwordEncoder) {
         return args -> {
-            String superAdminEmail = System.getenv("BOOTSTRAP_SUPER_ADMIN_EMAIL");
-            String superAdminPassword = System.getenv("BOOTSTRAP_SUPER_ADMIN_PASSWORD");
-
-            String adminEmail = System.getenv("BOOTSTRAP_ADMIN_EMAIL");
-            String adminPassword = System.getenv("BOOTSTRAP_ADMIN_PASSWORD");
 
             if (superAdminEmail != null && !superAdminEmail.isBlank()
                     && superAdminPassword != null && !superAdminPassword.isBlank()) {

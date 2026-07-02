@@ -2,6 +2,8 @@ package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.EcheanceDTO;
 import club.taekwondo.service.jpa.EcheanceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,8 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/echeances")
 public class EcheanceController {
+
+    private static final Logger log = LoggerFactory.getLogger(EcheanceController.class);
     /** Échéances filtrées par club */
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<EcheanceDTO>> getEcheancesByClub(@PathVariable Long clubId) {
@@ -27,9 +31,9 @@ public class EcheanceController {
     // ✅ Liste des échéances (DTO)
     @GetMapping
     public ResponseEntity<List<EcheanceDTO>> getAllEcheances() {
-        System.out.println("Requête reçue : GET /api/echeances");
+        log.debug("Requête reçue : GET /api/echeances");
         List<EcheanceDTO> echeances = echeanceService.getAllEcheanceDTOs();
-        System.out.println("Échéances récupérées : " + echeances.size());
+        log.debug("Échéances récupérées : {}", echeances.size());
         return ResponseEntity.ok(echeances);
     }
 
@@ -43,7 +47,7 @@ public class EcheanceController {
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body
     ) {
-        System.out.println("Requête reçue : POST /api/echeances/" + id + "/payer");
+        log.debug("Requête reçue : POST /api/echeances/{}/payer", id);
 
         try {
             String mode = null;
@@ -68,7 +72,7 @@ public class EcheanceController {
             // 👉 Appel du service nouvelle signature (gère aussi le cas "legacy")
             EcheanceDTO dto = echeanceService.payerEcheance(id, mode, reference, date);
 
-            System.out.println("Échéance payée avec succès pour l'ID : " + id);
+            log.info("Échéance payée avec succès pour l'ID : {}", id);
             return ResponseEntity.ok(dto);
 
         } catch (IllegalStateException ise) {
@@ -81,7 +85,7 @@ public class EcheanceController {
                     "error", notFound.getMessage()
             ));
         } catch (Exception e) {
-            System.err.println("Erreur lors du paiement de l'échéance : " + e.getMessage());
+            log.error("Erreur lors du paiement de l'échéance : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "error", "Erreur interne lors du paiement de l'échéance"
             ));
@@ -92,14 +96,14 @@ public class EcheanceController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEcheance(@PathVariable Long id) {
         try {
-            System.out.println("Suppression de l'échéance avec ID : " + id);
+            log.debug("Suppression de l'échéance avec ID : {}", id);
             echeanceService.delete(id);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            System.err.println("Erreur lors de la suppression de l'échéance : " + e.getMessage());
+            log.warn("Erreur lors de la suppression de l'échéance : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
-            System.err.println("Erreur inattendue lors de la suppression de l'échéance : " + e.getMessage());
+            log.error("Erreur inattendue lors de la suppression de l'échéance : {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

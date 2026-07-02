@@ -1,5 +1,7 @@
 package club.taekwondo.service.jpa;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,6 +13,8 @@ import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     @Autowired
     private JavaMailSender mailSender;
@@ -239,7 +243,7 @@ public class EmailService {
        ============================================ */
     public void envoyerEmailHtml(String destinataire, String sujet, String contenuHtml) {
         if (mailUsername == null || mailUsername.isBlank()) {
-            System.out.println("[EmailService] EMAIL_USERNAME non configuré – email non envoyé à : " + destinataire);
+            log.warn("[EmailService] EMAIL_USERNAME non configuré – email non envoyé à : {}", destinataire);
             return;
         }
         try {
@@ -252,10 +256,10 @@ public class EmailService {
             helper.setText(contenuHtml, true);
 
             mailSender.send(message);
-            System.out.println("✅ Email envoyé à : " + destinataire);
+            log.info("Email envoyé à : {}", destinataire);
 
         } catch (MessagingException e) {
-            System.err.println("❌ Erreur envoi email à " + destinataire + " : " + e.getMessage());
+            log.error("Erreur envoi email à {} : {}", destinataire, e.getMessage());
             // En environnement local/dev, ne pas échouer la requête si l'email ne peut pas
             // être envoyé — on loggue l'erreur et on poursuit. Les environnements de prod
             // doivent avoir des configurations SMTP valides.

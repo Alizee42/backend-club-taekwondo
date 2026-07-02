@@ -8,6 +8,8 @@ import com.google.api.services.drive.model.Permission;
 import com.google.api.services.drive.model.File;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.ServiceAccountCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.util.List;
 
 @Service
 public class GoogleDriveUploadService {
+    private static final Logger log = LoggerFactory.getLogger(GoogleDriveUploadService.class);
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "Club Taekwondo Documents";
 
@@ -85,7 +88,7 @@ public class GoogleDriveUploadService {
                 return uploaded.getWebViewLink() != null ? uploaded.getWebViewLink() : uploaded.getWebContentLink();
             } catch (Exception ex) {
                 String message = "Impossible de lire les credentials Google Drive depuis '" + credentialsPath + "'. Vérifiez que le fichier est une clé de compte de service (JSON) contenant \"type\": \"service_account\". Détails: " + ex.getMessage();
-                System.out.println("[GOOGLE DRIVE] " + message);
+                log.error("[GOOGLE DRIVE] {}", message);
                 // cleanup temp file before rethrow
                 try { Files.deleteIfExists(tempFile); } catch (Exception ignore) {}
                 throw new IOException(message, ex);

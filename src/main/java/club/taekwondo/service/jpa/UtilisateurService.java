@@ -9,6 +9,8 @@ import club.taekwondo.repository.jpa.UtilisateurRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.repository.jpa.ClubRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +25,8 @@ import java.util.Optional;
 
 @Service
 public class UtilisateurService {
+
+    private static final Logger log = LoggerFactory.getLogger(UtilisateurService.class);
 
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
@@ -101,7 +105,7 @@ public class UtilisateurService {
      * ======================= */
 
     public UtilisateurDTO convertToDTO(Utilisateur utilisateur) {
-        System.out.println("[" + now() + "][USR-SVC][convertToDTO] in: " + safeEntity(utilisateur));
+        log.debug("[USR-SVC][convertToDTO] in: {}", safeEntity(utilisateur));
         if (utilisateur == null) return null;
         
         UtilisateurDTO dto = new UtilisateurDTO();
@@ -135,7 +139,7 @@ public class UtilisateurService {
                 dto.setNom(utilisateur.getNom());
                 dto.setPrenom(utilisateur.getPrenom());
                 
-                System.out.println("[USR-SVC] Parent enrichi: " + premierEnfant.getPrenom() + " " + premierEnfant.getNom());
+                log.debug("[USR-SVC] Parent enrichi: {} {}", premierEnfant.getPrenom(), premierEnfant.getNom());
             } else {
                 // Pas d'enfant trouvé, utiliser les données de base
                 dto.setNom(utilisateur.getNom());
@@ -149,12 +153,12 @@ public class UtilisateurService {
             dto.setPrenom(utilisateur.getPrenom());
         }
         
-        System.out.println("[" + now() + "][USR-SVC][convertToDTO] out: " + safeDto(dto));
+        log.debug("[USR-SVC][convertToDTO] out: {}", safeDto(dto));
         return dto;
     }
 
     private Utilisateur toUtilisateurEntity(UtilisateurDTO dto) {
-        System.out.println("[" + now() + "][USR-SVC][toEntity] in: " + safeDto(dto));
+        log.debug("[USR-SVC][toEntity] in: {}", safeDto(dto));
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setNom(dto.getNom());
         utilisateur.setPrenom(dto.getPrenom());
@@ -171,7 +175,7 @@ public class UtilisateurService {
             Club club = clubRepository.findById(dto.getClubId()).orElse(null);
             utilisateur.setClub(club);
         }
-        System.out.println("[" + now() + "][USR-SVC][toEntity] out: " + safeEntity(utilisateur));
+        log.debug("[USR-SVC][toEntity] out: {}", safeEntity(utilisateur));
         return utilisateur;
     }
 
@@ -180,72 +184,71 @@ public class UtilisateurService {
      * ======================= */
 
     public List<UtilisateurDTO> getAllUtilisateursByClubId(Long clubId) {
-        System.out.println("[" + now() + "][USR-SVC][getAllUtilisateursByClubId] clubId=" + clubId);
+        log.debug("[USR-SVC][getAllUtilisateursByClubId] clubId={}", clubId);
         List<UtilisateurDTO> result = new ArrayList<>();
         for (Utilisateur u : utilisateurRepository.findByClub_Id(clubId)) {
             result.add(convertToDTO(u));
         }
-        System.out.println("[" + now() + "][USR-SVC][getAllUtilisateursByClubId] size=" + result.size());
+        log.debug("[USR-SVC][getAllUtilisateursByClubId] size={}", result.size());
         return result;
     }
 
     public Optional<UtilisateurDTO> getUtilisateurByEmail(String email) {
         String e = lowerOrNull(email);
-        System.out.println("[" + now() + "][USR-SVC][getUtilisateurByEmail] in email=" + email + " -> normalized=" + e);
+        log.debug("[USR-SVC][getUtilisateurByEmail] in email={} -> normalized={}", email, e);
         Optional<UtilisateurDTO> out = e == null ? Optional.empty()
                 : utilisateurRepository.findByEmailIgnoreCase(e).map(this::convertToDTO);
-        System.out.println("[" + now() + "][USR-SVC][getUtilisateurByEmail] present? " + out.isPresent());
+        log.debug("[USR-SVC][getUtilisateurByEmail] present? {}", out.isPresent());
         return out;
     }
 
     public Optional<Utilisateur> getUtilisateurEntityById(Long id) {
-        System.out.println("[" + now() + "][USR-SVC][getUtilisateurEntityById] id=" + id);
+        log.debug("[USR-SVC][getUtilisateurEntityById] id={}", id);
         Optional<Utilisateur> out = utilisateurRepository.findById(id);
-        System.out.println("[" + now() + "][USR-SVC][getUtilisateurEntityById] present? " + out.isPresent());
+        log.debug("[USR-SVC][getUtilisateurEntityById] present? {}", out.isPresent());
         return out;
     }
 
     public Optional<Utilisateur> getUtilisateurEntityByEmail(String email) {
         String e = lowerOrNull(email);
-        System.out.println("[" + now() + "][USR-SVC][getUtilisateurEntityByEmail] in email=" + email + " -> normalized=" + e);
+        log.debug("[USR-SVC][getUtilisateurEntityByEmail] in email={} -> normalized={}", email, e);
         Optional<Utilisateur> out = e == null ? Optional.empty() : utilisateurRepository.findByEmailIgnoreCase(e);
-        System.out.println("[" + now() + "][USR-SVC][getUtilisateurEntityByEmail] present? " + out.isPresent());
+        log.debug("[USR-SVC][getUtilisateurEntityByEmail] present? {}", out.isPresent());
         return out;
     }
 
     public Optional<Utilisateur> findByNomPrenom(String nom, String prenom) {
-        System.out.println("[" + now() + "][USR-SVC][findByNomPrenom] nom=" + nom + ", prenom=" + prenom);
+        log.debug("[USR-SVC][findByNomPrenom] nom={}, prenom={}", nom, prenom);
         if (nom == null || prenom == null) {
-            System.out.println("[" + now() + "][USR-SVC][findByNomPrenom] -> empty (null param)");
             return Optional.empty();
         }
         Optional<Utilisateur> out = utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase(nom.trim(), prenom.trim());
-        System.out.println("[" + now() + "][USR-SVC][findByNomPrenom] present? " + out.isPresent());
+        log.debug("[USR-SVC][findByNomPrenom] present? {}", out.isPresent());
         return out;
     }
 
     /** Exposés pour le PaiementService (évite l’erreur “undefined method”) */
     public Optional<Utilisateur> findByEmailIgnoreCase(String email) {
         String e = lowerOrNull(email);
-        System.out.println("[" + now() + "][USR-SVC][findByEmailIgnoreCase] in email=" + email + " -> normalized=" + e);
+        log.debug("[USR-SVC][findByEmailIgnoreCase] in email={} -> normalized={}", email, e);
         Optional<Utilisateur> out = e == null ? Optional.empty() : utilisateurRepository.findByEmailIgnoreCase(e);
-        System.out.println("[" + now() + "][USR-SVC][findByEmailIgnoreCase] present? " + out.isPresent());
+        log.debug("[USR-SVC][findByEmailIgnoreCase] present? {}", out.isPresent());
         return out;
     }
 
     public boolean existsByEmailIgnoreCase(String email) {
         String e = lowerOrNull(email);
         boolean exists = e != null && utilisateurRepository.existsByEmailIgnoreCase(e);
-        System.out.println("[" + now() + "][USR-SVC][existsByEmailIgnoreCase] email=" + email + " -> normalized=" + e + ", exists=" + exists);
+        log.debug("[USR-SVC][existsByEmailIgnoreCase] email={} -> normalized={}, exists={}", email, e, exists);
         return exists;
     }
 
     // Historique si du code appelle encore cette version
     public Optional<Utilisateur> findByEmail(String email) {
         String e = lowerOrNull(email);
-        System.out.println("[" + now() + "][USR-SVC][findByEmail] in email=" + email + " -> normalized=" + e);
+        log.debug("[USR-SVC][findByEmail] in email={} -> normalized={}", email, e);
         Optional<Utilisateur> out = e == null ? Optional.empty() : utilisateurRepository.findByEmailIgnoreCase(e);
-        System.out.println("[" + now() + "][USR-SVC][findByEmail] present? " + out.isPresent());
+        log.debug("[USR-SVC][findByEmail] present? {}", out.isPresent());
         return out;
     }
 
@@ -255,12 +258,12 @@ public class UtilisateurService {
 
     public Optional<UtilisateurDTO> login(String email, String password) {
         String e = lowerOrNull(email);
-        System.out.println("[" + now() + "][USR-SVC][login] email=" + email + " -> normalized=" + e + ", password=" + maskPwd(password));
+        log.debug("[USR-SVC][login] email={} -> normalized={}", email, e);
         Optional<Utilisateur> userOpt = utilisateurRepository.findByEmailIgnoreCase(e);
         Optional<UtilisateurDTO> out = userOpt
                 .filter(u -> {
                     boolean match = passwordEncoder.matches(password, u.getPassword());
-                    System.out.println("[" + now() + "][USR-SVC][login] password matches? " + match + " for userId=" + u.getId());
+                    log.debug("[USR-SVC][login] password matches? {} for userId={}", match, u.getId());
                     return match;
                 })
                 .map(this::convertToDTO);
@@ -279,21 +282,21 @@ public class UtilisateurService {
         }
         if (out.isPresent()) {
             if (clubIdDemande != null && !clubIdDemande.equals(out.get().getClubId())) {
-                System.out.println("[" + now() + "][USR-SVC][login] ❌ clubId mismatch, connexion refusée");
+                log.warn("[USR-SVC][login] clubId mismatch, connexion refusée");
                 return Optional.empty();
             }
             if (out.get().getClubId() == null) {
                 // Autoriser les SUPER_ADMIN à se connecter même s'ils n'ont pas de club
                 Role dtoRole = out.get().getRole();
                 if (dtoRole == Role.SUPER_ADMIN) {
-                    System.out.println("[" + now() + "][USR-SVC][login] ⚠ super-admin sans club, connexion autorisée");
+                    log.debug("[USR-SVC][login] super-admin sans club, connexion autorisée");
                 } else {
-                    System.out.println("[" + now() + "][USR-SVC][login] ❌ utilisateur sans club, connexion refusée");
+                    log.warn("[USR-SVC][login] utilisateur sans club, connexion refusée");
                     return Optional.empty();
                 }
             }
         }
-        System.out.println("[" + now() + "][USR-SVC][login] success? " + out.isPresent());
+        log.debug("[USR-SVC][login] success? {}", out.isPresent());
         return out;
     }
 
@@ -308,14 +311,12 @@ public class UtilisateurService {
      * @param adminCreation true si créé par un admin (mot de passe temporaire), false si auto-inscription (mot de passe définitif)
      */
     public Utilisateur createUtilisateur(UtilisateurDTO dto, boolean adminCreation) {
-        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] in DTO: " + safeDto(dto) + ", adminCreation=" + adminCreation);
+        log.debug("[USR-SVC][createUtilisateur] in DTO: {}, adminCreation={}", safeDto(dto), adminCreation);
 
         if (dto.getNom() == null || dto.getNom().trim().isEmpty()) {
-            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ nom manquant");
             throw new IllegalArgumentException("Le nom est requis.");
         }
         if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
-            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ email manquant");
             throw new IllegalArgumentException("L'email est requis.");
         }
         // Gestion différenciée du mot de passe selon l'origine
@@ -326,33 +327,30 @@ public class UtilisateurService {
                 // raccourcir à 12 caractères pour lisibilité si jamais exposé (il reste encodé avant save)
                 generated = generated.substring(0, 12);
                 dto.setPassword(generated);
-                System.out.println("[" + now() + "][USR-SVC][createUtilisateur] 🔐 mot de passe temporaire généré (admin)");
+                log.debug("[USR-SVC][createUtilisateur] mot de passe temporaire généré (admin)");
             }
         } else {
             // Auto-inscription: le mot de passe est obligatoire et définitif
             if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
-                System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ mot de passe manquant (self-register)");
                 throw new IllegalArgumentException("Le mot de passe est requis.");
             }
         }
 
         dto.setEmail(lowerOrNull(dto.getEmail()));
-        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] email normalisé=" + dto.getEmail());
+        log.debug("[USR-SVC][createUtilisateur] email normalisé={}", dto.getEmail());
 
         if (existsByEmailIgnoreCase(dto.getEmail())) {
-            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ❌ email déjà existant");
             throw new IllegalArgumentException("Un utilisateur avec cet email existe déjà.");
         }
 
-        // Encode le mot de passe et parse le rôle proprement
-        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] encodage mot de passe...");
+        log.debug("[USR-SVC][createUtilisateur] encodage mot de passe...");
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         if (dto.getRole() == null) {
             dto.setRole(Role.MEMBRE.name());
-            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] role null -> set MEMBRE");
+            log.debug("[USR-SVC][createUtilisateur] role null -> set MEMBRE");
         } else {
-            System.out.println("[" + now() + "][USR-SVC][createUtilisateur] role reçu='" + dto.getRole() + "'");
+            log.debug("[USR-SVC][createUtilisateur] role reçu='{}'", dto.getRole());
         }
 
     // Propager l'état temporaire dans le DTO pour toEntity(), puis s'assurer sur l'entité
@@ -365,7 +363,7 @@ public class UtilisateurService {
             utilisateur.setPasswordUpdatedAt(java.time.OffsetDateTime.now());
         }
         Utilisateur saved = utilisateurRepository.save(utilisateur);
-        System.out.println("[" + now() + "][USR-SVC][createUtilisateur] ✅ saved: " + safeEntity(saved));
+        log.info("[USR-SVC][createUtilisateur] saved: {}", safeEntity(saved));
 
         // 🔔 Notifications
         try {

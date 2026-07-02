@@ -76,21 +76,21 @@ jobs:
           docker compose -f "$COMPOSE_FILE" up -d --build "$SERVICE_NAME"
           docker ps --filter "name=$SERVICE_NAME"
 
-          for endpoint in /api/hero-config /api/about-config; do
-            echo "Waiting for $endpoint"
-            for attempt in $(seq 1 30); do
-              if curl -fsS "http://localhost:8080$endpoint" >/dev/null; then
-                echo "$endpoint is reachable"
-                break
-              fi
+          echo "Waiting for /actuator/health"
+          for attempt in $(seq 1 30); do
+            STATUS=$(curl -fsS "http://localhost:8080/actuator/health" 2>/dev/null | grep -o '"status":"UP"' || true)
+            if [ "$STATUS" = '"status":"UP"' ]; then
+              echo "Backend is UP"
+              break
+            fi
 
-              if [ "$attempt" -eq 30 ]; then
-                echo "$endpoint did not become reachable"
-                docker logs --tail 120 "$SERVICE_NAME" || true
-                exit 1
-              fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "Backend did not become healthy"
+              docker logs --tail 120 "$SERVICE_NAME" || true
+              exit 1
+            fi
 
-              sleep 3
-            done
+            sleep 3
+          done
           done
           EOF

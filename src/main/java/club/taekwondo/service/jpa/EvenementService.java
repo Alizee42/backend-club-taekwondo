@@ -9,6 +9,8 @@ import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.EvenementRepository;
 import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 public class EvenementService {
 
+    private static final Logger log = LoggerFactory.getLogger(EvenementService.class);
     private static final String UPLOAD_DIR = "uploads/evenements/";
 
     @Autowired
@@ -65,7 +68,7 @@ public class EvenementService {
         Evenement saved = evenementRepository.save(evenement);
         
         // 🔔 Envoyer notification à tous les utilisateurs
-        System.out.println("🚀 Événement créé, envoi des notifications...");
+        log.info("Événement créé, envoi des notifications...");
         envoyerNotificationNouvelEvenement(saved);
         
         return convertToDTO(saved);
@@ -171,14 +174,14 @@ public class EvenementService {
             // ✅ 1. Supprimer directement toutes les inscriptions par requête SQL
             // Cela évite de charger les relations et contourne le problème du membre ID 0
             inscriptionRepository.deleteByEvenementId(id);
-            System.out.println("🔍 Toutes les inscriptions de l'événement " + id + " ont été supprimées");
-            
+            log.debug("Toutes les inscriptions de l'événement {} ont été supprimées", id);
+
             // ✅ 2. Ensuite supprimer l'événement
             evenementRepository.deleteById(id);
-            System.out.println("✅ Événement " + id + " supprimé avec succès");
-            
+            log.info("Événement {} supprimé avec succès", id);
+
         } catch (Exception e) {
-            System.err.println("❌ Erreur lors de la suppression de l'événement " + id + ": " + e.getMessage());
+            log.error("Erreur lors de la suppression de l'événement {}: {}", id, e.getMessage());
             throw new RuntimeException("Impossible de supprimer l'événement: " + e.getMessage(), e);
         }
     }
@@ -257,9 +260,9 @@ public class EvenementService {
                     "EVENEMENT"
                 );
             }
-            System.out.println("🔔 Notifications envoyées pour le nouvel événement : " + evenement.getTitre());
+            log.info("Notifications envoyées pour le nouvel événement : {}", evenement.getTitre());
         } catch (Exception e) {
-            System.err.println("❌ Erreur lors de l'envoi des notifications : " + e.getMessage());
+            log.error("Erreur lors de l'envoi des notifications : {}", e.getMessage());
         }
     }
     
@@ -281,9 +284,9 @@ public class EvenementService {
                     );
                 }
             }
-            System.out.println("🔔 Notifications de modification envoyées pour : " + evenement.getTitre());
+            log.info("Notifications de modification envoyées pour : {}", evenement.getTitre());
         } catch (Exception e) {
-            System.err.println("❌ Erreur lors de l'envoi des notifications de modification : " + e.getMessage());
+            log.error("Erreur lors de l'envoi des notifications de modification : {}", e.getMessage());
         }
     }
     
@@ -305,9 +308,9 @@ public class EvenementService {
                     );
                 }
             }
-            System.out.println("🔔 Notifications d'annulation envoyées pour : " + evenement.getTitre());
+            log.info("Notifications d'annulation envoyées pour : {}", evenement.getTitre());
         } catch (Exception e) {
-            System.err.println("❌ Erreur lors de l'envoi des notifications d'annulation : " + e.getMessage());
+            log.error("Erreur lors de l'envoi des notifications d'annulation : {}", e.getMessage());
         }
     }
 

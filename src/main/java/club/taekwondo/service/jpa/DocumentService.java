@@ -9,6 +9,8 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.repository.jpa.DocumentRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DocumentService {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
 
     @Autowired
     private DocumentRepository documentRepository;
@@ -35,54 +39,54 @@ public class DocumentService {
     /** Tous les documents (+ mapping utilisateur & membre/enfant) */
     @Transactional(readOnly = true)
     public List<DocumentDTO> getAllDocumentsWithUtilisateur() {
-        System.out.println("Récupération de tous les documents...");
+        log.debug("Récupération de tous les documents...");
         List<DocumentDTO> documents = documentRepository
-                .findAllWithUtilisateurAndMembre() // ⚠️ doit charger utilisateur + membre (enfant)
+                .findAllWithUtilisateurAndMembre()
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        System.out.println("Documents récupérés: " + documents.size());
+        log.debug("Documents récupérés: {}", documents.size());
         return documents;
     }
 
     /** Par utilisateur (parent ou adulte) */
     @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByUtilisateurId(Long utilisateurId) {
-        System.out.println("Récupération des documents pour l'utilisateur ID: " + utilisateurId);
+        log.debug("Récupération des documents pour l'utilisateur ID: {}", utilisateurId);
         validatePositiveId(utilisateurId, "L'ID de l'utilisateur doit être valide et supérieur à 0.");
         List<DocumentDTO> documents = documentRepository
                 .findByUtilisateurIdWithFetch(utilisateurId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        System.out.println("Documents trouvés: " + documents.size());
+        log.debug("Documents trouvés: {}", documents.size());
         return documents;
     }
 
     /** Par enfant (membre) */
     @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByMembreId(Long membreId) {
-        System.out.println("Récupération des documents pour le membre ID: " + membreId);
+        log.debug("Récupération des documents pour le membre ID: {}", membreId);
         validatePositiveId(membreId, "L'ID du membre doit être valide et supérieur à 0.");
         List<DocumentDTO> documents = documentRepository
                 .findByMembreIdWithFetch(membreId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        System.out.println("Documents trouvés: " + documents.size());
+        log.debug("Documents trouvés: {}", documents.size());
         return documents;
     }
 
     @Transactional(readOnly = true)
     public Optional<DocumentDTO> getDocumentById(Long id) {
-        System.out.println("Récupération du document avec l'ID: " + id);
+        log.debug("Récupération du document avec l'ID: {}", id);
         validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
         return documentRepository.findByIdWithFetch(id).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByStatus(String status) {
-        System.out.println("Récupération des documents avec le statut: " + status);
+        log.debug("Récupération des documents avec le statut: {}", status);
         if (status == null || status.isEmpty()) {
             throw new IllegalArgumentException("Le statut ne peut pas être null ou vide.");
         }
@@ -91,21 +95,21 @@ public class DocumentService {
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        System.out.println("Documents trouvés: " + documents.size());
+        log.debug("Documents trouvés: {}", documents.size());
         return documents;
     }
 
     /** Par club (admin ou staff) */
     @Transactional(readOnly = true)
     public List<DocumentDTO> getDocumentsByClubId(Long clubId) {
-        System.out.println("Récupération des documents pour le club ID: " + clubId);
+        log.debug("Récupération des documents pour le club ID: {}", clubId);
         validatePositiveId(clubId, "L'ID du club doit être valide et supérieur à 0.");
         List<DocumentDTO> documents = documentRepository.findAllWithUtilisateurAndMembre()
                 .stream()
                 .filter(doc -> doc.getUtilisateur() != null && doc.getUtilisateur().getClub() != null && doc.getUtilisateur().getClub().getId().equals(clubId))
                 .map(this::toDTO)
                 .collect(Collectors.toList());
-        System.out.println("Documents trouvés pour le club: " + documents.size());
+        log.debug("Documents trouvés pour le club: {}", documents.size());
         return documents;
     }
 
@@ -113,9 +117,9 @@ public class DocumentService {
 
     /** Création depuis un DTO (le contrôleur a déjà stocké le fichier et rempli cheminFichier) */
     public DocumentDTO createDocument(DocumentDTO documentDTO) {
-        System.out.println("Création d'un nouveau document pour l'utilisateur ID: " + documentDTO.getUtilisateurId());
+        log.debug("Création d'un nouveau document pour l'utilisateur ID: {}", documentDTO.getUtilisateurId());
         Document saved = documentRepository.save(toEntity(documentDTO));
-        System.out.println("Document créé avec succès, ID: " + saved.getId());
+        log.info("Document créé avec succès, ID: {}", saved.getId());
         return toDTO(saved);
     }
 
@@ -129,7 +133,7 @@ public class DocumentService {
     }
 
     public DocumentDTO updateDocument(Long id, DocumentDTO documentDTO) {
-        System.out.println("Mise à jour du document avec l'ID: " + id);
+        log.debug("Mise à jour du document avec l'ID: {}", id);
         validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
         if (!documentRepository.existsById(id)) {
             throw new IllegalArgumentException("Le document avec l'ID spécifié n'existe pas.");
@@ -137,24 +141,24 @@ public class DocumentService {
         Document document = toEntity(documentDTO);
         document.setId(id);
         DocumentDTO updated = toDTO(documentRepository.save(document));
-        System.out.println("Document mis à jour, ID: " + updated.getId());
+        log.info("Document mis à jour, ID: {}", updated.getId());
         return updated;
     }
 
     public void deleteDocument(Long id) {
-        System.out.println("Suppression du document avec l'ID: " + id);
+        log.debug("Suppression du document avec l'ID: {}", id);
         validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
         if (!documentRepository.existsById(id)) {
             throw new IllegalArgumentException("Le document avec l'ID spécifié n'existe pas.");
         }
         documentRepository.deleteById(id);
-        System.out.println("Document supprimé avec succès, ID: " + id);
+        log.info("Document supprimé avec succès, ID: {}", id);
     }
 
     // ====================== MAPPERS ======================
 
     private DocumentDTO toDTO(Document document) {
-        System.out.println("Conversion du document ID: " + document.getId() + " en DTO...");
+        log.debug("Conversion du document ID: {} en DTO...", document.getId());
         DocumentDTO documentDTO = new DocumentDTO();
         documentDTO.setId(document.getId());
         documentDTO.setTypeDocument(document.getTypeDocument());
@@ -217,7 +221,7 @@ public class DocumentService {
     }
 
     private Document toEntity(DocumentDTO dto) {
-        System.out.println("Conversion du DTO en Document...");
+        log.debug("Conversion du DTO en Document...");
         if (dto == null) {
             throw new IllegalArgumentException("Le document ne peut pas être null.");
         }
@@ -270,9 +274,8 @@ public class DocumentService {
         doc.setUtilisateur(utilisateur);
         doc.setMembre(membre);
 
-        System.out.println("Document prêt pour persistance; id=" + doc.getId()
-                + ", utilisateurId=" + (utilisateur != null ? utilisateur.getId() : null)
-                + ", membreId=" + (membre != null ? membre.getId() : null));
+        log.debug("Document prêt pour persistance; id={}, utilisateurId={}, membreId={}",
+                doc.getId(), utilisateur != null ? utilisateur.getId() : null, membre != null ? membre.getId() : null);
         return doc;
     }
 
@@ -280,7 +283,7 @@ public class DocumentService {
 
     private void validatePositiveId(Long id, String message) {
         if (id == null || id <= 0) {
-            System.out.println("Validation échouée pour l'ID: " + id);
+            log.warn("Validation échouée pour l'ID: {}", id);
             throw new IllegalArgumentException(message);
         }
     }

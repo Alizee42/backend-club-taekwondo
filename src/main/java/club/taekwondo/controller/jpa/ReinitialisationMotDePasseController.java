@@ -2,6 +2,8 @@ package club.taekwondo.controller.jpa;
 
 import club.taekwondo.dto.ReinitialisationMotDePasseDTO;
 import club.taekwondo.service.jpa.ReinitialisationMotDePasseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +16,19 @@ import java.util.Optional;
 @RequestMapping("/api/reinitialisation")
 public class ReinitialisationMotDePasseController {
 
+    private static final Logger log = LoggerFactory.getLogger(ReinitialisationMotDePasseController.class);
+
     @Autowired
     private ReinitialisationMotDePasseService service;
 
     @PostMapping("/demander")
-    public ResponseEntity<Map<String, String>> demanderReinitialisation(@RequestParam String email) {
+    public ResponseEntity<Map<String, String>> demanderReinitialisation(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Email requis.");
+            return ResponseEntity.badRequest().body(response);
+        }
         try {
             service.demanderReinitialisation(email);
             Map<String, String> response = new HashMap<>();
@@ -43,7 +53,7 @@ public class ReinitialisationMotDePasseController {
         }
     }
 
-    @PostMapping("/valider") // Remplacé PUT par POST
+    @PostMapping("/valider")
     public ResponseEntity<Map<String, String>> validerToken(@RequestParam String token) {
         boolean valide = service.validerToken(token);
         Map<String, String> response = new HashMap<>();
@@ -57,37 +67,34 @@ public class ReinitialisationMotDePasseController {
     }
 
     @PostMapping("/reinitialiser-mot-de-passe")
-    public ResponseEntity<Map<String, String>> reinitialiserMotDePasse(
-            @RequestParam String token,
-            @RequestParam String newPassword) {
-        
-        System.out.println("🔍 [DEBUG] Réinitialisation demandée");
-        System.out.println("🔍 [DEBUG] Token reçu: " + token);
-        System.out.println("🔍 [DEBUG] Longueur nouveau mot de passe: " + newPassword.length());
-        
+    public ResponseEntity<Map<String, String>> reinitialiserMotDePasse(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String newPassword = body.get("newPassword");
+
+        log.debug("Réinitialisation demandée");
+
         try {
             boolean succes = service.reinitialiserMotDePasse(token, newPassword);
             Map<String, String> response = new HashMap<>();
             if (succes) {
-                System.out.println("✅ [DEBUG] Réinitialisation réussie");
+                log.info("Réinitialisation réussie");
                 response.put("message", "Mot de passe réinitialisé avec succès.");
                 return ResponseEntity.ok(response);
             } else {
-                System.out.println("❌ [DEBUG] Token invalide ou expiré");
+                log.warn("Token invalide ou expiré");
                 response.put("message", "Token invalide ou expiré.");
                 return ResponseEntity.badRequest().body(response);
             }
         } catch (IllegalArgumentException e) {
-            System.out.println("❌ [DEBUG] Erreur argument: " + e.getMessage());
+            log.warn("Erreur argument: {}", e.getMessage());
             Map<String, String> response = new HashMap<>();
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
-            System.out.println("❌ [DEBUG] Erreur interne: " + e.getMessage());
+            log.error("Erreur interne: {}", e.getMessage());
             Map<String, String> response = new HashMap<>();
             response.put("message", "Erreur lors de la réinitialisation du mot de passe.");
             return ResponseEntity.status(500).body(response);
         }
     }
 }
-
