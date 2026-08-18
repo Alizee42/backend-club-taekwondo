@@ -5,11 +5,11 @@ ALTER TABLE about_config ADD COLUMN IF NOT EXISTS club_id BIGINT;
 
 -- Rattache la ligne existante (si présente) au premier club connu, pour ne pas perdre le contenu déjà saisi.
 UPDATE about_config
-SET club_id = (SELECT id FROM club ORDER BY id ASC LIMIT 1)
+SET club_id = (SELECT id FROM clubs ORDER BY id ASC LIMIT 1)
 WHERE club_id IS NULL;
 
 ALTER TABLE about_config ADD CONSTRAINT fk_about_config_club
-    FOREIGN KEY (club_id) REFERENCES club(id);
+    FOREIGN KEY (club_id) REFERENCES clubs(id);
 
 ALTER TABLE about_config ADD CONSTRAINT uq_about_config_club
     UNIQUE (club_id);
