@@ -11,6 +11,7 @@ public class ActualiteDTO {
     private String id;
     private String titre;
     private String contenu;
+    private String extrait;
     private LocalDateTime datePublication;
 
     private String typeActu; // devient optionnel
@@ -60,6 +61,9 @@ public class ActualiteDTO {
 
     public String getContenu() { return contenu; }
     public void setContenu(String contenu) { this.contenu = contenu; }
+
+    public String getExtrait() { return extrait; }
+    public void setExtrait(String extrait) { this.extrait = extrait; }
 
     public LocalDateTime getDatePublication() { return datePublication; }
     public void setDatePublication(LocalDateTime datePublication) { this.datePublication = datePublication; }

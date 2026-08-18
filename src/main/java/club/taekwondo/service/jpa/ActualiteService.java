@@ -73,6 +73,7 @@ public class ActualiteService {
 
                     existing.setTitre(actualiteDTO.getTitre());
                     existing.setContenu(actualiteDTO.getContenu());
+                    existing.setExtrait(actualiteDTO.getExtrait());
                     if (actualiteDTO.getDatePublication() != null) {
                         existing.setDatePublication(actualiteDTO.getDatePublication());
                     }
@@ -122,7 +123,7 @@ public class ActualiteService {
     }
 
     private ActualiteDTO toDTO(Actualite actualite) {
-        return new ActualiteDTO(
+        ActualiteDTO dto = new ActualiteDTO(
                 String.valueOf(actualite.getId()),
                 actualite.getTitre(),
                 actualite.getContenu(),
@@ -133,6 +134,8 @@ public class ActualiteService {
                 actualite.getImageUrl(),
                 actualite.getComplement()
         );
+        dto.setExtrait(actualite.getExtrait());
+        return dto;
     }
 
     private Actualite toEntity(ActualiteDTO actualiteDTO) {
@@ -142,6 +145,7 @@ public class ActualiteService {
         }
         actualite.setTitre(actualiteDTO.getTitre());
         actualite.setContenu(actualiteDTO.getContenu());
+        actualite.setExtrait(actualiteDTO.getExtrait());
         actualite.setDatePublication(actualiteDTO.getDatePublication());
         actualite.setTypeActu(actualiteDTO.getTypeActu());
         actualite.setClubId(parseClubId(actualiteDTO.getClubId()));

@@ -18,6 +18,9 @@ public class Actualite {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String contenu;
 
+    @Column(length = 220)
+    private String extrait;
+
     @Column(name = "date_publication", nullable = false)
     private LocalDateTime datePublication;
 
@@ -58,6 +61,14 @@ public class Actualite {
 
     public void setContenu(String contenu) {
         this.contenu = contenu;
+    }
+
+    public String getExtrait() {
+        return extrait;
+    }
+
+    public void setExtrait(String extrait) {
+        this.extrait = extrait;
     }
 
     public LocalDateTime getDatePublication() {

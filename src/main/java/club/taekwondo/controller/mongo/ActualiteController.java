@@ -80,6 +80,7 @@ public class ActualiteController {
     public ResponseEntity<?> createWithImage(
         @RequestParam String titre,
         @RequestParam String contenu,
+        @RequestParam(value = "extrait", required = false) String extrait,
         @RequestParam String typeActu,
         @RequestParam boolean isFeatured,
         @RequestParam String clubId,
@@ -96,6 +97,7 @@ public class ActualiteController {
     ActualiteDTO actualiteDTO = new ActualiteDTO();
     actualiteDTO.setTitre(titre);
     actualiteDTO.setContenu(contenu);
+    actualiteDTO.setExtrait(extrait);
     actualiteDTO.setTypeActu(typeActu);
     actualiteDTO.setFeatured(isFeatured);
     actualiteDTO.setImageUrl(imageUrl);
@@ -128,6 +130,7 @@ public class ActualiteController {
         @PathVariable String id,
         @RequestParam String titre,
         @RequestParam String contenu,
+        @RequestParam(value = "extrait", required = false) String extrait,
         @RequestParam String typeActu,
         @RequestParam boolean isFeatured,
         @RequestParam String clubId,
@@ -142,6 +145,7 @@ public class ActualiteController {
             ActualiteDTO actualiteDTO = new ActualiteDTO();
             actualiteDTO.setTitre(titre);
             actualiteDTO.setContenu(contenu);
+            actualiteDTO.setExtrait(extrait);
             actualiteDTO.setTypeActu(typeActu);
             actualiteDTO.setFeatured(isFeatured);
             actualiteDTO.setImageUrl(imageUrl);
