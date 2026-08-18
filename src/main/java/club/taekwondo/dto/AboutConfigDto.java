@@ -4,6 +4,7 @@ import java.util.List;
 
 public class AboutConfigDto {
 
+    private Long clubId;
     private String headingLine1;
     private String headingLine2;
     private String leadText;
@@ -19,6 +20,8 @@ public class AboutConfigDto {
     private String valuesTitle;
     private List<AboutValueDto> values;
 
+    public Long getClubId() { return clubId; }
+    public void setClubId(Long v) { this.clubId = v; }
     public String getHeadingLine1() { return headingLine1; }
     public void setHeadingLine1(String v) { this.headingLine1 = v; }
     public String getHeadingLine2() { return headingLine2; }

@@ -9,7 +9,12 @@ import java.util.List;
 public class AboutConfig {
 
     @Id
-    private Long id = 1L;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id", nullable = false, unique = true)
+    private Club club;
 
     private String headingLine1;
     private String headingLine2;
@@ -38,6 +43,8 @@ public class AboutConfig {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Club getClub() { return club; }
+    public void setClub(Club club) { this.club = club; }
     public String getHeadingLine1() { return headingLine1; }
     public void setHeadingLine1(String headingLine1) { this.headingLine1 = headingLine1; }
     public String getHeadingLine2() { return headingLine2; }

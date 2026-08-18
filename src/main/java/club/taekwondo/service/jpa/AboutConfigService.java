@@ -4,6 +4,7 @@ import club.taekwondo.dto.AboutConfigDto;
 import club.taekwondo.entity.jpa.AboutConfig;
 import club.taekwondo.entity.jpa.AboutValue;
 import club.taekwondo.repository.jpa.AboutConfigRepository;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.service.common.FileUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,24 +21,31 @@ public class AboutConfigService {
     private AboutConfigRepository repo;
 
     @Autowired
+    private ClubRepository clubRepository;
+
+    @Autowired
     private FileUploadService fileUploadService;
 
-    public AboutConfigDto get() {
-        return toDto(repo.findById(1L).orElseGet(AboutConfig::new));
+    public AboutConfigDto get(Long clubId) {
+        return toDto(repo.findByClub_Id(clubId).orElseGet(AboutConfig::new));
     }
 
-    public AboutConfigDto update(AboutConfigDto dto) {
-        AboutConfig config = repo.findById(1L).orElseGet(() -> {
-            AboutConfig c = new AboutConfig(); c.setId(1L); return c;
+    public AboutConfigDto update(Long clubId, AboutConfigDto dto) {
+        AboutConfig config = repo.findByClub_Id(clubId).orElseGet(() -> {
+            AboutConfig c = new AboutConfig();
+            clubRepository.findById(clubId).ifPresent(c::setClub);
+            return c;
         });
         applyDto(config, dto);
         return toDto(repo.save(config));
     }
 
-    public AboutConfigDto uploadImage(MultipartFile file) throws IOException {
+    public AboutConfigDto uploadImage(Long clubId, MultipartFile file) throws IOException {
         String path = fileUploadService.uploadFile(file, "about");
-        AboutConfig config = repo.findById(1L).orElseGet(() -> {
-            AboutConfig c = new AboutConfig(); c.setId(1L); return c;
+        AboutConfig config = repo.findByClub_Id(clubId).orElseGet(() -> {
+            AboutConfig c = new AboutConfig();
+            clubRepository.findById(clubId).ifPresent(c::setClub);
+            return c;
         });
         config.setImagePath(path);
         return toDto(repo.save(config));
@@ -45,6 +53,7 @@ public class AboutConfigService {
 
     private AboutConfigDto toDto(AboutConfig c) {
         AboutConfigDto dto = new AboutConfigDto();
+        dto.setClubId(c.getClub() != null ? c.getClub().getId() : null);
         dto.setHeadingLine1(c.getHeadingLine1());
         dto.setHeadingLine2(c.getHeadingLine2());
         dto.setLeadText(c.getLeadText());
