@@ -48,7 +48,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     // Routes publiques en lecture seule (GET) uniquement — écriture toujours soumise au JWT
     private static final List<String> PUBLIC_GET_PREFIXES = List.of(
         "/api/hero-config",
-        "/api/about-config"
+        "/api/about-config",
+        "/api/mentions-legales-config",
+        "/api/politique-confidentialite-config"
     );
 
     public JwtAuthFilter(JwtUtil jwtUtil,

@@ -67,7 +67,9 @@ public class SecurityConfig {
                     "/api/evenements/actifs",
                     "/api/evenements/{id}",
                     "/api/hero-config",
-                    "/api/about-config"
+                    "/api/about-config",
+                    "/api/mentions-legales-config",
+                    "/api/politique-confidentialite-config"
                 ).permitAll()
                 // Restreindre la modification des clubs (création / modification / suppression)
                 .requestMatchers(HttpMethod.POST, "/api/clubs/**").hasRole("SUPER_ADMIN")
