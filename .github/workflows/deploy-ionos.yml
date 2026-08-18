@@ -92,5 +92,4 @@ jobs:
 
             sleep 3
           done
-          done
           EOF
