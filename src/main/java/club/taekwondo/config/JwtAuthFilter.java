@@ -41,10 +41,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         "/api/utilisateurs/login",
         "/api/utilisateurs/register",
         "/api/parametres-paiement/public",
-        "/api/hero-config",
-        "/api/about-config",
         "/api/public",
         "/api/uploads" // Ajouté : accès libre aux fichiers/documents
+    );
+
+    // Routes publiques en lecture seule (GET) uniquement — écriture toujours soumise au JWT
+    private static final List<String> PUBLIC_GET_PREFIXES = List.of(
+        "/api/hero-config",
+        "/api/about-config"
     );
 
     public JwtAuthFilter(JwtUtil jwtUtil,
@@ -64,6 +68,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         boolean isPublic = PUBLIC_PREFIXES.stream().anyMatch(uri::startsWith);
         if (isPublic) {
             log.debug("[SEC] Endpoint public ignoré: {}", uri);
+            return true;
+        }
+
+        // ⚡ Ignore les endpoints publics en lecture seule (GET) — POST/PUT/DELETE restent filtrés
+        boolean isPublicGet = "GET".equalsIgnoreCase(request.getMethod())
+                && PUBLIC_GET_PREFIXES.stream().anyMatch(uri::startsWith);
+        if (isPublicGet) {
+            log.debug("[SEC] Endpoint public (GET) ignoré: {}", uri);
             return true;
         }
 
