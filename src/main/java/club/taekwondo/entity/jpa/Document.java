@@ -32,6 +32,9 @@ public class Document {
     @Column(name = "status", length = 20, nullable = false)
     private String status;
 
+    @Column(name = "motif_refus", columnDefinition = "TEXT")
+    private String motifRefus;
+
     // Relation existante: Document -> Utilisateur (obligatoire)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
@@ -72,6 +75,9 @@ public class Document {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getMotifRefus() { return motifRefus; }
+    public void setMotifRefus(String motifRefus) { this.motifRefus = motifRefus; }
 
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }

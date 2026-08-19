@@ -9,6 +9,7 @@ public class DocumentDTO {
     private String cheminFichier;
     private LocalDateTime dateDepot;
     private String status;
+    private String motifRefus;
 
     /** Nouveau : commentaire côté front (vient de Document.description) */
     private String commentaire;
@@ -40,6 +41,9 @@ public class DocumentDTO {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getMotifRefus() { return motifRefus; }
+    public void setMotifRefus(String motifRefus) { this.motifRefus = motifRefus; }
 
     public String getCommentaire() { return commentaire; }
     public void setCommentaire(String commentaire) { this.commentaire = commentaire; }

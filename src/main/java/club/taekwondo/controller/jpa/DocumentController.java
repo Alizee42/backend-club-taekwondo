@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -328,11 +329,7 @@ public class DocumentController {
                 }
             }
 
-            dto.setCheminFichier(cheminFichier);
-            dto.setNomDocument(file.getOriginalFilename());
-            dto.setStatus("en attente");
-
-            DocumentDTO updated = documentService.updateDocument(id, dto);
+            DocumentDTO updated = documentService.replaceDocumentFile(id, cheminFichier, file.getOriginalFilename());
             return ResponseEntity.ok(updated);
 
         } catch (ResponseStatusException e) {
@@ -375,14 +372,17 @@ public class DocumentController {
 
     @PutMapping("/{id}/refuser")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<?> refuserDocument(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<?> refuserDocument(@PathVariable Long id,
+                                              @RequestBody(required = false) Map<String, String> body,
+                                              Authentication authentication) {
         try {
             Optional<DocumentDTO> document = documentService.getDocumentById(id);
             if (document.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document introuvable.");
             }
             assertCanAccessDocument(authentication, document.get());
-            documentService.updateDocumentStatus(id, "refusé");
+            String motif = body != null ? body.get("motifRefus") : null;
+            documentService.updateDocumentStatus(id, "refusé", motif);
             return ResponseEntity.ok().build();
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());

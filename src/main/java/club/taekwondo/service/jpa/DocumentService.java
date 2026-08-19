@@ -134,11 +134,29 @@ public class DocumentService {
 
     @Transactional
     public void updateDocumentStatus(Long id, String status) {
+        updateDocumentStatus(id, status, null);
+    }
+
+    public void updateDocumentStatus(Long id, String status, String motifRefus) {
         validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
         Document doc = documentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Document introuvable: " + id));
         doc.setStatus(status);
+        doc.setMotifRefus("refusé".equalsIgnoreCase(status) ? motifRefus : null);
         documentRepository.save(doc);
+    }
+
+    /** Remplace uniquement le fichier d'un document existant, sans toucher à son rattachement (utilisateur/membre). */
+    @Transactional
+    public DocumentDTO replaceDocumentFile(Long id, String cheminFichier, String nomDocument) {
+        validatePositiveId(id, "L'ID du document doit être valide et supérieur à 0.");
+        Document doc = documentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Document introuvable: " + id));
+        doc.setCheminFichier(cheminFichier);
+        doc.setNomDocument(nomDocument);
+        doc.setStatus("en attente");
+        doc.setMotifRefus(null);
+        return toDTO(documentRepository.save(doc));
     }
 
     public DocumentDTO updateDocument(Long id, DocumentDTO documentDTO) {
@@ -175,6 +193,7 @@ public class DocumentService {
         documentDTO.setCheminFichier(document.getCheminFichier());
         documentDTO.setDateDepot(document.getDateDepot());
         documentDTO.setStatus(document.getStatus());
+        documentDTO.setMotifRefus(document.getMotifRefus());
 
         // commentaire côté front = description côté entity
         documentDTO.setCommentaire(document.getDescription());
