@@ -67,9 +67,13 @@ class NotificationControllerTest {
 
     @Test
     void markAsRead_succes_retourne200() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(5L)).thenReturn(1L);
         doNothing().when(notificationService).marquerCommeLue(5L);
 
-        ResponseEntity<?> response = controller.markAsRead(5L);
+        ResponseEntity<?> response = controller.markAsRead(5L, auth);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(notificationService).marquerCommeLue(5L);
@@ -77,11 +81,28 @@ class NotificationControllerTest {
 
     @Test
     void markAsRead_notificationInexistante_retourne404() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(999L)).thenReturn(1L);
         doThrow(new IllegalArgumentException("Not found")).when(notificationService).marquerCommeLue(999L);
 
-        ResponseEntity<?> response = controller.markAsRead(999L);
+        ResponseEntity<?> response = controller.markAsRead(999L, auth);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void markAsRead_pasProprietaire_retourne403() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(5L)).thenReturn(42L);
+
+        ResponseEntity<?> response = controller.markAsRead(5L, auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(notificationService, never()).marquerCommeLue(anyLong());
     }
 
     // ── PUT /api/notifications/mark-all-read ───────────────────
@@ -112,9 +133,13 @@ class NotificationControllerTest {
 
     @Test
     void deleteNotification_succes_retourne200() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(3L)).thenReturn(1L);
         doNothing().when(notificationService).deleteNotification(3L);
 
-        ResponseEntity<?> response = controller.deleteNotification(3L);
+        ResponseEntity<?> response = controller.deleteNotification(3L, auth);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(notificationService).deleteNotification(3L);
@@ -122,11 +147,28 @@ class NotificationControllerTest {
 
     @Test
     void deleteNotification_inexistante_retourne404() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(888L)).thenReturn(1L);
         doThrow(new IllegalArgumentException("Not found")).when(notificationService).deleteNotification(888L);
 
-        ResponseEntity<?> response = controller.deleteNotification(888L);
+        ResponseEntity<?> response = controller.deleteNotification(888L, auth);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void deleteNotification_pasProprietaire_retourne403() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(3L)).thenReturn(42L);
+
+        ResponseEntity<?> response = controller.deleteNotification(3L, auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(notificationService, never()).deleteNotification(anyLong());
     }
 
     // ── helpers ─────────────────────────────────────────────────
