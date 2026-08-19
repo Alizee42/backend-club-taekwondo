@@ -118,6 +118,15 @@ public class DocumentService {
     /** Création depuis un DTO (le contrôleur a déjà stocké le fichier et rempli cheminFichier) */
     public DocumentDTO createDocument(DocumentDTO documentDTO) {
         log.debug("Création d'un nouveau document pour l'utilisateur ID: {}", documentDTO.getUtilisateurId());
+
+        boolean dejaActif = documentRepository.findByUtilisateurId(documentDTO.getUtilisateurId()).stream()
+                .anyMatch(d -> java.util.Objects.equals(d.getMembre() != null ? d.getMembre().getId() : null, documentDTO.getMembreId())
+                        && java.util.Objects.equals(d.getTypeDocument(), documentDTO.getTypeDocument())
+                        && !"refusé".equalsIgnoreCase(d.getStatus()));
+        if (dejaActif) {
+            throw new IllegalArgumentException("Un document de ce type a déjà été déposé pour cette personne.");
+        }
+
         Document saved = documentRepository.save(toEntity(documentDTO));
         log.info("Document créé avec succès, ID: {}", saved.getId());
         return toDTO(saved);
