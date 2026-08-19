@@ -58,6 +58,16 @@ public class EvenementController {
         return ResponseEntity.ok(evenementService.getEvenementsActifs());
     }
 
+    // Endpoint public (aucune authentification requise) pour la page /evenements publique,
+    // scopé au club affiché — contrairement à /actifs qui renvoie tous les clubs mélangés.
+    @GetMapping("/club/{clubId}/actifs")
+    public ResponseEntity<List<EvenementDTO>> getEvenementsActifsByClub(@PathVariable Long clubId) {
+        List<EvenementDTO> evenements = evenementService.getEvenementsByClubId(clubId).stream()
+                .filter(e -> e.getActif() == null || e.getActif())
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(evenements);
+    }
+
     @GetMapping("/mon-club")
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN','PARENT','MEMBRE')")
     public ResponseEntity<List<EvenementDTO>> getEvenementsMonClub(Authentication authentication) {

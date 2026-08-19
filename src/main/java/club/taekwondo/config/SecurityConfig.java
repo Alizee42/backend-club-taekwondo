@@ -66,6 +66,7 @@ public class SecurityConfig {
                     "/api/evenements",
                     "/api/evenements/actifs",
                     "/api/evenements/{id}",
+                    "/api/evenements/club/*/actifs",
                     "/api/hero-config",
                     "/api/about-config",
                     "/api/mentions-legales-config",

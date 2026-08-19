@@ -39,7 +39,7 @@ public class DashboardAdminController {
         this.utilisateurService = utilisateurService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/admin")
     public ResponseEntity<Map<String, Object>> getAdminStats(Authentication authentication) {
         Utilisateur admin = utilisateurService.findByEmail(authentication.getName())

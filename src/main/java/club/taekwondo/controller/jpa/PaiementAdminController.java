@@ -54,7 +54,7 @@ public class PaiementAdminController {
         return ResponseEntity.ok(paiementService.getPaiementsByClubId(clubId));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping(value = "/ajouter-manuel", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> ajouterPaiementManuel(@RequestBody Map<String, Object> body) {
         try {
@@ -119,7 +119,7 @@ public class PaiementAdminController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping(value = "/ajouter-complet", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> ajouterPaiementCompletJson(@Valid @RequestBody PaiementRequestDTO req) {
         try {
@@ -142,7 +142,7 @@ public class PaiementAdminController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping(value = "/ajouter-complet", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> ajouterPaiementCompletMultipart(
             @RequestPart("utilisateurNom") String utilisateurNom,
@@ -189,7 +189,7 @@ public class PaiementAdminController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePaiement(@PathVariable Long id) {
         try {
@@ -203,18 +203,18 @@ public class PaiementAdminController {
     }
 
     @PostMapping("/admin/backfill-club")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> backfillClub() {
         return ResponseEntity.ok(Map.of("updated", paiementService.backfillClubForExistingPaiements()));
     }
 
     @PostMapping("/admin/backfill-charge")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> backfillCharge() {
         return ResponseEntity.ok(Map.of("updated", paiementService.backfillStripeChargeInfoForExistingPaiements()));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}/annuler")
     public ResponseEntity<PaiementDTO> annulerPaiement(@PathVariable Long id,
                                                        @RequestBody AnnulationRequestDTO dto) {

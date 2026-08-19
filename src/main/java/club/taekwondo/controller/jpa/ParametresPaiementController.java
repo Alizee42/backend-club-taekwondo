@@ -32,7 +32,7 @@ public class ParametresPaiementController {
     }
 
     /** 🔒 Lecture réservée ADMIN par club */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/club/{clubId}")
     public ResponseEntity<ParametresPaiementDTO> getParametresPaiementByClub(@PathVariable Long clubId, Authentication auth) {
         log.debug("[CTRL] GET /api/parametres-paiement/club/{} by user={} roles={}",
@@ -44,7 +44,7 @@ public class ParametresPaiementController {
     }
 
     /** 🔒 Mise à jour réservée ADMIN par club */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/club/{clubId}")
     public ResponseEntity<ParametresPaiementDTO> updateParametresPaiementByClub(@PathVariable Long clubId, Authentication auth, @RequestBody ParametresPaiementDTO parametres) {
         log.debug("[CTRL] POST /api/parametres-paiement/club/{} by user={} roles={} payload={}",
