@@ -96,6 +96,7 @@ public class PaiementMemberController {
             req.setMontantTotal(montantTotal);
             req.setNombreEcheances(nombreEcheances);
             req.setDatePaiement(LocalDate.now().toString());
+            req.setCommandeId(PaiementRequestValues.longOrNull(body.get("commandeId")));
 
             boolean isParent = utilisateur.getRole() != null
                     && "PARENT".equalsIgnoreCase(utilisateur.getRole().toString().replace("ROLE_", ""));

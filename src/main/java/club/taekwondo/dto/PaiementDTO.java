@@ -18,6 +18,9 @@ public class PaiementDTO {
     /** Club associé au paiement (dérivé: commande.club, membre.club ou utilisateur.club) */
     private Long clubId;
 
+    /** Commande boutique associée si ce paiement règle une commande (null pour une cotisation) */
+    private Long commandeId;
+
     /** Utilisateur (parent/adulte) payeur */
     private Long utilisateurId;
     private String utilisateurNom;
@@ -65,6 +68,9 @@ public class PaiementDTO {
 
     public Long getClubId() { return clubId; }
     public void setClubId(Long clubId) { this.clubId = clubId; }
+
+    public Long getCommandeId() { return commandeId; }
+    public void setCommandeId(Long commandeId) { this.commandeId = commandeId; }
 
     public Long getUtilisateurId() { return utilisateurId; }
     public void setUtilisateurId(Long utilisateurId) { this.utilisateurId = utilisateurId; }

@@ -395,6 +395,10 @@ public class PaiementService {
             membresCibles.add(adulte);
         }
 
+        Commande commande = req.getCommandeId() != null
+                ? commandeRepository.findById(req.getCommandeId()).orElse(null)
+                : null;
+
         List<PaiementDTO> out = new ArrayList<>();
         for (Membre membre : membresCibles) {
             Paiement p = new Paiement();
@@ -403,6 +407,7 @@ public class PaiementService {
             p.setDatePaiement(date);
             p.setModePaiement(mode);
             p.setType(type);
+            p.setCommande(commande);
 
             if ("UNIQUE".equals(type)) {
                 p.setMontantTotal(total);

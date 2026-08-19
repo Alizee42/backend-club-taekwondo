@@ -39,6 +39,7 @@ public class PaiementMapper {
             clubId = paiement.getUtilisateur().getClub().getId();
         }
         dto.setClubId(clubId);
+        dto.setCommandeId(paiement.getCommande() != null ? paiement.getCommande().getId() : null);
 
         if (paiement.getUtilisateur() != null) {
             dto.setUtilisateurId(paiement.getUtilisateur().getId());

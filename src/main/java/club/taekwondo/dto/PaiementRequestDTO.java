@@ -27,6 +27,9 @@ public class PaiementRequestDTO {
     /** Optionnel : plusieurs enfants d'un coup (une création sera faite par enfant côté service). */
     private List<Long> membreIds;
 
+    /** Optionnel : commande boutique réglée par ce paiement (absent pour une cotisation) */
+    private Long commandeId;
+
     // ===== Création à la volée (si utilisateurId absent) =====
     /** Nom/prénom/email pour créer un payeur rapidement (parent/adulte) */
     private String utilisateurNom;
@@ -93,6 +96,9 @@ public class PaiementRequestDTO {
 
     public List<Long> getMembreIds() { return membreIds; }
     public void setMembreIds(List<Long> membreIds) { this.membreIds = membreIds; }
+
+    public Long getCommandeId() { return commandeId; }
+    public void setCommandeId(Long commandeId) { this.commandeId = commandeId; }
 
     public String getUtilisateurNom() { return utilisateurNom; }
     public void setUtilisateurNom(String utilisateurNom) { this.utilisateurNom = utilisateurNom; }
