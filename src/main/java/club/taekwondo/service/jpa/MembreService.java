@@ -143,6 +143,7 @@ public class MembreService {
     }
 
     // 🔹 Mettre à jour un membre
+    @Transactional
     public MembreDTO updateMembre(Long id, MembreDTO membreDTO) {
         return membreRepository.findById(id).map(membre -> {
             membre.setNom(membreDTO.getNom());
