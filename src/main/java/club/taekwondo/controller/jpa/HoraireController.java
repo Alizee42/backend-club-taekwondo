@@ -6,12 +6,14 @@ import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.service.jpa.HoraireService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/horaires")
 public class HoraireController {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}")
     public Horaire updateHoraire(@PathVariable Long id, @RequestBody Horaire horaire) {
         horaire.setId(id);
@@ -30,6 +32,7 @@ public class HoraireController {
         return horaireService.getHorairesByClub(clubId);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/club/{clubId}")
     public Horaire addHoraire(@PathVariable Long clubId, @RequestBody Horaire horaire) {
         // Associer le club à l'horaire
@@ -38,6 +41,7 @@ public class HoraireController {
         return horaireService.addHoraire(horaire);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteHoraire(@PathVariable Long id) {
         horaireService.deleteHoraire(id);

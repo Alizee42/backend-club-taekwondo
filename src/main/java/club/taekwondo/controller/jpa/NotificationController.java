@@ -53,8 +53,10 @@ public class NotificationController {
 
     // 🔹 Marquer une notification comme lue
     @PutMapping("/{id}/lue")
-    public ResponseEntity<?> marquerCommeLue(@PathVariable Long id) {
+    public ResponseEntity<?> marquerCommeLue(@PathVariable Long id, Authentication authentication) {
         try {
+            ResponseEntity<?> refus = refuserSiPasProprietaire(id, authentication);
+            if (refus != null) return refus;
             notificationService.marquerCommeLue(id);
             return ResponseEntity.ok(Map.of("message", "Notification marquée comme lue."));
         } catch (IllegalArgumentException e) {
@@ -64,13 +66,30 @@ public class NotificationController {
 
     // 🔹 Supprimer une notification
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
+    public ResponseEntity<?> deleteNotification(@PathVariable Long id, Authentication authentication) {
         try {
+            ResponseEntity<?> refus = refuserSiPasProprietaire(id, authentication);
+            if (refus != null) return refus;
             notificationService.deleteNotification(id);
             return ResponseEntity.ok(Map.of("message", "Notification supprimée avec succès."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
         }
+    }
+
+    // 🔹 Vérifie que l'appelant est propriétaire de la notification (ou admin/super-admin) ;
+    // renvoie une réponse 401/403 à retourner tel quel si l'accès doit être refusé, sinon null.
+    private ResponseEntity<?> refuserSiPasProprietaire(Long notificationId, Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (isAdmin) return null;
+        Utilisateur caller = utilisateurRepository.findByEmail(authentication.getName()).orElse(null);
+        Long ownerId = notificationService.getOwnerId(notificationId);
+        if (caller == null || !caller.getId().equals(ownerId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return null;
     }
 
     // ========== NOUVEAUX ENDPOINTS POUR LE FRONTEND ==========
@@ -93,8 +112,10 @@ public class NotificationController {
 
     // 🔹 Marquer une notification comme lue (endpoint frontend)
     @PutMapping("/{id}/read")
-    public ResponseEntity<?> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<?> markAsRead(@PathVariable Long id, Authentication authentication) {
         try {
+            ResponseEntity<?> refus = refuserSiPasProprietaire(id, authentication);
+            if (refus != null) return refus;
             notificationService.marquerCommeLue(id);
             return ResponseEntity.ok(Map.of("message", "Notification marquée comme lue"));
         } catch (IllegalArgumentException e) {

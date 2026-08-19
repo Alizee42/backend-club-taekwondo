@@ -60,6 +60,13 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
+    // 🔹 Propriétaire d'une notification (pour vérifier les droits avant modification/suppression)
+    public Long getOwnerId(Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new IllegalArgumentException("Notification non trouvée avec l'id : " + notificationId));
+        return notification.getUtilisateur().getId();
+    }
+
     // 🔹 Marquer une notification comme lue
     public void marquerCommeLue(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)

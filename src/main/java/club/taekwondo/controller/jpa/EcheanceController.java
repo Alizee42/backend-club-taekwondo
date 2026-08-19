@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -42,6 +43,7 @@ public class EcheanceController {
      * - Si aucun body n'est fourni → on marque payé (date du jour), sans mode/référence
      * - Si body fourni : { "modePaiement": "cb|virement|espèces", "reference": "...", "datePaiementReel": "YYYY-MM-DD" }
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/{id}/payer")
     public ResponseEntity<?> payerEcheance(
             @PathVariable Long id,
@@ -93,6 +95,7 @@ public class EcheanceController {
     }
 
     // 🔹 Suppression d'une échéance
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEcheance(@PathVariable Long id) {
         try {
