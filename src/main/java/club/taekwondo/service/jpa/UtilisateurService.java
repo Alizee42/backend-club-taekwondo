@@ -424,6 +424,44 @@ public class UtilisateurService {
         });
     }
 
+    /**
+     * Mise à jour "self-service" du profil par l'utilisateur connecté lui-même.
+     * Volontairement restreinte aux champs personnels : ne touche jamais au rôle,
+     * au club ni au mot de passe (contrairement à updateUtilisateurFromDTO, réservée aux admins).
+     */
+    public void updateProfilPersonnel(Long id, UtilisateurDTO dto) {
+        utilisateurRepository.findById(id).ifPresent(user -> {
+            user.setNom(dto.getNom());
+            user.setPrenom(dto.getPrenom());
+            user.setEmail(lowerOrNull(dto.getEmail()));
+            user.setTelephone(dto.getTelephone());
+            user.setAdresse(dto.getAdresse());
+            user.setDateNaissance(dto.getDateNaissance());
+            utilisateurRepository.save(user);
+        });
+    }
+
+    /**
+     * Changement de mot de passe "self-service" : exige le mot de passe actuel
+     * pour éviter qu'un token volé suffise à prendre le contrôle du compte.
+     * @return true si le changement a eu lieu, false si le mot de passe actuel est incorrect.
+     */
+    public boolean changerMotDePassePersonnel(Long id, String currentPassword, String newPassword) {
+        Optional<Utilisateur> userOpt = utilisateurRepository.findById(id);
+        if (userOpt.isEmpty()) return false;
+
+        Utilisateur user = userOpt.get();
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return false;
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordTemporaire(false);
+        user.setPasswordUpdatedAt(java.time.OffsetDateTime.now());
+        utilisateurRepository.save(user);
+        return true;
+    }
+
     /* =======================
      *   Suppression
      * ======================= */

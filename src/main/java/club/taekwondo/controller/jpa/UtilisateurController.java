@@ -356,4 +356,73 @@ public ResponseEntity<?> login(@RequestBody(required = false) LoginDTO loginDTO)
                     .body(Map.of("message", "Erreur lors de la récupération de l'utilisateur connecté."));
         }
     }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                                @RequestBody UtilisateurDTO utilisateurDTO) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Token manquant ou invalide."));
+            }
+
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
+            if (email == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Token invalide."));
+            }
+
+            Optional<Utilisateur> utilisateurOpt = utilisateurService.getUtilisateurEntityByEmail(email);
+            if (utilisateurOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé."));
+            }
+
+            Long id = utilisateurOpt.get().getId();
+            utilisateurService.updateProfilPersonnel(id, utilisateurDTO);
+
+            Optional<Utilisateur> updated = utilisateurService.getUtilisateurEntityById(id);
+            return ResponseEntity.ok(utilisateurService.convertToDTO(updated.get()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la modification du profil."));
+        }
+    }
+
+    @PutMapping("/me/mot-de-passe")
+    public ResponseEntity<?> updateCurrentUserPassword(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                                         @RequestBody Map<String, String> body) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Token manquant ou invalide."));
+            }
+
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractEmail(token);
+            if (email == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Token invalide."));
+            }
+
+            Optional<Utilisateur> utilisateurOpt = utilisateurService.getUtilisateurEntityByEmail(email);
+            if (utilisateurOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Utilisateur non trouvé."));
+            }
+
+            String currentPassword = body.get("currentPassword");
+            String newPassword = body.get("newPassword");
+            if (currentPassword == null || newPassword == null || newPassword.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Mot de passe actuel et nouveau mot de passe requis."));
+            }
+
+            boolean ok = utilisateurService.changerMotDePassePersonnel(utilisateurOpt.get().getId(), currentPassword, newPassword);
+            if (!ok) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Mot de passe actuel incorrect."));
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Mot de passe mis à jour."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Erreur lors de la mise à jour du mot de passe."));
+        }
+    }
 }
