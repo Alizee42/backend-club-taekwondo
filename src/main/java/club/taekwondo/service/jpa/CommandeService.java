@@ -1,12 +1,10 @@
 package club.taekwondo.service.jpa;
 
-import club.taekwondo.dto.BonCommandeRequestDTO;
 import club.taekwondo.dto.CartCheckoutRequestDTO;
 import club.taekwondo.dto.CommandeDTO;
 import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.dto.LigneCommandeDTO;
 import club.taekwondo.dto.UtilisateurCommandeDTO;
-import club.taekwondo.entity.jpa.CampagneCommande;
 import club.taekwondo.entity.jpa.Commande;
 import club.taekwondo.entity.jpa.LigneCommande;
 import club.taekwondo.entity.jpa.Membre;
@@ -255,77 +253,6 @@ public class CommandeService {
     }
 
     @Transactional
-    public CommandeDTO createCommandeForCampagne(BonCommandeRequestDTO req, Utilisateur utilisateur, CampagneCommande campagne) {
-        if (req.getLignesCommande() == null || req.getLignesCommande().isEmpty()) {
-            throw new IllegalArgumentException("La commande doit contenir au moins une ligne.");
-        }
-
-        Commande commande = new Commande();
-        commande.setDateCommande(LocalDate.now());
-        commande.setMontantTotal(BigDecimal.ZERO);
-        commande.setUtilisateur(utilisateur);
-        commande.setCampagne(campagne);
-        if (utilisateur.getClub() != null) {
-            commande.setClub(utilisateur.getClub());
-        }
-
-        final String modeNorm = normalizeMode(req.getModePaiement());
-        commande.setModePaiement(modeNorm);
-        commande.setStatut("EN_ATTENTE");
-        commande.setDatePaiement(null);
-
-        commande = commandeRepository.save(commande);
-
-        BigDecimal total = BigDecimal.ZERO;
-        List<LigneCommande> lignes = new ArrayList<>();
-        Membre defaultBeneficiaire = resolveDefaultBeneficiaire(utilisateur);
-
-        for (LigneCommandeDTO ligneDTO : req.getLignesCommande()) {
-            Produit produit = produitRepository.findById(ligneDTO.getProduitId())
-                    .orElseThrow(() -> new RuntimeException("Produit non trouvé id=" + ligneDTO.getProduitId()));
-
-            BigDecimal prixUnitaire;
-            if (ligneDTO.getPrixUnitaire() != null && ligneDTO.getPrixUnitaire() > 0) {
-                prixUnitaire = BigDecimal.valueOf(ligneDTO.getPrixUnitaire());
-            } else {
-                prixUnitaire = produit.getPrix();
-                if (ligneDTO.getFlocage() != null && !ligneDTO.getFlocage().trim().isEmpty()) {
-                    prixUnitaire = prixUnitaire.add(COUT_FLOCAGE);
-                }
-            }
-
-            LigneCommande ligne = new LigneCommande();
-            ligne.setCommande(commande);
-            ligne.setProduit(produit);
-            ligne.setQuantite(ligneDTO.getQuantite());
-            ligne.setPrixUnitaire(prixUnitaire.doubleValue());
-            BigDecimal qte = BigDecimal.valueOf(ligneDTO.getQuantite() != null ? ligneDTO.getQuantite() : 0);
-            ligne.setSousTotal(prixUnitaire.multiply(qte).doubleValue());
-            ligne.setTaille(ligneDTO.getTaille());
-            ligne.setCouleur(ligneDTO.getCouleur());
-            ligne.setFlocage(ligneDTO.getFlocage());
-
-            if (ligneDTO.getBeneficiaireId() != null) {
-                Membre enfant = membreRepository.findById(ligneDTO.getBeneficiaireId())
-                        .orElseThrow(() -> new RuntimeException("Bénéficiaire introuvable id=" + ligneDTO.getBeneficiaireId()));
-                ligne.setBeneficiaire(enfant);
-            } else if (defaultBeneficiaire != null) {
-                ligne.setBeneficiaire(defaultBeneficiaire);
-            }
-
-            total = total.add(prixUnitaire.multiply(qte));
-            lignes.add(ligneCommandeRepository.save(ligne));
-        }
-
-        commande.setMontantTotal(total);
-        commande = commandeRepository.save(commande);
-
-        CommandeDTO resultDTO = convertToDTO(commande);
-        resultDTO.setLignesCommande(lignes.stream().map(this::convertLigneToDTO).collect(Collectors.toList()));
-        return resultDTO;
-    }
-
-    @Transactional
     public CommandeDTO createCommandeFromCart(CartCheckoutRequestDTO req, Utilisateur utilisateur) {
         if (req.getLignes() == null || req.getLignes().isEmpty()) {
             throw new IllegalArgumentException("Le panier est vide.");
@@ -513,11 +440,6 @@ public class CommandeService {
 
         if (commande.getClub() != null) {
             dto.setClubId(commande.getClub().getId());
-        }
-
-        if (commande.getCampagne() != null) {
-            dto.setCampagneId(commande.getCampagne().getId());
-            dto.setCampagneTitre(commande.getCampagne().getTitre());
         }
 
         if (commande.getUtilisateur() != null) {

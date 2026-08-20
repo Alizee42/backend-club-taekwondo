@@ -37,10 +37,6 @@ public class Commande {
     @JoinColumn(name = "utilisateur_id", referencedColumnName = "id")
     private Utilisateur utilisateur;
 
-    @ManyToOne
-    @JoinColumn(name = "campagne_id")
-    private CampagneCommande campagne;
-
     // 🔹 Relation avec les lignes de commande
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LigneCommande> lignes;
@@ -120,14 +116,6 @@ public class Commande {
 
     public void setDatePaiement(LocalDate datePaiement) {
         this.datePaiement = datePaiement;
-    }
-
-    public CampagneCommande getCampagne() {
-        return campagne;
-    }
-
-    public void setCampagne(CampagneCommande campagne) {
-        this.campagne = campagne;
     }
 
     public List<LigneCommande> getLignes() {
