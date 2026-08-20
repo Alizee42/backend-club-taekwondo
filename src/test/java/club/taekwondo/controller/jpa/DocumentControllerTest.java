@@ -27,6 +27,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -114,10 +116,10 @@ class DocumentControllerTest {
         when(documentService.getDocumentById(8L)).thenReturn(Optional.of(document));
         when(utilisateurService.getUtilisateurEntityById(22L)).thenReturn(Optional.of(targetUser));
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> controller.validerDocument(8L, auth));
+        ResponseEntity<?> response = controller.validerDocument(8L, auth);
 
-        assertEquals(HttpStatus.FORBIDDEN.value(), exception.getStatusCode().value());
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(documentService, never()).updateDocumentStatus(anyLong(), anyString());
     }
 
     private Authentication auth(String email, String authority) {

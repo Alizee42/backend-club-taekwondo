@@ -8,12 +8,12 @@ import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.repository.jpa.NotificationRepository;
 import club.taekwondo.repository.jpa.PaiementRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class PaiementServiceTest {
 
     @MockBean
@@ -47,6 +46,9 @@ class PaiementServiceTest {
     private UtilisateurRepository utilisateurRepository;
 
     @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
     private UtilisateurService utilisateurService;
 
     @Autowired
@@ -60,6 +62,7 @@ class PaiementServiceTest {
         // Nettoyage complet dans l'ordre des dépendances FK
         paiementRepository.deleteAll();
         membreRepository.deleteAll();
+        notificationRepository.deleteAll();
         utilisateurRepository.deleteAll();
 
         // Création d'un utilisateur parent
