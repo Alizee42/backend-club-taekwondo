@@ -48,6 +48,11 @@ jobs:
           HOST="$(printf '%s' "$IONOS_HOST" | tr -d '[:space:]')"
           USER="$(printf '%s' "$IONOS_USER" | tr -d '[:space:]')"
           ssh -i ~/.ssh/ionos_key "$USER@$HOST" "mkdir -p '$APP_DIR'"
+          # Repart d'un dossier source propre a chaque deploiement : un `tar -xzf` seul
+          # fusionne par-dessus sans jamais supprimer les fichiers retires du depot (ex:
+          # anciennes migrations Flyway renommees/supprimees), ce qui peut faire cohabiter
+          # d'anciens et de nouveaux fichiers et casser le demarrage de l'appli.
+          ssh -i ~/.ssh/ionos_key "$USER@$HOST" "rm -rf '$APP_DIR/src' '$APP_DIR/pom.xml' '$APP_DIR/Dockerfile' '$APP_DIR/mvnw' '$APP_DIR/mvnw.cmd' '$APP_DIR/.mvn'"
           tar \
             --exclude='.git' \
             --exclude='.github' \
