@@ -122,6 +122,154 @@ class DocumentControllerTest {
         verify(documentService, never()).updateDocumentStatus(anyLong(), anyString());
     }
 
+    @Test
+    void getAllDocuments_adminSeesOnlyOwnClub() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        Utilisateur admin = user(1L, "admin@test.com", 3L);
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(documentService.getDocumentsByClubId(3L)).thenReturn(List.of(document(1L, 10L, null, "a.pdf", "en attente")));
+
+        ResponseEntity<List<DocumentDTO>> response = controller.getAllDocuments(auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(documentService, never()).getAllDocumentsWithUtilisateur();
+        verify(documentService).getDocumentsByClubId(3L);
+    }
+
+    @Test
+    void getAllDocuments_superAdminSeesEveryClub() {
+        Authentication auth = auth("super@test.com", "ROLE_SUPER_ADMIN");
+        when(documentService.getAllDocumentsWithUtilisateur()).thenReturn(List.of(document(1L, 10L, null, "a.pdf", "en attente")));
+
+        ResponseEntity<List<DocumentDTO>> response = controller.getAllDocuments(auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(utilisateurService, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void getAllDocuments_adminWithoutClub_isForbidden() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        Utilisateur admin = user(1L, "admin@test.com", null);
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+
+        ResponseEntity<List<DocumentDTO>> response = controller.getAllDocuments(auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void validerDocument_ownerCanValidateOwnClubDocument() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        DocumentDTO document = document(8L, 22L, null, "doc.pdf", "en attente");
+        Utilisateur targetUser = user(22L, "other@test.com", 1L);
+
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(documentService.getDocumentById(8L)).thenReturn(Optional.of(document));
+        when(utilisateurService.getUtilisateurEntityById(22L)).thenReturn(Optional.of(targetUser));
+
+        ResponseEntity<?> response = controller.validerDocument(8L, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(documentService).updateDocumentStatus(8L, "validé");
+    }
+
+    @Test
+    void refuserDocument_passesMotifToService() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        DocumentDTO document = document(8L, 22L, null, "doc.pdf", "en attente");
+        Utilisateur targetUser = user(22L, "other@test.com", 1L);
+
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(documentService.getDocumentById(8L)).thenReturn(Optional.of(document));
+        when(utilisateurService.getUtilisateurEntityById(22L)).thenReturn(Optional.of(targetUser));
+
+        ResponseEntity<?> response = controller.refuserDocument(8L, java.util.Map.of("motifRefus", "Photo illisible"), auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(documentService).updateDocumentStatus(8L, "refusé", "Photo illisible");
+    }
+
+    @Test
+    void deleteDocument_notFound_returns404() {
+        when(documentService.getDocumentById(404L)).thenReturn(Optional.empty());
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        ResponseEntity<?> response = controller.deleteDocument(404L, auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        verify(documentService, never()).deleteDocument(anyLong());
+    }
+
+    @Test
+    void deleteDocument_ownerCanDeleteOwnDocument() {
+        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
+        Utilisateur membre = user(7L, "membre@test.com", 1L);
+        DocumentDTO document = document(3L, 7L, null, "doc.pdf", "en attente");
+
+        when(documentService.getDocumentById(3L)).thenReturn(Optional.of(document));
+        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(membre));
+
+        ResponseEntity<?> response = controller.deleteDocument(3L, auth);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(documentService).deleteDocument(3L);
+    }
+
+    @Test
+    void getDocumentsByMembre_adminOfOtherClubIsForbidden() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        Membre membre = new Membre();
+        membre.setId(50L);
+        Club otherClub = new Club();
+        otherClub.setId(2L);
+        membre.setClub(otherClub);
+
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(membreService.findById(50L)).thenReturn(Optional.of(membre));
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> controller.getDocumentsByMembre(50L, auth));
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+        verify(documentService, never()).getDocumentsByMembreId(anyLong());
+    }
+
+    @Test
+    void getDocumentsByMembre_unknownMembre_returns404() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(membreService.findById(999L)).thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> controller.getDocumentsByMembre(999L, auth));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
+
+    @Test
+    void getDocumentById_notFound_returns404() {
+        when(documentService.getDocumentById(123L)).thenReturn(Optional.empty());
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        ResponseEntity<DocumentDTO> response = controller.getDocumentById(123L, auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void createDocument_missingFile_returnsBadRequest() {
+        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
+
+        ResponseEntity<?> response = controller.createDocument("licence", null, 7L, null, auth);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
     private Authentication auth(String email, String authority) {
         TestingAuthenticationToken token = new TestingAuthenticationToken(email, null, authority);
         token.setAuthenticated(true);

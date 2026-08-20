@@ -125,6 +125,144 @@ class CommandeControllerTest {
         verify(commandeService, never()).createCommande(dto);
     }
 
+    @Test
+    void validerCommande_adminCannotValidateOtherClubCommande() {
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        Commande commande = commandeFor(otherClubUser(2L));
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+
+        ResponseEntity<CommandeDTO> response = controller.validerCommande(50L, java.util.Map.of("modePaiement", "cheque"), auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(commandeService, never()).validerCommande(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void validerCommande_missingModePaiement_returnsBadRequest() {
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+
+        ResponseEntity<CommandeDTO> response = controller.validerCommande(50L, java.util.Map.of(), auth);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void validerCommande_ownerCanValidate() {
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        CommandeDTO result = new CommandeDTO();
+        result.setId(50L);
+
+        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(commandeService.validerCommande(50L, "cheque")).thenReturn(result);
+
+        ResponseEntity<CommandeDTO> response = controller.validerCommande(50L, java.util.Map.of("modePaiement", "cheque"), auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void annulerCommande_ownerCanCancelWithDefaultMotif() {
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        CommandeDTO result = new CommandeDTO();
+        result.setId(50L);
+
+        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        when(commandeService.annulerCommande(50L, "Motif non renseigne")).thenReturn(result);
+
+        ResponseEntity<CommandeDTO> response = controller.annulerCommande(50L, java.util.Map.of(), auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(commandeService).annulerCommande(50L, "Motif non renseigne");
+    }
+
+    @Test
+    void marquerCommandeARetirer_adminOfOtherClubIsForbidden() {
+        Utilisateur admin = user(1L, "admin@test.com", 1L);
+        Commande commande = commandeFor(otherClubUser(2L));
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+
+        ResponseEntity<CommandeDTO> response = controller.marquerCommandeARetirer(50L, auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(commandeService, never()).marquerCommandeARetirer(org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    void deleteCommande_superAdminCanDeleteAnyClub() {
+        Utilisateur superAdmin = user(1L, "super@test.com", 9L);
+        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
+        Authentication auth = auth("super@test.com", "ROLE_SUPER_ADMIN");
+
+        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
+        when(utilisateurService.findByEmail("super@test.com")).thenReturn(Optional.of(superAdmin));
+
+        ResponseEntity<Void> response = controller.deleteCommande(50L, auth);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(commandeService).deleteCommande(50L);
+    }
+
+    @Test
+    void deleteCommande_notFound_returns404() {
+        when(commandeService.getCommandeEntityById(999L)).thenReturn(Optional.empty());
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        ResponseEntity<Void> response = controller.deleteCommande(999L, auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void passerCommandeDepuisPanier_withoutClub_returnsForbidden() {
+        Utilisateur caller = user(1L, "membre@test.com", null);
+        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
+        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(caller));
+
+        ResponseEntity<?> response = controller.passerCommandeDepuisPanier(
+                new club.taekwondo.dto.CartCheckoutRequestDTO(), auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(commandeService, never()).createCommandeFromCart(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void getCommandesParMembre_notFound_returns404() {
+        when(membreRepository.findById(404L)).thenReturn(Optional.empty());
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParMembre(404L, auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    private Commande commandeFor(Utilisateur owner) {
+        Commande commande = new Commande();
+        commande.setId(50L);
+        commande.setUtilisateur(owner);
+        return commande;
+    }
+
+    private Utilisateur otherClubUser(Long clubId) {
+        return user(2L, "client@other.com", clubId);
+    }
+
     private Authentication auth(String email, String authority) {
         TestingAuthenticationToken token = new TestingAuthenticationToken(email, null, authority);
         token.setAuthenticated(true);
