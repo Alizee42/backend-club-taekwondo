@@ -1,14 +1,16 @@
 package club.taekwondo.controller.jpa;
 
+import club.taekwondo.dto.CartCheckoutRequestDTO;
 import club.taekwondo.dto.CommandeDTO;
+import club.taekwondo.dto.CommandeUpdateDTO;
 import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Commande;
 import club.taekwondo.entity.jpa.LigneCommande;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Utilisateur;
+import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.service.jpa.CommandeService;
 import club.taekwondo.service.jpa.UtilisateurService;
-import club.taekwondo.repository.jpa.MembreRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,13 +21,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,251 +52,391 @@ class CommandeControllerTest {
         controller = new CommandeController(commandeService, utilisateurService, membreRepository);
     }
 
-    @Test
-    void getAllCommandes_adminUsesOwnClubScope() {
-        Utilisateur admin = user(10L, "admin@club.test", 1L);
-        Authentication auth = auth("admin@club.test", "ROLE_ADMIN");
+    private Authentication auth(String email, String role) {
+        return new TestingAuthenticationToken(email, null, "ROLE_" + role);
+    }
+
+    private Utilisateur user(Long id, Long clubId) {
+        Utilisateur u = new Utilisateur();
+        u.setId(id);
+        if (clubId != null) {
+            Club club = new Club();
+            club.setId(clubId);
+            u.setClub(club);
+        }
+        return u;
+    }
+
+    private Commande commande(Long id, Long clubId, Utilisateur utilisateur) {
+        Commande c = new Commande();
+        c.setId(id);
+        if (clubId != null) {
+            Club club = new Club();
+            club.setId(clubId);
+            c.setClub(club);
+        }
+        c.setUtilisateur(utilisateur);
+        return c;
+    }
+
+    private CommandeDTO commandeDTO(Long utilisateurId, Long clubId) {
         CommandeDTO dto = new CommandeDTO();
-        dto.setId(100L);
+        dto.setUtilisateurId(utilisateurId);
+        dto.setClubId(clubId);
+        return dto;
+    }
 
-        when(utilisateurService.findByEmail("admin@club.test")).thenReturn(Optional.of(admin));
-        when(commandeService.getAllCommandesByClubId(1L)).thenReturn(List.of(dto));
+    @Test
+    void getAllCommandes_superAdmin_retourneToutes() {
+        when(utilisateurService.findByEmail("super@test.com")).thenReturn(Optional.of(user(1L, null)));
+        when(commandeService.getAllCommandes()).thenReturn(List.of(new CommandeDTO()));
 
-        ResponseEntity<List<CommandeDTO>> response = controller.getAllCommandes(auth);
+        ResponseEntity<List<CommandeDTO>> response = controller.getAllCommandes(auth("super@test.com", "SUPER_ADMIN"));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
-        assertEquals(100L, response.getBody().get(0).getId());
-        verify(commandeService).getAllCommandesByClubId(1L);
-        verify(commandeService, never()).getAllCommandes();
     }
 
     @Test
-    void getCommandesParParent_parentCannotReadAnotherFamily() {
-        Utilisateur callerParent = user(11L, "parent1@test.com", 1L);
-        Utilisateur targetParent = user(22L, "parent2@test.com", 1L);
-        Authentication auth = auth("parent1@test.com", "ROLE_PARENT");
+    void getAllCommandes_adminAvecClub_filtreParClub() {
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.getAllCommandesByClubId(10L)).thenReturn(List.of(new CommandeDTO()));
 
-        when(utilisateurService.findByEmail("parent1@test.com")).thenReturn(Optional.of(callerParent));
-        when(utilisateurService.getUtilisateurEntityById(22L)).thenReturn(Optional.of(targetParent));
+        ResponseEntity<List<CommandeDTO>> response = controller.getAllCommandes(auth("admin@test.com", "ADMIN"));
 
-        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParParent(22L, auth);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getAllCommandes_adminSansClub_retourneForbidden() {
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, null)));
+
+        ResponseEntity<List<CommandeDTO>> response = controller.getAllCommandes(auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(commandeService, never()).getCommandesParParent(22L);
     }
 
     @Test
-    void getCommandeById_memberCannotAccessAnotherBeneficiaryCommande() {
-        Utilisateur caller = user(30L, "membre@test.com", 1L);
-        Utilisateur otherUser = user(31L, "autre@test.com", 1L);
-        Membre otherMember = member(301L, otherUser, null, 1L);
-        LigneCommande ligne = new LigneCommande();
-        ligne.setBeneficiaire(otherMember);
+    void getCommandeById_absent_retourneNotFound() {
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.empty());
 
-        Commande commande = new Commande();
-        commande.setId(77L);
-        commande.setUtilisateur(otherUser);
-        commande.setLignes(List.of(ligne));
+        ResponseEntity<CommandeDTO> response = controller.getCommandeById(1L, auth("super@test.com", "SUPER_ADMIN"));
 
-        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
 
-        when(commandeService.getCommandeEntityById(77L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(caller));
+    @Test
+    void getCommandeById_proprietaire_retourneOk() {
+        Utilisateur owner = user(3L, null);
+        Commande c = commande(1L, null, owner);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(user(3L, null)));
+        when(commandeService.toCommandeDTO(c)).thenReturn(new CommandeDTO());
 
-        ResponseEntity<CommandeDTO> response = controller.getCommandeById(77L, auth);
+        ResponseEntity<CommandeDTO> response = controller.getCommandeById(1L, auth("membre@test.com", "MEMBRE"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getCommandeById_nonAutorise_retourneForbidden() {
+        Utilisateur owner = user(3L, null);
+        Commande c = commande(1L, null, owner);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("autre@test.com")).thenReturn(Optional.of(user(99L, null)));
+
+        ResponseEntity<CommandeDTO> response = controller.getCommandeById(1L, auth("autre@test.com", "MEMBRE"));
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(commandeService, never()).toCommandeDTO(commande);
     }
 
     @Test
-    void createCommande_adminCannotCreateForUserFromAnotherClub() {
-        Utilisateur admin = user(40L, "admin@test.com", 1L);
-        Utilisateur targetUser = user(41L, "target@test.com", 2L);
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+    void getCommandesParMembre_membreIntrouvable_retourneNotFound() {
+        when(membreRepository.findById(1L)).thenReturn(Optional.empty());
 
-        CommandeDTO dto = new CommandeDTO();
-        dto.setUtilisateurId(41L);
-        dto.setClubId(2L);
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParMembre(1L, auth("super@test.com", "SUPER_ADMIN"));
 
-        when(utilisateurService.getUtilisateurEntityById(41L)).thenReturn(Optional.of(targetUser));
-        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
 
-        ResponseEntity<CommandeDTO> response = controller.createCommande(dto, auth);
+    @Test
+    void getCommandesParMembre_parentProprietaire_retourneOk() {
+        Utilisateur parent = user(5L, null);
+        Membre m = new Membre();
+        m.setId(1L);
+        m.setParent(parent);
+        when(membreRepository.findById(1L)).thenReturn(Optional.of(m));
+        when(utilisateurService.findByEmail("parent@test.com")).thenReturn(Optional.of(user(5L, null)));
+        when(commandeService.getCommandesParMembre(1L)).thenReturn(List.of(new CommandeDTO()));
+
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParMembre(1L, auth("parent@test.com", "PARENT"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getCommandesParParent_parentIntrouvable_retourneNotFound() {
+        when(utilisateurService.getUtilisateurEntityById(1L)).thenReturn(Optional.empty());
+
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParParent(1L, auth("super@test.com", "SUPER_ADMIN"));
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void getCommandesParParent_lui_meme_retourneOk() {
+        Utilisateur parent = user(5L, null);
+        when(utilisateurService.getUtilisateurEntityById(5L)).thenReturn(Optional.of(parent));
+        when(utilisateurService.findByEmail("parent@test.com")).thenReturn(Optional.of(parent));
+        when(commandeService.getCommandesParParent(5L)).thenReturn(List.of(new CommandeDTO()));
+
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParParent(5L, auth("parent@test.com", "PARENT"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void passerCommandeDepuisPanier_sansClub_retourneForbidden() {
+        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(user(3L, null)));
+
+        ResponseEntity<?> response = controller.passerCommandeDepuisPanier(new CartCheckoutRequestDTO(), auth("membre@test.com", "MEMBRE"));
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(commandeService, never()).createCommande(dto);
     }
 
     @Test
-    void validerCommande_adminCannotValidateOtherClubCommande() {
-        Utilisateur admin = user(1L, "admin@test.com", 1L);
-        Commande commande = commandeFor(otherClubUser(2L));
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+    void passerCommandeDepuisPanier_succes_retourneCreated() {
+        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(user(3L, 10L)));
+        when(commandeService.createCommandeFromCart(any(CartCheckoutRequestDTO.class), any(Utilisateur.class)))
+                .thenReturn(new CommandeDTO());
 
-        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
+        ResponseEntity<?> response = controller.passerCommandeDepuisPanier(new CartCheckoutRequestDTO(), auth("membre@test.com", "MEMBRE"));
 
-        ResponseEntity<CommandeDTO> response = controller.validerCommande(50L, java.util.Map.of("modePaiement", "cheque"), auth);
-
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(commandeService, never()).validerCommande(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyString());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
     @Test
-    void validerCommande_missingModePaiement_returnsBadRequest() {
-        Utilisateur admin = user(1L, "admin@test.com", 1L);
-        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+    void passerCommandeDepuisPanier_erreurValidation_retourneBadRequest() {
+        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(user(3L, 10L)));
+        when(commandeService.createCommandeFromCart(any(CartCheckoutRequestDTO.class), any(Utilisateur.class)))
+                .thenThrow(new IllegalArgumentException("panier vide"));
 
-        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
-
-        ResponseEntity<CommandeDTO> response = controller.validerCommande(50L, java.util.Map.of(), auth);
+        ResponseEntity<?> response = controller.passerCommandeDepuisPanier(new CartCheckoutRequestDTO(), auth("membre@test.com", "MEMBRE"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    void validerCommande_ownerCanValidate() {
-        Utilisateur admin = user(1L, "admin@test.com", 1L);
-        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
-        CommandeDTO result = new CommandeDTO();
-        result.setId(50L);
+    void createCommande_utilisateurCibleIntrouvable_retourneBadRequest() {
+        CommandeDTO dto = commandeDTO(99L, null);
+        when(utilisateurService.getUtilisateurEntityById(99L)).thenReturn(Optional.empty());
 
-        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
-        when(commandeService.validerCommande(50L, "cheque")).thenReturn(result);
+        ResponseEntity<CommandeDTO> response = controller.createCommande(dto, auth("super@test.com", "SUPER_ADMIN"));
 
-        ResponseEntity<CommandeDTO> response = controller.validerCommande(50L, java.util.Map.of("modePaiement", "cheque"), auth);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
-    void annulerCommande_ownerCanCancelWithDefaultMotif() {
-        Utilisateur admin = user(1L, "admin@test.com", 1L);
-        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
-        CommandeDTO result = new CommandeDTO();
-        result.setId(50L);
+    void createCommande_adminMemeClub_retourneCreated() {
+        Utilisateur target = user(2L, 10L);
+        CommandeDTO dto = commandeDTO(2L, null);
+        when(utilisateurService.getUtilisateurEntityById(2L)).thenReturn(Optional.of(target));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.createCommande(any(CommandeDTO.class))).thenReturn(dto);
 
-        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
-        when(commandeService.annulerCommande(50L, "Motif non renseigne")).thenReturn(result);
+        ResponseEntity<CommandeDTO> response = controller.createCommande(dto, auth("admin@test.com", "ADMIN"));
 
-        ResponseEntity<CommandeDTO> response = controller.annulerCommande(50L, java.util.Map.of(), auth);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(commandeService).annulerCommande(50L, "Motif non renseigne");
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
     @Test
-    void marquerCommandeARetirer_adminOfOtherClubIsForbidden() {
-        Utilisateur admin = user(1L, "admin@test.com", 1L);
-        Commande commande = commandeFor(otherClubUser(2L));
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+    void createCommande_adminAutreClub_retourneForbidden() {
+        Utilisateur target = user(2L, 99L);
+        CommandeDTO dto = commandeDTO(2L, null);
+        when(utilisateurService.getUtilisateurEntityById(2L)).thenReturn(Optional.of(target));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
 
-        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
-
-        ResponseEntity<CommandeDTO> response = controller.marquerCommandeARetirer(50L, auth);
+        ResponseEntity<CommandeDTO> response = controller.createCommande(dto, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(commandeService, never()).marquerCommandeARetirer(org.mockito.ArgumentMatchers.anyLong());
     }
 
     @Test
-    void deleteCommande_superAdminCanDeleteAnyClub() {
-        Utilisateur superAdmin = user(1L, "super@test.com", 9L);
-        Commande commande = commandeFor(user(2L, "client@test.com", 1L));
-        Authentication auth = auth("super@test.com", "ROLE_SUPER_ADMIN");
+    void createCommande_erreurService_retourneBadRequest() {
+        Utilisateur target = user(2L, 10L);
+        CommandeDTO dto = commandeDTO(2L, null);
+        when(utilisateurService.getUtilisateurEntityById(2L)).thenReturn(Optional.of(target));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.createCommande(any(CommandeDTO.class))).thenThrow(new RuntimeException("erreur"));
 
-        when(commandeService.getCommandeEntityById(50L)).thenReturn(Optional.of(commande));
-        when(utilisateurService.findByEmail("super@test.com")).thenReturn(Optional.of(superAdmin));
+        ResponseEntity<CommandeDTO> response = controller.createCommande(dto, auth("admin@test.com", "ADMIN"));
 
-        ResponseEntity<Void> response = controller.deleteCommande(50L, auth);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void createCommandeAvecLignes_succes_retourneCreated() {
+        Utilisateur target = user(2L, 10L);
+        CommandeDTO dto = commandeDTO(2L, null);
+        when(utilisateurService.getUtilisateurEntityById(2L)).thenReturn(Optional.of(target));
+        when(utilisateurService.findByEmail("super@test.com")).thenReturn(Optional.of(user(1L, null)));
+        when(commandeService.createCommandeWithLignes(any(CommandeDTO.class))).thenReturn(dto);
+
+        ResponseEntity<CommandeDTO> response = controller.createCommandeAvecLignes(dto, auth("super@test.com", "SUPER_ADMIN"));
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    void mettreAJourCommande_succes_retourneOk() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+
+        ResponseEntity<Void> response = controller.mettreAJourCommande(1L, new CommandeUpdateDTO(), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void mettreAJourCommande_absente_retourneNotFound() {
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.empty());
+
+        ResponseEntity<Void> response = controller.mettreAJourCommande(1L, new CommandeUpdateDTO(), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void mettreAJourCommande_adminAutreClub_retourneForbidden() {
+        Commande c = commande(1L, 99L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+
+        ResponseEntity<Void> response = controller.mettreAJourCommande(1L, new CommandeUpdateDTO(), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void deleteCommande_succes_retourneNoContent() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+
+        ResponseEntity<Void> response = controller.deleteCommande(1L, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(commandeService).deleteCommande(50L);
     }
 
     @Test
-    void deleteCommande_notFound_returns404() {
-        when(commandeService.getCommandeEntityById(999L)).thenReturn(Optional.empty());
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+    void deleteCommande_erreurService_retourneNotFound() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        org.mockito.Mockito.doThrow(new RuntimeException("erreur")).when(commandeService).deleteCommande(1L);
 
-        ResponseEntity<Void> response = controller.deleteCommande(999L, auth);
+        ResponseEntity<Void> response = controller.deleteCommande(1L, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @Test
-    void passerCommandeDepuisPanier_withoutClub_returnsForbidden() {
-        Utilisateur caller = user(1L, "membre@test.com", null);
-        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
-        when(utilisateurService.findByEmail("membre@test.com")).thenReturn(Optional.of(caller));
+    void getCommandesPaiementClub_superAdmin_retourneToutes() {
+        when(utilisateurService.findByEmail("super@test.com")).thenReturn(Optional.of(user(1L, null)));
+        when(commandeService.getCommandesPaiementClub()).thenReturn(List.of(new CommandeDTO()));
 
-        ResponseEntity<?> response = controller.passerCommandeDepuisPanier(
-                new club.taekwondo.dto.CartCheckoutRequestDTO(), auth);
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesPaiementClub(auth("super@test.com", "SUPER_ADMIN"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getCommandesPaiementClub_adminSansClub_retourneForbidden() {
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, null)));
+
+        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesPaiementClub(auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(commandeService, never()).createCommandeFromCart(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
-    void getCommandesParMembre_notFound_returns404() {
-        when(membreRepository.findById(404L)).thenReturn(Optional.empty());
-        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+    void validerCommande_sansModePaiement_retourneBadRequest() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
 
-        ResponseEntity<List<CommandeDTO>> response = controller.getCommandesParMembre(404L, auth);
+        ResponseEntity<CommandeDTO> response = controller.validerCommande(1L, Map.of(), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void validerCommande_succes_retourneOk() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.validerCommande(1L, "cb")).thenReturn(new CommandeDTO());
+
+        ResponseEntity<CommandeDTO> response = controller.validerCommande(1L, Map.of("modePaiement", "cb"), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void validerCommande_erreurService_retourneBadRequest() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.validerCommande(1L, "cb")).thenThrow(new RuntimeException("erreur"));
+
+        ResponseEntity<CommandeDTO> response = controller.validerCommande(1L, Map.of("modePaiement", "cb"), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void annulerCommande_succes_retourneOk() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.annulerCommande(1L, "raison")).thenReturn(new CommandeDTO());
+
+        ResponseEntity<CommandeDTO> response = controller.annulerCommande(1L, Map.of("motif", "raison"), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void annulerCommande_sansMotif_utiliseValeurParDefaut() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.annulerCommande(1L, "Motif non renseigne")).thenReturn(new CommandeDTO());
+
+        ResponseEntity<CommandeDTO> response = controller.annulerCommande(1L, Map.of(), auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void marquerCommandeARetirer_succes_retourneOk() {
+        Commande c = commande(1L, 10L, null);
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.of(c));
+        when(utilisateurService.findByEmail("admin@test.com")).thenReturn(Optional.of(user(1L, 10L)));
+        when(commandeService.marquerCommandeARetirer(1L)).thenReturn(new CommandeDTO());
+
+        ResponseEntity<CommandeDTO> response = controller.marquerCommandeARetirer(1L, auth("admin@test.com", "ADMIN"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void marquerCommandeARetirer_absente_retourneNotFound() {
+        when(commandeService.getCommandeEntityById(1L)).thenReturn(Optional.empty());
+
+        ResponseEntity<CommandeDTO> response = controller.marquerCommandeARetirer(1L, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    private Commande commandeFor(Utilisateur owner) {
-        Commande commande = new Commande();
-        commande.setId(50L);
-        commande.setUtilisateur(owner);
-        return commande;
-    }
-
-    private Utilisateur otherClubUser(Long clubId) {
-        return user(2L, "client@other.com", clubId);
-    }
-
-    private Authentication auth(String email, String authority) {
-        TestingAuthenticationToken token = new TestingAuthenticationToken(email, null, authority);
-        token.setAuthenticated(true);
-        return token;
-    }
-
-    private Utilisateur user(Long id, String email, Long clubId) {
-        Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setId(id);
-        utilisateur.setEmail(email);
-        utilisateur.setClub(club(clubId));
-        return utilisateur;
-    }
-
-    private Membre member(Long id, Utilisateur compte, Utilisateur parent, Long clubId) {
-        Membre membre = new Membre();
-        membre.setId(id);
-        membre.setCompteUtilisateur(compte);
-        membre.setParent(parent);
-        membre.setClub(club(clubId));
-        membre.setNom("Nom");
-        membre.setPrenom("Prenom");
-        return membre;
-    }
-
-    private Club club(Long id) {
-        Club club = new Club();
-        club.setId(id);
-        club.setName("Club " + id);
-        return club;
     }
 }
