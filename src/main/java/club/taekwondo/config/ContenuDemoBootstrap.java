@@ -3,10 +3,12 @@ package club.taekwondo.config;
 import club.taekwondo.entity.jpa.Actualite;
 import club.taekwondo.entity.jpa.Avis;
 import club.taekwondo.entity.jpa.Club;
+import club.taekwondo.entity.jpa.Enseignant;
 import club.taekwondo.entity.jpa.Galerie;
 import club.taekwondo.repository.jpa.ActualiteRepository;
 import club.taekwondo.repository.jpa.AvisRepository;
 import club.taekwondo.repository.jpa.ClubRepository;
+import club.taekwondo.repository.jpa.EnseignantRepository;
 import club.taekwondo.repository.jpa.GalerieRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +22,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Seed d'avis, actualites et photos de galerie factices, pour donner un
- * apercu visuel realiste du site public (page d'accueil, avis, actualites,
- * galerie) sans attendre du vrai contenu.
+ * Seed d'avis, actualites, photos de galerie et enseignants factices, pour
+ * donner un apercu visuel realiste du site public (page d'accueil, avis,
+ * actualites, galerie, professeurs) sans attendre du vrai contenu.
  *
  * Contenu clairement fictif (noms/textes generiques), images d'illustration
  * libres (Unsplash). A retirer facilement : supprimer ce fichier, ou mettre
- * demo.contenu.seed=false, ou vider les tables avis/actualites/galeries
- * pour les clubs concernes.
+ * demo.contenu.seed=false, ou vider les tables avis/actualites/galeries/
+ * enseignants pour les clubs concernes.
  *
  * Idempotent : ne rejoue rien si des avis existent deja pour le club.
  */
@@ -45,7 +47,8 @@ public class ContenuDemoBootstrap {
             ClubRepository clubRepository,
             AvisRepository avisRepository,
             ActualiteRepository actualiteRepository,
-            GalerieRepository galerieRepository
+            GalerieRepository galerieRepository,
+            EnseignantRepository enseignantRepository
     ) {
         return args -> {
             if (!seedEnabled) {
@@ -62,6 +65,7 @@ public class ContenuDemoBootstrap {
                 seedAvis(avisRepository, club);
                 seedActualites(actualiteRepository, club);
                 seedGalerie(galerieRepository, club);
+                seedEnseignants(enseignantRepository, club);
             }
         };
     }
@@ -176,5 +180,37 @@ public class ContenuDemoBootstrap {
         g.setImageUrl(imageUrl);
         g.setDatePublication(date);
         return g;
+    }
+
+    private void seedEnseignants(EnseignantRepository enseignantRepository, Club club) {
+        if (!enseignantRepository.findByClub_Id(club.getId()).isEmpty()) {
+            log.info("[ContenuDemoBootstrap] enseignants déjà présents pour {}, seed ignoré.", club.getName());
+            return;
+        }
+
+        enseignantRepository.save(enseignant(club, "Lefebvre", "Antoine",
+                "Ceinture noire 4e Dan, professeur principal",
+                "Professeur principal du club depuis plusieurs années, formé à l'encadrement de tous les publics, "
+                        + "de l'initiation à la compétition.",
+                "https://images.unsplash.com/photo-1517438476312-10d79c077509?w=800&q=80"));
+
+        enseignantRepository.save(enseignant(club, "Rousseau", "Camille",
+                "Ceinture noire 2e Dan, spécialiste jeunes pousses",
+                "Encadre les cours enfants et débutants, avec une approche pédagogique axée sur le respect et la progression.",
+                "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80"));
+
+        log.info("[ContenuDemoBootstrap] 2 enseignants créés pour {}.", club.getName());
+    }
+
+    private Enseignant enseignant(Club club, String nom, String prenom, String specialite,
+                                   String description, String photoUrl) {
+        Enseignant e = new Enseignant();
+        e.setClub(club);
+        e.setNom(nom);
+        e.setPrenom(prenom);
+        e.setSpecialite(specialite);
+        e.setDescription(description);
+        e.setPhotoUrl(photoUrl);
+        return e;
     }
 }
