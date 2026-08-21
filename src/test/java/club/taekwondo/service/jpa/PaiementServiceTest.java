@@ -85,8 +85,8 @@ class PaiementServiceTest {
         inscriptionRepository.deleteAll();
         evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
-        commandeRepository.deleteAll();
         paiementRepository.deleteAll();
+        commandeRepository.deleteAll();
         membreRepository.deleteAll();
         notificationRepository.deleteAll();
         utilisateurRepository.deleteAll();

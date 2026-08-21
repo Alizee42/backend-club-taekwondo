@@ -86,9 +86,9 @@ class EcheanceServiceTest {
         inscriptionRepository.deleteAll();
         evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
-        commandeRepository.deleteAll();
         echeanceRepository.deleteAll();
         paiementRepository.deleteAll();
+        commandeRepository.deleteAll();
         membreRepository.deleteAll();
         notificationRepository.deleteAll();
         utilisateurRepository.deleteAll();
