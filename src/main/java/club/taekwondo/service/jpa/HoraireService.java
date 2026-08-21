@@ -6,11 +6,16 @@ import club.taekwondo.repository.jpa.HoraireRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class HoraireService {
     @Autowired
     private HoraireRepository horaireRepository;
+
+    public Optional<Horaire> getHoraireById(Long id) {
+        return horaireRepository.findById(id);
+    }
 
     public Horaire updateHoraire(Horaire horaire) {
         return horaireRepository.save(horaire);
