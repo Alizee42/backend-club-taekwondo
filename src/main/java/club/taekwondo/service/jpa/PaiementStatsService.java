@@ -9,6 +9,7 @@ import club.taekwondo.repository.jpa.PaiementRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -32,6 +33,7 @@ public class PaiementStatsService {
         this.echeanceService = echeanceService;
     }
 
+    @Transactional(readOnly = true)
     public DashboardStatsDTO buildDashboardStats(Long clubId) {
         try {
             LocalDate today = LocalDate.now();
