@@ -8,11 +8,19 @@ import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
 import club.taekwondo.enums.StatutInscription;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -185,5 +193,130 @@ class EvenementServiceTest extends AbstractServiceIntegrationTest {
         assertThrows(RuntimeException.class, () -> evenementService.ajouterEvenement(
                 "Titre", "2026-09-01T10:00:00", "2026-09-01T12:00:00", "Dojo",
                 20, "Description", null, 999999L));
+    }
+
+    @Test
+    void ajouterEvenement_succes_creeEtNotifieTousLesUtilisateurs() {
+        EvenementDTO dto = evenementService.ajouterEvenement(
+                "Nouveau stage", "2026-09-01T10:00:00", "2026-09-01T12:00:00", "Dojo",
+                15, "Description complete", null, club.getId());
+
+        assertNotNull(dto.getId());
+        assertEquals("Nouveau stage", dto.getTitre());
+        assertEquals(0, dto.getNbInscrits());
+        assertNull(dto.getImageUrl());
+    }
+
+    @Test
+    void ajouterEvenement_avecImage_persisteLeFichierEtExposeLUrl() throws IOException {
+        MultipartFile image = new MockMultipartFile("image", "photo.jpg", "image/jpeg", "contenu".getBytes());
+
+        EvenementDTO dto = evenementService.ajouterEvenement(
+                "Stage avec photo", "2026-09-01T10:00:00", "2026-09-01T12:00:00", "Dojo",
+                15, "Description", image, club.getId());
+
+        assertNotNull(dto.getImageFilename());
+        assertTrue(dto.getImageUrl().endsWith(dto.getImageFilename()));
+        assertTrue(Files.exists(Paths.get("uploads/evenements/" + dto.getImageFilename())));
+    }
+
+    @Test
+    void saveImage_fichierNull_retourneNull() {
+        assertNull(evenementService.saveImage(null));
+    }
+
+    @Test
+    void saveImage_fichierVide_retourneNull() {
+        MultipartFile empty = new MockMultipartFile("image", "photo.jpg", "image/jpeg", new byte[0]);
+
+        assertNull(evenementService.saveImage(empty));
+    }
+
+    @Test
+    void getAllEvenements_retourneActifsEtInactifs() {
+        creerEvenement(true);
+        creerEvenement(false);
+
+        var all = evenementService.getAllEvenements();
+
+        assertEquals(2, all.size());
+    }
+
+    @Test
+    void createEvenement_sansClubDansLeDto_echoueCarClubIdEstObligatoireEnBase() {
+        // Bug/code mort connu : EvenementDTO n'a pas de champ clubId, et
+        // convertToEntity() ne l'affecte donc jamais. Comme la colonne club_id est
+        // NOT NULL en base, ce chemin ne peut jamais aboutir en pratique. Le vrai
+        // point d'entree de creation est ajouterEvenement(...), qui recoit clubId
+        // explicitement en parametre.
+        EvenementDTO dto = new EvenementDTO();
+        dto.setTitre("Cree via DTO");
+        dto.setDateDebut(LocalDateTime.now().plusDays(5));
+        dto.setDateFin(LocalDateTime.now().plusDays(5).plusHours(1));
+        dto.setLieu("Salle B");
+        dto.setCapacite(10);
+        dto.setDescription("Desc");
+        dto.setActif(true);
+
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+                () -> evenementService.createEvenement(dto));
+    }
+
+    @Test
+    void updateEvenement_notifieUniquementLesInscrits() {
+        Evenement evenement = creerEvenement(true);
+        InscriptionEvenement inscription = new InscriptionEvenement();
+        inscription.setEvenement(evenement);
+        inscription.setMembre(enfant);
+        inscription.setStatut(StatutInscription.VALIDEE);
+        inscriptionRepository.save(inscription);
+
+        EvenementDTO dto = dtoFor(evenement);
+        dto.setLieu("Nouveau lieu");
+
+        EvenementDTO updated = evenementService.updateEvenement(evenement.getId(), dto);
+
+        assertEquals("Nouveau lieu", updated.getLieu());
+    }
+
+    @Test
+    void updateEvenement_aucunChampModifie_neDeclencheAucuneErreur() {
+        Evenement evenement = creerEvenement(true);
+        EvenementDTO dto = dtoFor(evenement);
+
+        EvenementDTO updated = evenementService.updateEvenement(evenement.getId(), dto);
+
+        assertEquals(evenement.getTitre(), updated.getTitre());
+    }
+
+    @Test
+    void changerStatutEvenement_annulationNotifieLesInscrits() {
+        Evenement evenement = creerEvenement(true);
+        InscriptionEvenement inscription = new InscriptionEvenement();
+        inscription.setEvenement(evenement);
+        inscription.setMembre(enfant);
+        inscription.setStatut(StatutInscription.VALIDEE);
+        inscriptionRepository.save(inscription);
+
+        EvenementDTO updated = evenementService.changerStatutEvenement(evenement.getId(), false);
+
+        assertEquals(Boolean.FALSE, updated.getActif());
+    }
+
+    @AfterEach
+    void cleanupUploads() throws IOException {
+        Path dir = Paths.get("uploads/evenements/");
+        if (Files.exists(dir)) {
+            try (var stream = Files.walk(dir)) {
+                stream.sorted(Comparator.reverseOrder())
+                        .filter(p -> !p.equals(dir))
+                        .forEach(p -> {
+                            try {
+                                Files.deleteIfExists(p);
+                            } catch (IOException ignored) {
+                            }
+                        });
+            }
+        }
     }
 }
