@@ -49,7 +49,16 @@ public class StripeService {
     }
 
     public PaymentIntent createPaymentIntentWithMetadata(Map<String, Object> req, String idempotencyKey) throws StripeException {
-        log.info("[STRIPE] creation PaymentIntent idempotencyKey={}", idempotencyKey);
+        return createPaymentIntentWithMetadata(req, idempotencyKey, null);
+    }
+
+    /**
+     * @param stripeAccountId si non-null, la charge est creee directement sur le compte
+     *                        Stripe connecte du club (direct charge) plutot que sur le
+     *                        compte plateforme partage.
+     */
+    public PaymentIntent createPaymentIntentWithMetadata(Map<String, Object> req, String idempotencyKey, String stripeAccountId) throws StripeException {
+        log.info("[STRIPE] creation PaymentIntent idempotencyKey={} stripeAccountId={}", idempotencyKey, stripeAccountId);
 
         long amount = parseLongStrict(req.get("amount"), "amount (centimes)");
         if (amount <= 0) {
@@ -79,22 +88,30 @@ public class StripeService {
 
         log.debug("[STRIPE] requete PaymentIntent amount={} currency={}", amount, currency);
 
-        RequestOptions opts = RequestOptions.builder()
-                .setIdempotencyKey(idempotencyKey)
-                .build();
+        RequestOptions.RequestOptionsBuilder optsBuilder = RequestOptions.builder()
+                .setIdempotencyKey(idempotencyKey);
+        if (stripeAccountId != null && !stripeAccountId.isBlank()) {
+            optsBuilder.setStripeAccount(stripeAccountId);
+        }
 
-        PaymentIntent paymentIntent = PaymentIntent.create(builder.build(), opts);
+        PaymentIntent paymentIntent = PaymentIntent.create(builder.build(), optsBuilder.build());
         log.info("[STRIPE] PaymentIntent cree id={}", paymentIntent.getId());
         return paymentIntent;
     }
 
     public String retrieveClientSecret(String paymentIntentId) {
-        log.debug("[STRIPE] recuperation clientSecret pour PaymentIntent={}", paymentIntentId);
+        return retrieveClientSecret(paymentIntentId, null);
+    }
+
+    public String retrieveClientSecret(String paymentIntentId, String stripeAccountId) {
+        log.debug("[STRIPE] recuperation clientSecret pour PaymentIntent={} stripeAccountId={}", paymentIntentId, stripeAccountId);
         try {
             if (paymentIntentId == null || paymentIntentId.isBlank()) {
                 return null;
             }
-            PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
+            PaymentIntent intent = (stripeAccountId != null && !stripeAccountId.isBlank())
+                    ? PaymentIntent.retrieve(paymentIntentId, RequestOptions.builder().setStripeAccount(stripeAccountId).build())
+                    : PaymentIntent.retrieve(paymentIntentId);
             return intent != null ? intent.getClientSecret() : null;
         } catch (Exception e) {
             log.warn("[STRIPE] erreur recuperation clientSecret: {}", e.getMessage());
@@ -130,11 +147,16 @@ public class StripeService {
             return Optional.empty();
         }
 
+        String stripeAccountId = (p.getClub() != null) ? p.getClub().getStripeAccountId() : null;
+        RequestOptions opts = (stripeAccountId != null && !stripeAccountId.isBlank())
+                ? RequestOptions.builder().setStripeAccount(stripeAccountId).build()
+                : null;
+
         try {
-            PaymentIntent pi = PaymentIntent.retrieve(piId);
+            PaymentIntent pi = opts != null ? PaymentIntent.retrieve(piId, opts) : PaymentIntent.retrieve(piId);
             String latestChargeId = pi.getLatestCharge();
             if (latestChargeId != null && !latestChargeId.isBlank()) {
-                Charge charge = Charge.retrieve(latestChargeId);
+                Charge charge = opts != null ? Charge.retrieve(latestChargeId, opts) : Charge.retrieve(latestChargeId);
                 if (charge != null && charge.getReceiptUrl() != null && !charge.getReceiptUrl().isBlank()) {
                     return Optional.of(charge.getReceiptUrl());
                 }

@@ -1,11 +1,14 @@
 package club.taekwondo.controller;
 
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.service.jpa.PaiementService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Account;
 import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
@@ -43,11 +46,13 @@ public class StripeWebhookController {
 
     private final PaiementService paiementService;
     private final Environment environment;
+    private final ClubRepository clubRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public StripeWebhookController(PaiementService paiementService, Environment environment) {
+    public StripeWebhookController(PaiementService paiementService, Environment environment, ClubRepository clubRepository) {
         this.paiementService = paiementService;
         this.environment = environment;
+        this.clubRepository = clubRepository;
     }
 
     @PostConstruct
@@ -89,6 +94,10 @@ public class StripeWebhookController {
         final String eventId = event.getId();
         log.info("[STRIPE] webhook mode={} type={} eventId={}",
                 event.getLivemode() ? "LIVE" : "TEST", event.getType(), eventId);
+
+        if ("account.updated".equals(event.getType())) {
+            return handleAccountUpdated(event);
+        }
 
         var dataObj = event.getDataObjectDeserializer().getObject();
         PaymentIntent pi = null;
@@ -278,6 +287,30 @@ public class StripeWebhookController {
                     : "unknown";
             log.warn("[STRIPE] payment failed paymentIntent={} reason={} metadata={}", piId, reason, md);
         }
+
+        return ResponseEntity.ok("Webhook recu");
+    }
+
+    // Suit l'etat de verification des comptes Stripe Connect des clubs : un compte
+    // "Standard" peut exister (cree a l'onboarding) sans etre encore autorise a
+    // encaisser (charges_enabled=false) tant que Stripe n'a pas fini sa verification.
+    private ResponseEntity<String> handleAccountUpdated(Event event) {
+        var dataObj = event.getDataObjectDeserializer().getObject();
+        if (dataObj.isEmpty() || !(dataObj.get() instanceof Account account)) {
+            log.warn("[STRIPE-CONNECT] account.updated recu sans objet Account deserialisable, ignore.");
+            return ResponseEntity.ok("ignored");
+        }
+
+        Club club = clubRepository.findByStripeAccountId(account.getId());
+        if (club == null) {
+            log.warn("[STRIPE-CONNECT] account.updated pour un compte inconnu localement : {}", account.getId());
+            return ResponseEntity.ok("unknown-account");
+        }
+
+        boolean chargesEnabled = Boolean.TRUE.equals(account.getChargesEnabled());
+        club.setStripeChargesEnabled(chargesEnabled);
+        clubRepository.save(club);
+        log.info("[STRIPE-CONNECT] club {} (compte {}) chargesEnabled={}", club.getName(), account.getId(), chargesEnabled);
 
         return ResponseEntity.ok("Webhook recu");
     }

@@ -18,6 +18,12 @@ public class Club {
     private String logo;
     private String rib;
 
+    @Column(name = "stripe_account_id")
+    private String stripeAccountId;
+
+    @Column(name = "stripe_charges_enabled", nullable = false)
+    private boolean stripeChargesEnabled = false;
+
     // Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -33,4 +39,8 @@ public class Club {
     public void setLogo(String logo) { this.logo = logo; }
     public String getRib() { return rib; }
     public void setRib(String rib) { this.rib = rib; }
+    public String getStripeAccountId() { return stripeAccountId; }
+    public void setStripeAccountId(String stripeAccountId) { this.stripeAccountId = stripeAccountId; }
+    public boolean isStripeChargesEnabled() { return stripeChargesEnabled; }
+    public void setStripeChargesEnabled(boolean stripeChargesEnabled) { this.stripeChargesEnabled = stripeChargesEnabled; }
 }

@@ -1,9 +1,12 @@
 package club.taekwondo.controller;
 
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Echeance;
 import club.taekwondo.entity.jpa.Paiement;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.service.jpa.PaiementService;
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Account;
 import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
@@ -41,6 +44,9 @@ class StripeWebhookControllerTest {
     @Mock
     private Environment environment;
 
+    @Mock
+    private ClubRepository clubRepository;
+
     private StripeWebhookController controller;
 
     private MockedStatic<Webhook> webhookStatic;
@@ -49,7 +55,7 @@ class StripeWebhookControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new StripeWebhookController(paiementService, environment);
+        controller = new StripeWebhookController(paiementService, environment, clubRepository);
         ReflectionTestUtils.setField(controller, "endpointSecret", "whsec_test");
         webhookStatic = Mockito.mockStatic(Webhook.class);
         paymentIntentStatic = Mockito.mockStatic(PaymentIntent.class);
@@ -454,5 +460,56 @@ class StripeWebhookControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("Webhook recu", response.getBody());
+    }
+
+    // ---- account.updated (Stripe Connect) ----
+
+    private Event mockAccountEvent(Account account) {
+        Event event = mock(Event.class);
+        when(event.getId()).thenReturn("evt_acct_123");
+        when(event.getType()).thenReturn("account.updated");
+        when(event.getLivemode()).thenReturn(false);
+        EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
+        when(deserializer.getObject()).thenReturn(Optional.ofNullable(account));
+        when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+        return event;
+    }
+
+    @Test
+    void handleWebhook_accountUpdated_clubConnu_metAJourChargesEnabled() {
+        Account account = mock(Account.class);
+        when(account.getId()).thenReturn("acct_123");
+        when(account.getChargesEnabled()).thenReturn(true);
+        Club club = new Club();
+        club.setId(1L);
+        club.setName("Villeurbanne");
+        club.setStripeAccountId("acct_123");
+        when(clubRepository.findByStripeAccountId("acct_123")).thenReturn(club);
+
+        Event event = mockAccountEvent(account);
+        webhookStatic.when(() -> Webhook.constructEvent(anyString(), anyString(), anyString())).thenReturn(event);
+
+        ResponseEntity<String> response = controller.handleWebhook("{}", "sig");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Webhook recu", response.getBody());
+        assertEquals(true, club.isStripeChargesEnabled());
+        org.mockito.Mockito.verify(clubRepository).save(club);
+    }
+
+    @Test
+    void handleWebhook_accountUpdated_compteInconnuLocalement_neLevePas() {
+        Account account = mock(Account.class);
+        when(account.getId()).thenReturn("acct_inconnu");
+        when(clubRepository.findByStripeAccountId("acct_inconnu")).thenReturn(null);
+
+        Event event = mockAccountEvent(account);
+        webhookStatic.when(() -> Webhook.constructEvent(anyString(), anyString(), anyString())).thenReturn(event);
+
+        ResponseEntity<String> response = controller.handleWebhook("{}", "sig");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("unknown-account", response.getBody());
+        org.mockito.Mockito.verify(clubRepository, org.mockito.Mockito.never()).save(any());
     }
 }

@@ -100,6 +100,12 @@ public class StripeController {
             paiementAccessService.assertCanAccessPaiement(authentication, p);
             log.info("[STRIPE] Autorisation OK pour paiementId={}", paiementId);
 
+            // --------- Compte Stripe connecte du club (repli sur le compte plateforme si absent/non active) ---------
+            String stripeAccountId = (p.getClub() != null && p.getClub().isStripeChargesEnabled())
+                    ? p.getClub().getStripeAccountId()
+                    : null;
+            log.info("[STRIPE] stripeAccountId retenu pour paiementId={} : {}", paiementId, stripeAccountId);
+
             // --------- Déterminer montant à payer (centimes) ---------
             Echeance cible = null;
             Integer echeanceNumero = null;
@@ -153,15 +159,18 @@ public class StripeController {
             PaymentIntent existing = null;
             if (cible != null && cible.getReference() != null && !cible.getReference().isBlank()) {
                 try {
-                    existing = PaymentIntent.retrieve(cible.getReference());
+                    existing = (stripeAccountId != null)
+                            ? PaymentIntent.retrieve(cible.getReference(), com.stripe.net.RequestOptions.builder().setStripeAccount(stripeAccountId).build())
+                            : PaymentIntent.retrieve(cible.getReference());
                     String status = existing.getStatus();
                     log.info("[STRIPE] PI existant pour échéance={}, status={}", cible.getId(), status);
                     if (status != null && CONFIRMABLE_STATUSES.contains(status)) {
                         log.info("[STRIPE] Réutilisation du PaymentIntent confirmable: {}", existing.getId());
-                        return ResponseEntity.ok(Map.of(
-                                "clientSecret", existing.getClientSecret(),
-                                "paymentIntentId", existing.getId()
-                        ));
+                        Map<String, Object> reuseBody = new HashMap<>();
+                        reuseBody.put("clientSecret", existing.getClientSecret());
+                        reuseBody.put("paymentIntentId", existing.getId());
+                        reuseBody.put("stripeAccountId", stripeAccountId);
+                        return ResponseEntity.ok(reuseBody);
                     }
                 } catch (Exception ex) {
                     log.warn("[STRIPE] Impossible de récupérer le PI existant (échéance={}) → ignore. Cause: {}",
@@ -229,11 +238,11 @@ public class StripeController {
             // --------- Création Stripe (avec idempotence) ---------
             PaymentIntent paymentIntent;
             try {
-                paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq, idempotencyKey);
+                paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq, idempotencyKey, stripeAccountId);
             } catch (IdempotencyException idemEx) {
                 log.warn("[STRIPE] IdempotencyException: {} → retry avec clé versionnée", idemEx.getMessage());
                 String retryKey = idempotencyKey + "-v" + System.currentTimeMillis();
-                paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq, retryKey);
+                paymentIntent = stripeService.createPaymentIntentWithMetadata(piReq, retryKey, stripeAccountId);
             }
 
             // --------- Persister l’ID du PI côté BDD ---------
@@ -252,10 +261,11 @@ public class StripeController {
 
             log.info("[STRIPE] ✅ ClientSecret renvoyé au front");
             log.info("==================================================");
-            return ResponseEntity.ok(Map.of(
-                    "clientSecret", paymentIntent.getClientSecret(),
-                    "paymentIntentId", paymentIntent.getId()
-            ));
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("clientSecret", paymentIntent.getClientSecret());
+            responseBody.put("paymentIntentId", paymentIntent.getId());
+            responseBody.put("stripeAccountId", stripeAccountId);
+            return ResponseEntity.ok(responseBody);
 
         } catch (Exception e) {
             log.error("[STRIPE] ❌ Exception dans createPaymentIntent: {}", e.getMessage(), e);

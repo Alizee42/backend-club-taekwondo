@@ -8,4 +8,5 @@ import club.taekwondo.entity.jpa.Club;
 @Repository
 public interface ClubRepository extends JpaRepository<Club, Long> {
     Club findByName(String name);
+    Club findByStripeAccountId(String stripeAccountId);
 }

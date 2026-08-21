@@ -186,7 +186,7 @@ class StripeControllerTest {
         PaymentIntent createdPi = mock(PaymentIntent.class);
         when(createdPi.getClientSecret()).thenReturn("secret_abc");
         when(createdPi.getId()).thenReturn("pi_123");
-        when(stripeService.createPaymentIntentWithMetadata(any(), anyString())).thenReturn(createdPi);
+        when(stripeService.createPaymentIntentWithMetadata(any(), anyString(), any())).thenReturn(createdPi);
 
         ResponseEntity<?> response = controller.createPaymentIntent(Map.of("paiementId", 1), auth());
 
@@ -194,6 +194,58 @@ class StripeControllerTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals("secret_abc", body.get("clientSecret"));
+    }
+
+    @Test
+    void createPaymentIntent_clubConnecteEtActive_routeVersLeCompteDuClub() throws Exception {
+        when(stripeService.isConfigured()).thenReturn(true);
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(utilisateur(1L, "u@test.com"));
+        Paiement p = paiementUnique(1L, 100.0);
+        p.setUtilisateur(utilisateur(1L, "u@test.com"));
+        Club club = new Club();
+        club.setId(10L);
+        club.setStripeAccountId("acct_villeurbanne");
+        club.setStripeChargesEnabled(true);
+        p.setClub(club);
+        when(paiementService.getById(1L)).thenReturn(Optional.of(p));
+
+        PaymentIntent createdPi = mock(PaymentIntent.class);
+        when(createdPi.getClientSecret()).thenReturn("secret_abc");
+        when(createdPi.getId()).thenReturn("pi_123");
+        when(stripeService.createPaymentIntentWithMetadata(any(), anyString(), eq("acct_villeurbanne"))).thenReturn(createdPi);
+
+        ResponseEntity<?> response = controller.createPaymentIntent(Map.of("paiementId", 1), auth());
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals("acct_villeurbanne", body.get("stripeAccountId"));
+    }
+
+    @Test
+    void createPaymentIntent_clubConnecteMaisPasEncoreActive_retombeSurLeComptePlateforme() throws Exception {
+        when(stripeService.isConfigured()).thenReturn(true);
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(utilisateur(1L, "u@test.com"));
+        Paiement p = paiementUnique(1L, 100.0);
+        p.setUtilisateur(utilisateur(1L, "u@test.com"));
+        Club club = new Club();
+        club.setId(10L);
+        club.setStripeAccountId("acct_villeurbanne");
+        club.setStripeChargesEnabled(false); // onboarding pas termine
+        p.setClub(club);
+        when(paiementService.getById(1L)).thenReturn(Optional.of(p));
+
+        PaymentIntent createdPi = mock(PaymentIntent.class);
+        when(createdPi.getClientSecret()).thenReturn("secret_abc");
+        when(createdPi.getId()).thenReturn("pi_123");
+        when(stripeService.createPaymentIntentWithMetadata(any(), anyString(), eq(null))).thenReturn(createdPi);
+
+        ResponseEntity<?> response = controller.createPaymentIntent(Map.of("paiementId", 1), auth());
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals(null, body.get("stripeAccountId"));
     }
 
     @Test
@@ -269,7 +321,7 @@ class StripeControllerTest {
         PaymentIntent createdPi = mock(PaymentIntent.class);
         when(createdPi.getClientSecret()).thenReturn("secret_ech");
         when(createdPi.getId()).thenReturn("pi_ech_123");
-        when(stripeService.createPaymentIntentWithMetadata(any(), anyString())).thenReturn(createdPi);
+        when(stripeService.createPaymentIntentWithMetadata(any(), anyString(), any())).thenReturn(createdPi);
 
         ResponseEntity<?> response = controller.createPaymentIntent(Map.of("paiementId", 1), auth());
 
@@ -317,7 +369,7 @@ class StripeControllerTest {
         when(createdPi.getClientSecret()).thenReturn("secret_retry");
         when(createdPi.getId()).thenReturn("pi_retry");
         IdempotencyException idemEx = mock(IdempotencyException.class);
-        when(stripeService.createPaymentIntentWithMetadata(any(), anyString()))
+        when(stripeService.createPaymentIntentWithMetadata(any(), anyString(), any()))
                 .thenThrow(idemEx)
                 .thenReturn(createdPi);
 

@@ -54,6 +54,8 @@ public class ClubService {
         dto.setEmail(club.getEmail());
         dto.setLogo(club.getLogo());
         dto.setRib(club.getRib());
+        dto.setStripeAccountId(club.getStripeAccountId());
+        dto.setStripeChargesEnabled(club.isStripeChargesEnabled());
         return dto;
     }
 
