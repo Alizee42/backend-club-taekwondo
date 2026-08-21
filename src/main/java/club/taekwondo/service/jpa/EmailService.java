@@ -85,6 +85,34 @@ public class EmailService {
     }
 
     /* ============================================
+       🔔 EMAIL - Notification d'inscription au club
+       ============================================ */
+    public void envoyerNotificationInscriptionClub(String clubEmail, String clubNom, String nomComplet,
+                                                     String emailInscrit, String role) {
+        if (clubEmail == null || clubEmail.isBlank()) {
+            log.info("[EmailService] Pas d'email pour le club {}, notification d'inscription non envoyée.", clubNom);
+            return;
+        }
+
+        String sujet = "Nouvelle inscription - " + clubNom;
+        String contenuHtml = baseTemplate("Nouvelle inscription",
+                """
+                <p>Bonjour,</p>
+                <p>Une nouvelle personne vient de s'inscrire sur le site du club <strong>%s</strong> :</p>
+                <ul>
+                    <li><strong>Nom :</strong> %s</li>
+                    <li><strong>Email :</strong> %s</li>
+                    <li><strong>Rôle :</strong> %s</li>
+                </ul>
+                <p style="margin-top:24px;">Vous pouvez consulter ce compte depuis votre espace d'administration.</p>
+                <p style="margin-top:24px;">Cordialement,<br><strong>L'équipe du Club de Taekwondo</strong></p>
+                """.formatted(escape(clubNom), escape(nomComplet), escape(emailInscrit), escape(role))
+        );
+
+        envoyerEmailHtml(clubEmail, sujet, contenuHtml);
+    }
+
+    /* ============================================
        💬 EMAIL - Message de contact
        ============================================ */
     public void envoyerMessageContact(String nom, String email, String objet, String contenu) {

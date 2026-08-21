@@ -223,6 +223,23 @@ public class UtilisateurController {
                 emailSent = false;
             }
 
+            // notifier le club de la nouvelle inscription (ne doit pas empêcher la création)
+            try {
+                if (nouvelUtilisateur.getClub() != null) {
+                    String nomComplet = ((nouvelUtilisateur.getPrenom() != null ? nouvelUtilisateur.getPrenom() : "") + " "
+                            + (nouvelUtilisateur.getNom() != null ? nouvelUtilisateur.getNom() : "")).trim();
+                    String role = nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : "";
+                    emailService.envoyerNotificationInscriptionClub(
+                            nouvelUtilisateur.getClub().getEmail(),
+                            nouvelUtilisateur.getClub().getName(),
+                            nomComplet,
+                            nouvelUtilisateur.getEmail(),
+                            role);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             Map<String, Object> response = new java.util.HashMap<>();
             response.put("message", "Utilisateur créé avec succès.");
             response.put("id", nouvelUtilisateur.getId());
