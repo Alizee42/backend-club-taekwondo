@@ -257,6 +257,20 @@ public class UtilisateurService {
      * ======================= */
 
     public Optional<UtilisateurDTO> login(String email, String password) {
+        // Convention : email|clubId transmis pour login multi-club. Le split doit avoir
+        // lieu AVANT la recherche en base, sinon findByEmailIgnoreCase reçoit l'email
+        // composé (jamais présent en base) et ne trouve jamais l'utilisateur.
+        Long clubIdDemande = null;
+        if (email != null && email.contains("|")) {
+            String[] parts = email.split("\\|");
+            if (parts.length == 2) {
+                try {
+                    clubIdDemande = Long.parseLong(parts[1]);
+                    email = parts[0];
+                } catch (NumberFormatException ignore) {}
+            }
+        }
+
         String e = lowerOrNull(email);
         log.debug("[USR-SVC][login] email={} -> normalized={}", email, e);
         Optional<Utilisateur> userOpt = utilisateurRepository.findByEmailIgnoreCase(e);
@@ -269,17 +283,6 @@ public class UtilisateurService {
                 .map(this::convertToDTO);
         // Refuser la connexion si l'utilisateur est ADMIN et n'a pas de club
         // Contrôle clubId pour tous les utilisateurs
-        Long clubIdDemande = null;
-        if (email != null && email.contains("|")) {
-            // Convention : email|clubId transmis pour login multi-club
-            String[] parts = email.split("\\|");
-            if (parts.length == 2) {
-                try {
-                    clubIdDemande = Long.parseLong(parts[1]);
-                    email = parts[0];
-                } catch (NumberFormatException ignore) {}
-            }
-        }
         if (out.isPresent()) {
             if (clubIdDemande != null && !clubIdDemande.equals(out.get().getClubId())) {
                 log.warn("[USR-SVC][login] clubId mismatch, connexion refusée");

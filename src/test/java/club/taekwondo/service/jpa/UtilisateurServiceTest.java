@@ -434,11 +434,9 @@ class UtilisateurServiceTest {
     }
 
     @Test
-    void testLogin_emailAvecClubIdMatch_bugConnu_rechercheAvecLeSuffixeEtEchoueQuandMeme() {
-        // Bug connu : le split "email|clubId" (lignes 273+) intervient APRES l'appel au
-        // repository (ligne 262), qui reçoit donc "admin@example.com|10" tel quel.
-        // La convention "login multi-club via email|clubId" ne peut donc jamais fonctionner :
-        // findByEmailIgnoreCase ne trouvera jamais cet email compose en base.
+    void testLogin_emailAvecClubIdCorrespondant_accepte() {
+        // Le split "email|clubId" a lieu avant la recherche en base : le repository doit
+        // etre interroge avec l'email nu, pas avec la chaine composee.
         Utilisateur user = new Utilisateur();
         user.setId(1L);
         user.setEmail("admin@example.com");
@@ -448,12 +446,13 @@ class UtilisateurServiceTest {
         club.setId(10L);
         user.setClub(club);
 
-        when(utilisateurRepository.findByEmailIgnoreCase("admin@example.com|10")).thenReturn(Optional.empty());
+        when(utilisateurRepository.findByEmailIgnoreCase("admin@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secret", "hashed")).thenReturn(true);
 
         Optional<UtilisateurDTO> result = utilisateurService.login("admin@example.com|10", "secret");
 
-        assertFalse(result.isPresent());
-        verify(utilisateurRepository, never()).findByEmailIgnoreCase("admin@example.com");
+        assertTrue(result.isPresent());
+        verify(utilisateurRepository, never()).findByEmailIgnoreCase("admin@example.com|10");
     }
 }
 
