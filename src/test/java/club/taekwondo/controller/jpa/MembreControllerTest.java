@@ -166,6 +166,268 @@ class MembreControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
     }
 
+    // ---- getMembres : autres branches ----
+
+    @Test
+    void getMembres_parentIdFourni_retourneEnfantsDeCeParent() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        when(membreService.getMembresByUtilisateurId(5L)).thenReturn(List.of(membre(1L, "Leo")));
+
+        ResponseEntity<?> response = controller.getMembres(5L, null, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getMembres_parentIdFourni_listeVide_retourneNoContent() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        when(membreService.getMembresByUtilisateurId(5L)).thenReturn(List.of());
+
+        ResponseEntity<?> response = controller.getMembres(5L, null, auth);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+    }
+
+    @Test
+    void getMembres_sansFiltre_adminVoitTousLesMembres() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        when(membreService.getAllMembres()).thenReturn(List.of(membre(1L, "Leo")));
+
+        ResponseEntity<?> response = controller.getMembres(null, null, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getMembres_clubIdFourni_listeVide_retourneNoContent() {
+        Authentication auth = auth("super@test.com", "ROLE_SUPER_ADMIN");
+        when(membreService.getMembresByClubId(7L)).thenReturn(List.of());
+
+        ResponseEntity<?> response = controller.getMembres(null, 7L, auth);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+    }
+
+    // ---- getMembreById : admin/super-admin ----
+
+    @Test
+    void getMembreById_adminTrouve_retourneOk() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
+
+        ResponseEntity<?> response = controller.getMembreById(1L, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getMembreById_adminAbsent_retourneNotFound() {
+        Authentication auth = auth("admin@test.com", "ROLE_ADMIN");
+        when(membreService.getMembreById(999L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getMembreById(999L, auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    // ---- getMembresDuParentConnecte ----
+
+    @Test
+    void getMembresDuParentConnecte_retourneLesEnfants() {
+        Authentication auth = auth("parent@test.com", "ROLE_PARENT");
+        when(membreService.getMembresByParentEmail("parent@test.com")).thenReturn(List.of(membre(1L, "Leo")));
+
+        ResponseEntity<?> response = controller.getMembresDuParentConnecte(auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getMembresDuParentConnecte_listeVide_retourneNoContent() {
+        Authentication auth = auth("parent@test.com", "ROLE_PARENT");
+        when(membreService.getMembresByParentEmail("parent@test.com")).thenReturn(List.of());
+
+        ResponseEntity<?> response = controller.getMembresDuParentConnecte(auth);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+    }
+
+    // ---- getMembreByUtilisateurId / alias ----
+
+    @Test
+    void getMembreByUtilisateurId_trouve_retourneOk() {
+        club.taekwondo.entity.jpa.Membre entity = new club.taekwondo.entity.jpa.Membre();
+        entity.setId(1L);
+        when(membreService.getMembreEntityByIdUtilisateur(10L)).thenReturn(Optional.of(entity));
+        when(membreService.toMembreDTO(entity)).thenReturn(membre(1L, "Leo"));
+
+        ResponseEntity<?> response = controller.getMembreByUtilisateurId(10L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getMembreByUtilisateurId_absent_retourneNotFound() {
+        when(membreService.getMembreEntityByIdUtilisateur(10L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getMembreByUtilisateurId(10L);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void getMembreByUtilisateurIdAlias_trouve_retourneOk() {
+        club.taekwondo.entity.jpa.Membre entity = new club.taekwondo.entity.jpa.Membre();
+        entity.setId(1L);
+        when(membreService.getMembreEntityByIdUtilisateur(10L)).thenReturn(Optional.of(entity));
+        when(membreService.toMembreDTO(entity)).thenReturn(membre(1L, "Leo"));
+
+        ResponseEntity<?> response = controller.getMembreByUtilisateurIdAlias(10L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    // ---- getByParent ----
+
+    @Test
+    void getByParent_retourneListeAllegee() {
+        when(membreService.getMembresByUtilisateurId(5L)).thenReturn(List.of(membre(1L, "Leo")));
+
+        ResponseEntity<List<Map<String, Object>>> response = controller.getByParent(5L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Leo", response.getBody().get(0).get("prenom"));
+    }
+
+    @Test
+    void getByParent_listeVide_retourneNoContent() {
+        when(membreService.getMembresByUtilisateurId(5L)).thenReturn(List.of());
+
+        ResponseEntity<List<Map<String, Object>>> response = controller.getByParent(5L);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+    }
+
+    // ---- createMembre : autres branches ----
+
+    @Test
+    void createMembre_succes_retourneCreated() {
+        MembreDTO created = membre(1L, "Leo");
+        when(membreService.createMembre(org.mockito.ArgumentMatchers.any())).thenReturn(created);
+
+        ResponseEntity<?> response = controller.createMembre(new MembreDTO());
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    void createMembre_illegalArgument_retourneBadRequestAvecMessage() {
+        when(membreService.createMembre(org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new IllegalArgumentException("champ requis manquant"));
+
+        ResponseEntity<?> response = controller.createMembre(new MembreDTO());
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(Map.of("message", "champ requis manquant"), response.getBody());
+    }
+
+    @Test
+    void createMembre_erreurInattendue_retourneInternalServerError() {
+        when(membreService.createMembre(org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new RuntimeException("boom"));
+
+        ResponseEntity<?> response = controller.createMembre(new MembreDTO());
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    // ---- updateMembre : autres branches ----
+
+    @Test
+    void updateMembre_succes_retourneOk() {
+        when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
+        when(membreService.updateMembre(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(membre(1L, "Leo modifie"));
+
+        ResponseEntity<?> response = controller.updateMembre(1L, new MembreDTO());
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void updateMembre_erreurInattendue_retourneInternalServerError() {
+        when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
+        when(membreService.updateMembre(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new RuntimeException("boom"));
+
+        ResponseEntity<?> response = controller.updateMembre(1L, new MembreDTO());
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    // ---- deleteMembre ----
+
+    @Test
+    void deleteMembre_notFound_retourne404() {
+        when(membreService.getMembreById(99L)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.deleteMembre(99L);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void deleteMembre_succes_retourneOk() {
+        when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
+
+        ResponseEntity<?> response = controller.deleteMembre(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(membreService).deleteMembre(1L);
+    }
+
+    @Test
+    void deleteMembre_erreurInattendue_retourneInternalServerError() {
+        when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
+        org.mockito.Mockito.doThrow(new RuntimeException("boom")).when(membreService).deleteMembre(1L);
+
+        ResponseEntity<?> response = controller.deleteMembre(1L);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    // ---- getMembreConnecte : autres branches ----
+
+    @Test
+    void getMembreConnecte_adulteAvecMembreAssocie_retourneOk() {
+        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
+        when(membreService.getMembreByUtilisateurEmail("membre@test.com")).thenReturn(Optional.of(membre(3L, "Alizee")));
+
+        ResponseEntity<?> response = controller.getMembreConnecte(auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getMembreConnecte_parentSansMembreAssocie_retourneNoContent() {
+        Authentication auth = auth("parent@test.com", "ROLE_PARENT");
+        when(membreService.getMembreByUtilisateurEmail("parent@test.com")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getMembreConnecte(auth);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+    }
+
+    @Test
+    void getMembreConnecte_membreSansAssociation_retourneNotFound() {
+        Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
+        when(membreService.getMembreByUtilisateurEmail("membre@test.com")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getMembreConnecte(auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
     private Authentication auth(String email, String authority) {
         TestingAuthenticationToken token = new TestingAuthenticationToken(email, null, authority);
         token.setAuthenticated(true);
