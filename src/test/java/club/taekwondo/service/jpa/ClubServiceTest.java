@@ -2,77 +2,15 @@ package club.taekwondo.service.jpa;
 
 import club.taekwondo.dto.ClubDto;
 import club.taekwondo.entity.jpa.Club;
-import club.taekwondo.repository.jpa.ClubRepository;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.MembreRepository;
-import club.taekwondo.repository.jpa.NotificationRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class ClubServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class ClubServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private ClubService clubService;
-
-    @Autowired
-    private ClubRepository clubRepository;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private MembreRepository membreRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private InscriptionEvenementRepository inscriptionRepository;
-
-    @Autowired
-    private EvenementRepository evenementRepository;
-
-    @BeforeEach
-    void setup() {
-        // Nettoyage complet : le club "Villeurbanne" du bootstrap a des utilisateurs rattaches
-        inscriptionRepository.deleteAll();
-        evenementRepository.deleteAll();
-        ligneCommandeRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        membreRepository.deleteAll();
-        notificationRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-        clubRepository.deleteAll();
-    }
 
     @Test
     void createClub_nettoieLesChampsTexteEtIgnoreUnIdFourni() {

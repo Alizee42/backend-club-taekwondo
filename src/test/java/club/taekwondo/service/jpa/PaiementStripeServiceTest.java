@@ -9,22 +9,9 @@ import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
-import club.taekwondo.repository.jpa.ClubRepository;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EcheanceRepository;
-import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.MembreRepository;
-import club.taekwondo.repository.jpa.NotificationRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,51 +20,13 @@ import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class PaiementStripeServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class PaiementStripeServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private PaiementStripeService paiementStripeService;
 
     @Autowired
     private PaiementService paiementService;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private EcheanceRepository echeanceRepository;
-
-    @Autowired
-    private ClubRepository clubRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private MembreRepository membreRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private InscriptionEvenementRepository inscriptionRepository;
-
-    @Autowired
-    private EvenementRepository evenementRepository;
 
     @Autowired
     private UtilisateurService utilisateurService;
@@ -90,18 +39,7 @@ class PaiementStripeServiceTest {
     private Membre enfant;
 
     @BeforeEach
-    void setup() {
-        inscriptionRepository.deleteAll();
-        evenementRepository.deleteAll();
-        ligneCommandeRepository.deleteAll();
-        echeanceRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        membreRepository.deleteAll();
-        notificationRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-        clubRepository.deleteAll();
-
+    void setupStripe() {
         club = new Club();
         club.setName("Club Stripe Test");
         club = clubRepository.save(club);

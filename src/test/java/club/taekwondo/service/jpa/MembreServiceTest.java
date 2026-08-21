@@ -5,63 +5,16 @@ import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
-import club.taekwondo.repository.jpa.ClubRepository;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.MembreRepository;
-import club.taekwondo.repository.jpa.NotificationRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class MembreServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class MembreServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private MembreService membreService;
-
-    @Autowired
-    private MembreRepository membreRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private ClubRepository clubRepository;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private InscriptionEvenementRepository inscriptionRepository;
-
-    @Autowired
-    private EvenementRepository evenementRepository;
 
     @Autowired
     private UtilisateurService utilisateurService;
@@ -70,17 +23,7 @@ class MembreServiceTest {
     private Utilisateur parent;
 
     @BeforeEach
-    void setup() {
-        inscriptionRepository.deleteAll();
-        evenementRepository.deleteAll();
-        ligneCommandeRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        membreRepository.deleteAll();
-        notificationRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-        clubRepository.deleteAll();
-
+    void setupMembres() {
         club = new Club();
         club.setName("Club Membre Test");
         club = clubRepository.save(club);

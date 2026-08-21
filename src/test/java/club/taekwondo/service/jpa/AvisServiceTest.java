@@ -3,50 +3,23 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.AvisDTO;
 import club.taekwondo.entity.jpa.Avis;
 import club.taekwondo.entity.jpa.Club;
-import club.taekwondo.repository.jpa.AvisRepository;
-import club.taekwondo.repository.jpa.ClubRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class AvisServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class AvisServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private AvisService avisService;
 
-    @Autowired
-    private AvisRepository avisRepository;
-
-    @Autowired
-    private ClubRepository clubRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
     private Club club;
 
     @BeforeEach
-    void setup() {
-        avisRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-        clubRepository.deleteAll();
-
+    void setupAvis() {
         club = new Club();
         club.setName("Club Avis Test");
         club = clubRepository.save(club);

@@ -8,69 +8,22 @@ import club.taekwondo.entity.jpa.Membre;
 import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EcheanceRepository;
-import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.MembreRepository;
-import club.taekwondo.repository.jpa.NotificationRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class EcheanceServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class EcheanceServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private EcheanceService echeanceService;
 
     @Autowired
     private PaiementService paiementService;
-
-    @Autowired
-    private EcheanceRepository echeanceRepository;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private MembreRepository membreRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private InscriptionEvenementRepository inscriptionRepository;
-
-    @Autowired
-    private EvenementRepository evenementRepository;
 
     @Autowired
     private UtilisateurService utilisateurService;
@@ -82,17 +35,7 @@ class EcheanceServiceTest {
     private Membre enfant;
 
     @BeforeEach
-    void setup() {
-        inscriptionRepository.deleteAll();
-        evenementRepository.deleteAll();
-        ligneCommandeRepository.deleteAll();
-        echeanceRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        membreRepository.deleteAll();
-        notificationRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-
+    void setupEcheances() {
         parent = new Utilisateur();
         parent.setNom("Testeur");
         parent.setPrenom("Parent");

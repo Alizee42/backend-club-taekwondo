@@ -1,5 +1,6 @@
 package club.taekwondo.service.jpa;
 
+import club.taekwondo.repository.jpa.AvisRepository;
 import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.CommandeRepository;
 import club.taekwondo.repository.jpa.EcheanceRepository;
@@ -11,6 +12,7 @@ import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.NotificationRepository;
 import club.taekwondo.repository.jpa.PaiementRepository;
 import club.taekwondo.repository.jpa.ProduitRepository;
+import club.taekwondo.repository.jpa.ReinitialisationMotDePasseRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,8 @@ abstract class AbstractServiceIntegrationTest {
     @Autowired
     protected EnseignantRepository enseignantRepository;
     @Autowired
+    protected AvisRepository avisRepository;
+    @Autowired
     protected EcheanceRepository echeanceRepository;
     @Autowired
     protected PaiementRepository paiementRepository;
@@ -58,6 +62,8 @@ abstract class AbstractServiceIntegrationTest {
     @Autowired
     protected NotificationRepository notificationRepository;
     @Autowired
+    protected ReinitialisationMotDePasseRepository reinitialisationMotDePasseRepository;
+    @Autowired
     protected UtilisateurRepository utilisateurRepository;
     @Autowired
     protected ClubRepository clubRepository;
@@ -68,12 +74,14 @@ abstract class AbstractServiceIntegrationTest {
         evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
         enseignantRepository.deleteAll();
+        avisRepository.deleteAll();
         echeanceRepository.deleteAll();
         paiementRepository.deleteAll();
         commandeRepository.deleteAll();
         produitRepository.deleteAll();
         membreRepository.deleteAll();
         notificationRepository.deleteAll();
+        reinitialisationMotDePasseRepository.deleteAll();
         utilisateurRepository.deleteAll();
         clubRepository.deleteAll();
     }

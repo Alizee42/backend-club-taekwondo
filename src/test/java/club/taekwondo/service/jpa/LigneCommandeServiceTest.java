@@ -9,22 +9,9 @@ import club.taekwondo.entity.jpa.Paiement;
 import club.taekwondo.entity.jpa.Produit;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
-import club.taekwondo.repository.jpa.ClubRepository;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.MembreRepository;
-import club.taekwondo.repository.jpa.NotificationRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.ProduitRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,48 +19,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class LigneCommandeServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class LigneCommandeServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private LigneCommandeService ligneCommandeService;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private ProduitRepository produitRepository;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private MembreRepository membreRepository;
-
-    @Autowired
-    private ClubRepository clubRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private InscriptionEvenementRepository inscriptionRepository;
-
-    @Autowired
-    private EvenementRepository evenementRepository;
 
     @Autowired
     private UtilisateurService utilisateurService;
@@ -88,18 +37,7 @@ class LigneCommandeServiceTest {
     private Commande commande;
 
     @BeforeEach
-    void setup() {
-        inscriptionRepository.deleteAll();
-        evenementRepository.deleteAll();
-        ligneCommandeRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        produitRepository.deleteAll();
-        membreRepository.deleteAll();
-        notificationRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-        clubRepository.deleteAll();
-
+    void setupLignesCommande() {
         club = new Club();
         club.setName("Club LigneCommande Test");
         club = clubRepository.save(club);

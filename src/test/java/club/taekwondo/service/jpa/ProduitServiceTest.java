@@ -3,70 +3,23 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.ProduitDTO;
 import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.entity.jpa.Produit;
-import club.taekwondo.repository.jpa.ClubRepository;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EcheanceRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.ProduitRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class ProduitServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class ProduitServiceTest extends AbstractServiceIntegrationTest {
 
     @Autowired
     private ProduitService produitService;
 
-    @Autowired
-    private ProduitRepository produitRepository;
-
-    @Autowired
-    private ClubRepository clubRepository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private EcheanceRepository echeanceRepository;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
     private Club club;
 
     @BeforeEach
-    void setup() {
-        ligneCommandeRepository.deleteAll();
-        echeanceRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        produitRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-        clubRepository.deleteAll();
-
+    void setupProduits() {
         club = new Club();
         club.setName("Club Produit Test");
         club = clubRepository.save(club);

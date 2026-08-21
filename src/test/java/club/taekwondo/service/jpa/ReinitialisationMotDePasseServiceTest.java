@@ -4,22 +4,11 @@ import club.taekwondo.dto.ReinitialisationMotDePasseDTO;
 import club.taekwondo.entity.jpa.ReinitialisationMotDePasse;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
-import club.taekwondo.repository.jpa.CommandeRepository;
-import club.taekwondo.repository.jpa.EvenementRepository;
-import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
-import club.taekwondo.repository.jpa.LigneCommandeRepository;
-import club.taekwondo.repository.jpa.MembreRepository;
-import club.taekwondo.repository.jpa.NotificationRepository;
-import club.taekwondo.repository.jpa.PaiementRepository;
-import club.taekwondo.repository.jpa.ReinitialisationMotDePasseRepository;
-import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -28,15 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class ReinitialisationMotDePasseServiceTest {
-
-    @MockBean
-    private ActualiteService actualiteService;
-
-    @MockBean
-    private GalerieService galerieService;
+class ReinitialisationMotDePasseServiceTest extends AbstractServiceIntegrationTest {
 
     @MockBean
     private EmailService emailService;
@@ -45,49 +26,12 @@ class ReinitialisationMotDePasseServiceTest {
     private ReinitialisationMotDePasseService service;
 
     @Autowired
-    private ReinitialisationMotDePasseRepository repository;
-
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private PaiementRepository paiementRepository;
-
-    @Autowired
-    private CommandeRepository commandeRepository;
-
-    @Autowired
-    private LigneCommandeRepository ligneCommandeRepository;
-
-    @Autowired
-    private MembreRepository membreRepository;
-
-    @Autowired
-    private InscriptionEvenementRepository inscriptionRepository;
-
-    @Autowired
-    private EvenementRepository evenementRepository;
 
     private Utilisateur utilisateur;
 
     @BeforeEach
-    void setup() {
-        inscriptionRepository.deleteAll();
-        evenementRepository.deleteAll();
-        ligneCommandeRepository.deleteAll();
-        paiementRepository.deleteAll();
-        commandeRepository.deleteAll();
-        repository.deleteAll();
-        membreRepository.deleteAll();
-        notificationRepository.deleteAll();
-        utilisateurRepository.deleteAll();
-
+    void setupReset() {
         utilisateur = new Utilisateur();
         utilisateur.setNom("Testeur");
         utilisateur.setPrenom("Parent");
@@ -122,7 +66,7 @@ class ReinitialisationMotDePasseServiceTest {
     void demanderReinitialisation_succes_persisteLaDemandeEtEnvoieLEmail() {
         service.demanderReinitialisation(utilisateur.getEmail());
 
-        assertEquals(1, repository.findAll().size());
+        assertEquals(1, reinitialisationMotDePasseRepository.findAll().size());
         verify(emailService).envoyerEmailReinitialisationMotDePasse(
                 org.mockito.ArgumentMatchers.eq(utilisateur.getEmail()),
                 org.mockito.ArgumentMatchers.anyString());
@@ -137,7 +81,7 @@ class ReinitialisationMotDePasseServiceTest {
         // Ne doit pas lever d'exception malgre l'echec de l'envoi email
         service.demanderReinitialisation(utilisateur.getEmail());
 
-        assertEquals(1, repository.findAll().size());
+        assertEquals(1, reinitialisationMotDePasseRepository.findAll().size());
     }
 
     @Test
@@ -147,7 +91,7 @@ class ReinitialisationMotDePasseServiceTest {
         demande.setToken("token-valide");
         demande.setDateExpiration(LocalDateTime.now().plusHours(1));
         demande.setUtilise(false);
-        repository.save(demande);
+        reinitialisationMotDePasseRepository.save(demande);
 
         assertTrue(service.validerToken("token-valide"));
     }
@@ -159,7 +103,7 @@ class ReinitialisationMotDePasseServiceTest {
         demande.setToken("token-expire");
         demande.setDateExpiration(LocalDateTime.now().minusMinutes(5));
         demande.setUtilise(false);
-        repository.save(demande);
+        reinitialisationMotDePasseRepository.save(demande);
 
         assertFalse(service.validerToken("token-expire"));
     }
@@ -171,7 +115,7 @@ class ReinitialisationMotDePasseServiceTest {
         demande.setToken("token-utilise");
         demande.setDateExpiration(LocalDateTime.now().plusHours(1));
         demande.setUtilise(true);
-        repository.save(demande);
+        reinitialisationMotDePasseRepository.save(demande);
 
         assertFalse(service.validerToken("token-utilise"));
     }
@@ -200,7 +144,7 @@ class ReinitialisationMotDePasseServiceTest {
         demande.setToken("token-reset-ok");
         demande.setDateExpiration(LocalDateTime.now().plusHours(1));
         demande.setUtilise(false);
-        repository.save(demande);
+        reinitialisationMotDePasseRepository.save(demande);
 
         boolean resultat = service.reinitialiserMotDePasse("token-reset-ok", "nouveauMotDePasse123");
 
@@ -220,7 +164,7 @@ class ReinitialisationMotDePasseServiceTest {
         demande.setToken("token-reset-expire");
         demande.setDateExpiration(LocalDateTime.now().minusMinutes(1));
         demande.setUtilise(false);
-        repository.save(demande);
+        reinitialisationMotDePasseRepository.save(demande);
 
         boolean resultat = service.reinitialiserMotDePasse("token-reset-expire", "nouveauMotDePasse123");
 
