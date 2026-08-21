@@ -1,18 +1,26 @@
 package club.taekwondo.service.jpa;
 
+import club.taekwondo.repository.jpa.AboutConfigRepository;
+import club.taekwondo.repository.jpa.ActualiteRepository;
 import club.taekwondo.repository.jpa.AvisRepository;
 import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.CommandeRepository;
 import club.taekwondo.repository.jpa.EcheanceRepository;
 import club.taekwondo.repository.jpa.EnseignantRepository;
 import club.taekwondo.repository.jpa.EvenementRepository;
+import club.taekwondo.repository.jpa.GalerieRepository;
+import club.taekwondo.repository.jpa.HoraireRepository;
 import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
+import club.taekwondo.repository.jpa.MentionsLegalesConfigRepository;
 import club.taekwondo.repository.jpa.NotificationRepository;
+import club.taekwondo.repository.jpa.ParametresPaiementRepository;
 import club.taekwondo.repository.jpa.PaiementRepository;
+import club.taekwondo.repository.jpa.PolitiqueConfidentialiteConfigRepository;
 import club.taekwondo.repository.jpa.ProduitRepository;
 import club.taekwondo.repository.jpa.ReinitialisationMotDePasseRepository;
+import club.taekwondo.repository.jpa.RequiredDocumentRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +58,22 @@ abstract class AbstractServiceIntegrationTest {
     @Autowired
     protected AvisRepository avisRepository;
     @Autowired
+    protected AboutConfigRepository aboutConfigRepository;
+    @Autowired
+    protected ActualiteRepository actualiteRepository;
+    @Autowired
+    protected GalerieRepository galerieRepository;
+    @Autowired
+    protected HoraireRepository horaireRepository;
+    @Autowired
+    protected MentionsLegalesConfigRepository mentionsLegalesConfigRepository;
+    @Autowired
+    protected PolitiqueConfidentialiteConfigRepository politiqueConfidentialiteConfigRepository;
+    @Autowired
+    protected ParametresPaiementRepository parametresPaiementRepository;
+    @Autowired
+    protected RequiredDocumentRepository requiredDocumentRepository;
+    @Autowired
     protected EcheanceRepository echeanceRepository;
     @Autowired
     protected PaiementRepository paiementRepository;
@@ -75,6 +99,14 @@ abstract class AbstractServiceIntegrationTest {
         ligneCommandeRepository.deleteAll();
         enseignantRepository.deleteAll();
         avisRepository.deleteAll();
+        aboutConfigRepository.deleteAll();
+        actualiteRepository.deleteAll();
+        galerieRepository.deleteAll();
+        horaireRepository.deleteAll();
+        mentionsLegalesConfigRepository.deleteAll();
+        politiqueConfidentialiteConfigRepository.deleteAll();
+        parametresPaiementRepository.deleteAll();
+        requiredDocumentRepository.deleteAll();
         echeanceRepository.deleteAll();
         paiementRepository.deleteAll();
         commandeRepository.deleteAll();
