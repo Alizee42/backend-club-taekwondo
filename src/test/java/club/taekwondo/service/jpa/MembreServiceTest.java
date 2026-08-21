@@ -221,4 +221,216 @@ class MembreServiceTest extends AbstractServiceIntegrationTest {
 
         assertEquals(1, membreService.getMembresByParentEmail(parent.getEmail()).size());
     }
+
+    // ---- lectures diverses ----
+
+    @Test
+    void getAllMembres_retourneTousLesMembres() {
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Enfant");
+        dto.setPrenom("Test");
+        dto.setEstAdulte(false);
+        dto.setUtilisateurId(parent.getId());
+        membreService.createMembre(dto);
+
+        assertEquals(1, membreService.getAllMembres().size());
+    }
+
+    @Test
+    void getMembreById_trouve_retourneLeDto() {
+        MembreDTO createDto = new MembreDTO();
+        createDto.setNom("Enfant");
+        createDto.setPrenom("Test");
+        createDto.setEstAdulte(false);
+        createDto.setUtilisateurId(parent.getId());
+        MembreDTO created = membreService.createMembre(createDto);
+
+        assertTrue(membreService.getMembreById(created.getId()).isPresent());
+    }
+
+    @Test
+    void getMembresByClubId_neRetourneQueLesMembresDuClub() {
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Enfant");
+        dto.setPrenom("Test");
+        dto.setEstAdulte(false);
+        dto.setUtilisateurId(parent.getId());
+        membreService.createMembre(dto);
+
+        Club autreClub = new Club();
+        autreClub.setName("Autre Club Filtre");
+        clubRepository.save(autreClub);
+
+        assertEquals(1, membreService.getMembresByClubId(club.getId()).size());
+    }
+
+    @Test
+    void getEnfantsDuParent_retourneLesEntitesEnfants() {
+        MembreDTO createDto = new MembreDTO();
+        createDto.setNom("Enfant");
+        createDto.setPrenom("Test");
+        createDto.setEstAdulte(false);
+        createDto.setUtilisateurId(parent.getId());
+        membreService.createMembre(createDto);
+
+        assertEquals(1, membreService.getEnfantsDuParent(parent.getId()).size());
+    }
+
+    @Test
+    void getMembreEntityByIdUtilisateur_etAlias_retournentLeMemeResultat() {
+        Utilisateur compte = new Utilisateur();
+        compte.setNom("Adulte");
+        compte.setPrenom("Compte");
+        compte.setEmail("adulte-compte@test.com");
+        compte.setPassword("secret");
+        compte.setRole(Role.MEMBRE);
+        compte.setClub(club);
+        compte = utilisateurService.save(compte);
+
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Adulte");
+        dto.setPrenom("Compte");
+        dto.setEstAdulte(true);
+        dto.setUtilisateurId(compte.getId());
+        MembreDTO created = membreService.createMembre(dto);
+
+        assertEquals(created.getId(), membreService.getMembreEntityByIdUtilisateur(compte.getId()).orElseThrow().getId());
+        assertEquals(created.getId(), membreService.findByCompteUtilisateurId(compte.getId()).orElseThrow().getId());
+    }
+
+    // ---- updateMembre : branches adulte ----
+
+    @Test
+    void updateMembre_adulteAvecClubIdFourni_metAJourLeClub() {
+        Utilisateur compte = new Utilisateur();
+        compte.setNom("Adulte");
+        compte.setPrenom("Compte");
+        compte.setEmail("adulte-update@test.com");
+        compte.setPassword("secret");
+        compte.setRole(Role.MEMBRE);
+        compte.setClub(club);
+        compte = utilisateurService.save(compte);
+
+        MembreDTO createDto = new MembreDTO();
+        createDto.setNom("Adulte");
+        createDto.setPrenom("Compte");
+        createDto.setEstAdulte(true);
+        createDto.setUtilisateurId(compte.getId());
+        MembreDTO created = membreService.createMembre(createDto);
+
+        Club nouveauClub = new Club();
+        nouveauClub.setName("Nouveau Club Adulte");
+        nouveauClub = clubRepository.save(nouveauClub);
+
+        MembreDTO updateDto = new MembreDTO();
+        updateDto.setNom("Adulte");
+        updateDto.setPrenom("Compte");
+        updateDto.setEstAdulte(true);
+        updateDto.setClubId(nouveauClub.getId());
+
+        MembreDTO updated = membreService.updateMembre(created.getId(), updateDto);
+
+        assertEquals(nouveauClub.getId(), updated.getClubId());
+    }
+
+    @Test
+    void updateMembre_adulteSansClubIdMaisAvecCompteUtilisateur_heriteDuClubDuCompte() {
+        Utilisateur compte = new Utilisateur();
+        compte.setNom("Adulte");
+        compte.setPrenom("Compte");
+        compte.setEmail("adulte-heritage@test.com");
+        compte.setPassword("secret");
+        compte.setRole(Role.MEMBRE);
+        compte.setClub(club);
+        compte = utilisateurService.save(compte);
+
+        MembreDTO createDto = new MembreDTO();
+        createDto.setNom("Adulte");
+        createDto.setPrenom("Compte");
+        createDto.setEstAdulte(true);
+        createDto.setUtilisateurId(compte.getId());
+        MembreDTO created = membreService.createMembre(createDto);
+
+        MembreDTO updateDto = new MembreDTO();
+        updateDto.setNom("Adulte");
+        updateDto.setPrenom("ModifieSansClub");
+        updateDto.setEstAdulte(true);
+
+        MembreDTO updated = membreService.updateMembre(created.getId(), updateDto);
+
+        assertEquals("ModifieSansClub", updated.getPrenom());
+        assertEquals(club.getId(), updated.getClubId());
+    }
+
+    // ---- createMembre : club fourni directement via DTO ----
+
+    @Test
+    void createMembre_adulteAvecClubIdDto_prevautSurAbsenceDeCompteClub() {
+        Utilisateur compte = new Utilisateur();
+        compte.setNom("Adulte");
+        compte.setPrenom("SansClub");
+        compte.setEmail("adulte-sans-club@test.com");
+        compte.setPassword("secret");
+        compte.setRole(Role.MEMBRE);
+        compte = utilisateurService.save(compte);
+
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Adulte");
+        dto.setPrenom("SansClub");
+        dto.setEstAdulte(true);
+        dto.setUtilisateurId(compte.getId());
+        dto.setClubId(club.getId());
+
+        MembreDTO created = membreService.createMembre(dto);
+
+        assertEquals(club.getId(), created.getClubId());
+    }
+
+    @Test
+    void createMembre_clubIdInexistant_leveRuntimeException() {
+        Utilisateur compte = new Utilisateur();
+        compte.setNom("Adulte");
+        compte.setPrenom("Test");
+        compte.setEmail("adulte-club-inexistant@test.com");
+        compte.setPassword("secret");
+        compte.setRole(Role.MEMBRE);
+        compte = utilisateurService.save(compte);
+
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Adulte");
+        dto.setPrenom("Test");
+        dto.setEstAdulte(true);
+        dto.setUtilisateurId(compte.getId());
+        dto.setClubId(999999L);
+
+        assertThrows(RuntimeException.class, () -> membreService.createMembre(dto));
+    }
+
+    @Test
+    void createMembre_genreValide_estPersiste() {
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Enfant");
+        dto.setPrenom("Genre");
+        dto.setEstAdulte(false);
+        dto.setUtilisateurId(parent.getId());
+        dto.setGenre("MASCULIN");
+
+        MembreDTO created = membreService.createMembre(dto);
+
+        assertEquals("MASCULIN", created.getGenre());
+    }
+
+    @Test
+    void createMembre_genreInvalide_estIgnoreSansException() {
+        MembreDTO dto = new MembreDTO();
+        dto.setNom("Enfant");
+        dto.setPrenom("GenreInvalide");
+        dto.setEstAdulte(false);
+        dto.setUtilisateurId(parent.getId());
+        dto.setGenre("PAS_UN_GENRE");
+
+        MembreDTO created = membreService.createMembre(dto);
+
+        assertNull(created.getGenre());
+    }
 }
