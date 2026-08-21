@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @Service
 public class EcheanceService {
     // Échéances filtrées par club
+    @Transactional(readOnly = true)
     public List<EcheanceDTO> getEcheancesByClubId(Long clubId) {
         return echeanceRepository.findByPaiement_Membre_Club_Id(clubId)
                 .stream()
@@ -46,6 +47,7 @@ public class EcheanceService {
     }
 
     // 🔹 Récupérer toutes les échéances sous forme de DTO
+    @Transactional(readOnly = true)
     public List<EcheanceDTO> getAllEcheanceDTOs() {
         return echeanceRepository.findAll().stream()
                 .map(this::toDTO)

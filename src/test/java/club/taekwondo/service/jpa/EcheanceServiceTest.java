@@ -211,4 +211,99 @@ class EcheanceServiceTest extends AbstractServiceIntegrationTest {
 
         assertTrue(echeances.isEmpty());
     }
+
+    @Test
+    void getEcheancesByClubId_avecLeBonClub_retourneLesEcheances() {
+        club.taekwondo.entity.jpa.Club club = new club.taekwondo.entity.jpa.Club();
+        club.setName("Club Echeance");
+        club = clubRepository.save(club);
+
+        club.taekwondo.entity.jpa.Membre membreDuClub = membreService.findById(enfant.getId()).orElseThrow();
+        membreDuClub.setClub(club);
+        membreService.save(membreDuClub);
+
+        creerPaiementEchelonne(50.0, 50.0);
+
+        List<EcheanceDTO> echeances = echeanceService.getEcheancesByClubId(club.getId());
+
+        assertEquals(2, echeances.size());
+        assertEquals("Enfant", echeances.get(0).getEnfantNom());
+    }
+
+    @Test
+    void getAllEcheanceDTOs_retourneToutesLesEcheances() {
+        creerPaiementEchelonne(50.0, 50.0);
+
+        List<EcheanceDTO> all = echeanceService.getAllEcheanceDTOs();
+
+        assertEquals(2, all.size());
+    }
+
+    @Test
+    void createEcheance_associeAuPaiementExistant() {
+        Paiement paiement = creerPaiementEchelonne(50.0, 50.0);
+
+        EcheanceDTO dto = new EcheanceDTO();
+        dto.setNumero(3);
+        dto.setDateEcheance(LocalDate.now().plusDays(60));
+        dto.setMontant(25.0);
+        dto.setStatut("en attente");
+
+        EcheanceDTO created = echeanceService.createEcheance(dto, paiement.getId());
+
+        assertNotNull(created.getId());
+        assertEquals(25.0, created.getMontant());
+        assertEquals(3, created.getNumero());
+    }
+
+    @Test
+    void createEcheance_paiementIntrouvable_leveRuntimeException() {
+        EcheanceDTO dto = new EcheanceDTO();
+        dto.setNumero(1);
+        dto.setDateEcheance(LocalDate.now());
+        dto.setStatut("en attente");
+
+        assertThrows(RuntimeException.class, () -> echeanceService.createEcheance(dto, 999999L));
+    }
+
+    @Test
+    void payerEcheance_sansCompteurEcheancesRestantes_derivelestatutDepuisLesEcheances() {
+        Paiement paiement = creerPaiementEchelonne(50.0, 50.0);
+        paiement.setEcheancesRestantes(null);
+        paiementService.save(paiement);
+
+        List<Echeance> echeances = paiement.getEcheances();
+        echeanceService.payerEcheance(echeances.get(0).getId(), "especes", null, null);
+        echeanceService.payerEcheance(echeances.get(1).getId(), "cb", null, null);
+
+        Paiement reloaded = paiementService.getById(paiement.getId()).orElseThrow();
+        assertEquals("payé", reloaded.getStatut());
+    }
+
+    @Test
+    void save_persisteDirectementLEntite() {
+        Paiement paiement = creerPaiementEchelonne(50.0, 50.0);
+        Echeance echeance = paiement.getEcheances().get(0);
+        echeance.setMontant(99.0);
+
+        Echeance saved = echeanceService.save(echeance);
+
+        assertEquals(99.0, saved.getMontant());
+    }
+
+    @Test
+    void updateEcheance_normalizeModeVirementEtEspeces() {
+        Paiement paiement = creerPaiementEchelonne(50.0, 50.0);
+        Echeance premiere = paiement.getEcheances().get(0);
+
+        EcheanceDTO update = new EcheanceDTO();
+        update.setDateEcheance(LocalDate.now());
+        update.setStatut("en attente");
+        update.setNumero(1);
+        update.setModePaiement("virement");
+
+        EcheanceDTO updated = echeanceService.updateEcheance(premiere.getId(), update);
+
+        assertEquals("VIREMENT", updated.getModePaiement());
+    }
 }
