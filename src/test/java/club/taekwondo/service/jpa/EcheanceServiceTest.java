@@ -10,6 +10,8 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.CommandeRepository;
 import club.taekwondo.repository.jpa.EcheanceRepository;
+import club.taekwondo.repository.jpa.EvenementRepository;
+import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.NotificationRepository;
@@ -65,6 +67,12 @@ class EcheanceServiceTest {
     private UtilisateurRepository utilisateurRepository;
 
     @Autowired
+    private InscriptionEvenementRepository inscriptionRepository;
+
+    @Autowired
+    private EvenementRepository evenementRepository;
+
+    @Autowired
     private UtilisateurService utilisateurService;
 
     @Autowired
@@ -75,6 +83,8 @@ class EcheanceServiceTest {
 
     @BeforeEach
     void setup() {
+        inscriptionRepository.deleteAll();
+        evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
         commandeRepository.deleteAll();
         echeanceRepository.deleteAll();

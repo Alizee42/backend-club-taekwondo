@@ -7,6 +7,8 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.CommandeRepository;
+import club.taekwondo.repository.jpa.EvenementRepository;
+import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.NotificationRepository;
@@ -56,6 +58,12 @@ class MembreServiceTest {
     private NotificationRepository notificationRepository;
 
     @Autowired
+    private InscriptionEvenementRepository inscriptionRepository;
+
+    @Autowired
+    private EvenementRepository evenementRepository;
+
+    @Autowired
     private UtilisateurService utilisateurService;
 
     private Club club;
@@ -63,6 +71,8 @@ class MembreServiceTest {
 
     @BeforeEach
     void setup() {
+        inscriptionRepository.deleteAll();
+        evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
         commandeRepository.deleteAll();
         paiementRepository.deleteAll();

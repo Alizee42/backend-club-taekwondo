@@ -11,6 +11,8 @@ import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
 import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.CommandeRepository;
+import club.taekwondo.repository.jpa.EvenementRepository;
+import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.NotificationRepository;
@@ -63,6 +65,12 @@ class PaiementServiceTest {
     private LigneCommandeRepository ligneCommandeRepository;
 
     @Autowired
+    private InscriptionEvenementRepository inscriptionRepository;
+
+    @Autowired
+    private EvenementRepository evenementRepository;
+
+    @Autowired
     private UtilisateurService utilisateurService;
 
     @Autowired
@@ -74,6 +82,8 @@ class PaiementServiceTest {
     @BeforeEach
     void setup() {
         // Nettoyage complet dans l'ordre des dépendances FK
+        inscriptionRepository.deleteAll();
+        evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
         commandeRepository.deleteAll();
         paiementRepository.deleteAll();

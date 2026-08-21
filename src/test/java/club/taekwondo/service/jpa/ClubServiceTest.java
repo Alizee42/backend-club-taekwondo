@@ -4,6 +4,8 @@ import club.taekwondo.dto.ClubDto;
 import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.CommandeRepository;
+import club.taekwondo.repository.jpa.EvenementRepository;
+import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.LigneCommandeRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import club.taekwondo.repository.jpa.NotificationRepository;
@@ -52,9 +54,17 @@ class ClubServiceTest {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
+    @Autowired
+    private InscriptionEvenementRepository inscriptionRepository;
+
+    @Autowired
+    private EvenementRepository evenementRepository;
+
     @BeforeEach
     void setup() {
         // Nettoyage complet : le club "Villeurbanne" du bootstrap a des utilisateurs rattaches
+        inscriptionRepository.deleteAll();
+        evenementRepository.deleteAll();
         ligneCommandeRepository.deleteAll();
         commandeRepository.deleteAll();
         paiementRepository.deleteAll();
