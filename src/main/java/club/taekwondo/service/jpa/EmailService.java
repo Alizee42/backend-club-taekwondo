@@ -1,5 +1,6 @@
 package club.taekwondo.service.jpa;
 
+import club.taekwondo.entity.jpa.Club;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.Optional;
 
 @Service
 public class EmailService {
@@ -18,6 +20,9 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private ClubMailSenderFactory clubMailSenderFactory;
 
     @Value("${app.mail.from}")
     private String fromEmail;
@@ -35,6 +40,10 @@ public class EmailService {
        📩 EMAIL - Réinitialisation de mot de passe
        ============================================ */
     public void envoyerEmailReinitialisationMotDePasse(String email, String token) {
+        envoyerEmailReinitialisationMotDePasse(null, email, token);
+    }
+
+    public void envoyerEmailReinitialisationMotDePasse(Club club, String email, String token) {
         String sujet = "Réinitialisation de votre mot de passe - Club de Taekwondo";
         String lienReinitialisation = frontendUrl + "/reinitialiser-mot-de-passe?token=" + token;
 
@@ -58,13 +67,17 @@ public class EmailService {
                 """.formatted(lienReinitialisation)
         );
 
-        envoyerEmailHtml(email, sujet, contenuHtml);
+        envoyerEmailHtml(club, email, sujet, contenuHtml);
     }
 
     /* ============================================
        👋 EMAIL - Confirmation d’inscription
        ============================================ */
     public void envoyerEmailConfirmationInscription(String email, String nomUtilisateur) {
+        envoyerEmailConfirmationInscription(null, email, nomUtilisateur);
+    }
+
+    public void envoyerEmailConfirmationInscription(Club club, String email, String nomUtilisateur) {
         String sujet = "Bienvenue au Club de Taekwondo !";
 
         String contenuHtml = baseTemplate("Bienvenue parmi nous !",
@@ -81,20 +94,20 @@ public class EmailService {
                 """.formatted(nomUtilisateur, frontendUrl, frontendUrl, frontendUrl)
         );
 
-        envoyerEmailHtml(email, sujet, contenuHtml);
+        envoyerEmailHtml(club, email, sujet, contenuHtml);
     }
 
     /* ============================================
        🔔 EMAIL - Notification d'inscription au club
        ============================================ */
-    public void envoyerNotificationInscriptionClub(String clubEmail, String clubNom, String nomComplet,
-                                                     String emailInscrit, String role) {
-        if (clubEmail == null || clubEmail.isBlank()) {
-            log.info("[EmailService] Pas d'email pour le club {}, notification d'inscription non envoyée.", clubNom);
+    public void envoyerNotificationInscriptionClub(Club club, String nomComplet, String emailInscrit, String role) {
+        if (club == null || club.getEmail() == null || club.getEmail().isBlank()) {
+            log.info("[EmailService] Pas d'email pour le club {}, notification d'inscription non envoyée.",
+                    club != null ? club.getName() : "?");
             return;
         }
 
-        String sujet = "Nouvelle inscription - " + clubNom;
+        String sujet = "Nouvelle inscription - " + club.getName();
         String contenuHtml = baseTemplate("Nouvelle inscription",
                 """
                 <p>Bonjour,</p>
@@ -106,10 +119,10 @@ public class EmailService {
                 </ul>
                 <p style="margin-top:24px;">Vous pouvez consulter ce compte depuis votre espace d'administration.</p>
                 <p style="margin-top:24px;">Cordialement,<br><strong>L'équipe du Club de Taekwondo</strong></p>
-                """.formatted(escape(clubNom), escape(nomComplet), escape(emailInscrit), escape(role))
+                """.formatted(escape(club.getName()), escape(nomComplet), escape(emailInscrit), escape(role))
         );
 
-        envoyerEmailHtml(clubEmail, sujet, contenuHtml);
+        envoyerEmailHtml(club, club.getEmail(), sujet, contenuHtml);
     }
 
     /* ============================================
@@ -154,6 +167,10 @@ public class EmailService {
        � EMAIL - Reçu de paiement (fallback club)
        ============================================ */
     public void envoyerRecuPaiement(String destinataire, double montant, String description, String receiptUrl) {
+        envoyerRecuPaiement(null, destinataire, montant, description, receiptUrl);
+    }
+
+    public void envoyerRecuPaiement(Club club, String destinataire, double montant, String description, String receiptUrl) {
         String sujet = "Votre reçu de paiement - Club de Taekwondo";
         String body = baseTemplate("Reçu de paiement",
                 ("""
@@ -170,7 +187,7 @@ public class EmailService {
                 """
                         ).formatted(String.format("%.2f €", montant), escape(description == null ? "Paiement" : description), receiptUrl)
         );
-        envoyerEmailHtml(destinataire, sujet, body);
+        envoyerEmailHtml(club, destinataire, sujet, body);
     }
 
     /* ============================================
@@ -270,21 +287,35 @@ public class EmailService {
        ⚙️ Méthode d’envoi d’email générique
        ============================================ */
     public void envoyerEmailHtml(String destinataire, String sujet, String contenuHtml) {
-        if (mailUsername == null || mailUsername.isBlank()) {
+        envoyerEmailHtml(null, destinataire, sujet, contenuHtml);
+    }
+
+    /**
+     * Envoie via le compte Gmail dedie du club (EMAIL_<NOM>_USERNAME/PASSWORD) s'il est
+     * configure, sinon retombe sur le compte partage global (comportement inchange).
+     */
+    public void envoyerEmailHtml(Club club, String destinataire, String sujet, String contenuHtml) {
+        Optional<ClubMailSenderFactory.ClubMailContext> clubCtx = clubMailSenderFactory.forClub(club);
+
+        if (clubCtx.isEmpty() && (mailUsername == null || mailUsername.isBlank())) {
             log.warn("[EmailService] EMAIL_USERNAME non configuré – email non envoyé à : {}", destinataire);
             return;
         }
+
+        JavaMailSender sender = clubCtx.map(ClubMailSenderFactory.ClubMailContext::sender).orElse(mailSender);
+        String from = clubCtx.map(ClubMailSenderFactory.ClubMailContext::fromEmail).orElse(fromEmail);
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessage message = sender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
+            helper.setFrom(from);
             helper.setTo(destinataire);
             helper.setSubject(sujet);
             helper.setText(contenuHtml, true);
 
-            mailSender.send(message);
-            log.info("Email envoyé à : {}", destinataire);
+            sender.send(message);
+            log.info("Email envoyé à : {} (depuis {})", destinataire, from);
 
         } catch (MessagingException e) {
             log.error("Erreur envoi email à {} : {}", destinataire, e.getMessage());

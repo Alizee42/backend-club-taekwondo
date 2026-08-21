@@ -80,6 +80,7 @@ public class EcheanceReminderJob {
                 if (utilisateur.getEmail() != null && !utilisateur.getEmail().isBlank()) {
                     try {
                         emailService.envoyerEmailHtml(
+                                utilisateur.getClub(),
                                 utilisateur.getEmail(),
                                 "Rappel : échéance de paiement en retard",
                                 buildEmailHtml(utilisateur.getPrenom(), message)

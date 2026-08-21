@@ -38,7 +38,7 @@ public class UtilisateurController {
             try {
                 var demande = reinitService.creerDemande(nouvelUtilisateur.getId());
                 if (nouvelUtilisateur.getEmail() != null && !nouvelUtilisateur.getEmail().isBlank()) {
-                    emailService.envoyerEmailReinitialisationMotDePasse(nouvelUtilisateur.getEmail(), demande.getToken());
+                    emailService.envoyerEmailReinitialisationMotDePasse(nouvelUtilisateur.getClub(), nouvelUtilisateur.getEmail(), demande.getToken());
                 }
             } catch (Exception ignore) {}
 
@@ -215,7 +215,7 @@ public class UtilisateurController {
             try {
                 if (nouvelUtilisateur.getEmail() != null && !nouvelUtilisateur.getEmail().isBlank()) {
                     String nom = nouvelUtilisateur.getPrenom() != null ? nouvelUtilisateur.getPrenom() : nouvelUtilisateur.getNom();
-                    emailService.envoyerEmailConfirmationInscription(nouvelUtilisateur.getEmail(), nom != null ? nom : "");
+                    emailService.envoyerEmailConfirmationInscription(nouvelUtilisateur.getClub(), nouvelUtilisateur.getEmail(), nom != null ? nom : "");
                     emailSent = true;
                 }
             } catch (Exception e) {
@@ -230,8 +230,7 @@ public class UtilisateurController {
                             + (nouvelUtilisateur.getNom() != null ? nouvelUtilisateur.getNom() : "")).trim();
                     String role = nouvelUtilisateur.getRole() != null ? nouvelUtilisateur.getRole().name() : "";
                     emailService.envoyerNotificationInscriptionClub(
-                            nouvelUtilisateur.getClub().getEmail(),
-                            nouvelUtilisateur.getClub().getName(),
+                            nouvelUtilisateur.getClub(),
                             nomComplet,
                             nouvelUtilisateur.getEmail(),
                             role);

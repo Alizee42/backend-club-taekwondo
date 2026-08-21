@@ -68,6 +68,7 @@ class ReinitialisationMotDePasseServiceTest extends AbstractServiceIntegrationTe
 
         assertEquals(1, reinitialisationMotDePasseRepository.findAll().size());
         verify(emailService).envoyerEmailReinitialisationMotDePasse(
+                org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.eq(utilisateur.getEmail()),
                 org.mockito.ArgumentMatchers.anyString());
     }
@@ -76,6 +77,7 @@ class ReinitialisationMotDePasseServiceTest extends AbstractServiceIntegrationTe
     void demanderReinitialisation_emailEnErreur_neFaitPasEchouerLaDemande() {
         org.mockito.Mockito.doThrow(new RuntimeException("SMTP down"))
                 .when(emailService).envoyerEmailReinitialisationMotDePasse(
+                        org.mockito.ArgumentMatchers.any(),
                         org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
 
         // Ne doit pas lever d'exception malgre l'echec de l'envoi email

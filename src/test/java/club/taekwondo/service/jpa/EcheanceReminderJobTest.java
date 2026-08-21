@@ -75,7 +75,7 @@ class EcheanceReminderJobTest {
         job.rappelerEcheancesEnRetard();
 
         verify(notificationService, never()).envoyerNotification(anyLong(), anyString(), anyString(), anyString(), anyString());
-        verify(emailService, never()).envoyerEmailHtml(anyString(), anyString(), anyString());
+        verify(emailService, never()).envoyerEmailHtml(any(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -105,7 +105,7 @@ class EcheanceReminderJobTest {
 
         verify(notificationService).envoyerNotification(
                 eq(1L), eq("Échéance en retard"), anyString(), eq("paiement"), eq("/parent/paiements"));
-        verify(emailService).envoyerEmailHtml(eq("parent@test.com"), anyString(), anyString());
+        verify(emailService).envoyerEmailHtml(any(), eq("parent@test.com"), anyString(), anyString());
     }
 
     @Test
@@ -177,7 +177,7 @@ class EcheanceReminderJobTest {
         job.rappelerEcheancesEnRetard();
 
         verify(notificationService).envoyerNotification(eq(4L), anyString(), anyString(), anyString(), anyString());
-        verify(emailService, never()).envoyerEmailHtml(anyString(), anyString(), anyString());
+        verify(emailService, never()).envoyerEmailHtml(any(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -190,7 +190,7 @@ class EcheanceReminderJobTest {
         when(echeanceRepository.findByStatutAndDateEcheanceBefore(eq("en attente"), any(LocalDate.class)))
                 .thenReturn(List.of(echeance));
         doThrow(new RuntimeException("SMTP down")).when(emailService)
-                .envoyerEmailHtml(anyString(), anyString(), anyString());
+                .envoyerEmailHtml(any(), anyString(), anyString(), anyString());
 
         assertDoesNotThrow(() -> job.rappelerEcheancesEnRetard());
 

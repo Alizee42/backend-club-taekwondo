@@ -414,7 +414,8 @@ public class StripeController {
                     String description = ("ECHELONNE".equalsIgnoreCase(paiement.getType()))
                             ? ("Échéance du paiement #" + paiement.getId())
                             : ("Paiement unique #" + paiement.getId());
-                    emailService.envoyerRecuPaiement(destinataire, montantPaye, description, receiptUrl);
+                    var club = paiement.getUtilisateur() != null ? paiement.getUtilisateur().getClub() : null;
+                    emailService.envoyerRecuPaiement(club, destinataire, montantPaye, description, receiptUrl);
                     log.info("[STRIPE] ✉️ Reçu envoyé par email à {} (fallback club)", destinataire);
                 }
             }

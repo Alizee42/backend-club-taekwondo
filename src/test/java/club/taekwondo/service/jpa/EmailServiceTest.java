@@ -23,16 +23,22 @@ class EmailServiceTest {
     @Mock
     private JavaMailSenderImpl mailSender;
 
+    @Mock
+    private ClubMailSenderFactory clubMailSenderFactory;
+
     private EmailService emailService;
 
     @BeforeEach
     void setUp() {
         emailService = new EmailService();
         ReflectionTestUtils.setField(emailService, "mailSender", mailSender);
+        ReflectionTestUtils.setField(emailService, "clubMailSenderFactory", clubMailSenderFactory);
         ReflectionTestUtils.setField(emailService, "fromEmail", "noreply@club-taekwondo.com");
         ReflectionTestUtils.setField(emailService, "mailUsername", "test@example.com");
         ReflectionTestUtils.setField(emailService, "frontendUrl", "https://frontend.example.com");
         ReflectionTestUtils.setField(emailService, "contactTo", "contact@club-taekwondo.com");
+        // Aucun club dans ces tests : Mockito retourne Optional.empty() par defaut pour
+        // forClub() (non stubbe), ce qui fait retomber le service sur mailSender global.
     }
 
     private MimeMessage realMimeMessage() {

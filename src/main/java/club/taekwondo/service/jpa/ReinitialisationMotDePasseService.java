@@ -72,7 +72,7 @@ public class ReinitialisationMotDePasseService {
         
         // 🔔 Envoi de l'email avec le lien de réinitialisation
         try {
-            emailService.envoyerEmailReinitialisationMotDePasse(email, demande.getToken());
+            emailService.envoyerEmailReinitialisationMotDePasse(utilisateur.getClub(), email, demande.getToken());
             log.info("Email de réinitialisation envoyé à : {}", email);
         } catch (Exception e) {
             log.error("Erreur envoi email pour {} : {}", email, e.getMessage());
