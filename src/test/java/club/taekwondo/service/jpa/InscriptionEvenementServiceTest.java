@@ -163,20 +163,24 @@ class InscriptionEvenementServiceTest {
     }
 
     @Test
-    void inscrireMembres_membreReinscritApresAnnulation_bloqueParContrainteUniqueEnBase() {
-        // Le code service autorise la reinscription (existsBy...StatutNot(ANNULEE) ne bloque
-        // pas ce cas), mais la contrainte UNIQUE(membre_id, evenement_id) en base ne distingue
-        // pas les statuts : une deuxieme ligne pour le meme couple membre/evenement est toujours
-        // rejetee, meme si la premiere est annulee. Divergence code/schema a noter.
+    void inscrireMembres_membreReinscritApresAnnulation_reactiveLaLigneExistante() {
+        // La contrainte UNIQUE(membre_id, evenement_id) en base impose une seule ligne par
+        // couple : inscrireMembres reutilise donc la ligne annulee au lieu d'en creer une
+        // nouvelle, ce qui doit fonctionner sans violer la contrainte.
         evenement.setCapacite(5);
         evenementRepository.save(evenement);
 
         List<InscriptionEvenementDTO> premiere = inscriptionService.inscrireMembres(
                 evenement.getId(), List.of(enfant.getId()), null);
-        inscriptionService.annulerInscription(premiere.get(0).getId());
+        Long inscriptionId = premiere.get(0).getId();
+        inscriptionService.annulerInscription(inscriptionId);
 
-        assertThrows(RuntimeException.class,
-                () -> inscriptionService.inscrireMembres(evenement.getId(), List.of(enfant.getId()), null));
+        List<InscriptionEvenementDTO> reinscription = inscriptionService.inscrireMembres(
+                evenement.getId(), List.of(enfant.getId()), null);
+
+        assertEquals(1, reinscription.size());
+        assertEquals(inscriptionId, reinscription.get(0).getId());
+        assertEquals(StatutInscription.EN_ATTENTE, reinscription.get(0).getStatut());
     }
 
     @Test
@@ -261,13 +265,10 @@ class InscriptionEvenementServiceTest {
     }
 
     @Test
-    void convertToDTO_accesParentHorsTransaction_retombeSurEmailNonDisponible() {
-        // InscriptionEvenementService n'a pas de @Transactional : l'acces lazy a membre.getParent()
-        // dans convertToDTO se fait hors session Hibernate active, leve une exception silencieusement
-        // catchee, et retombe sur ce message plutot que sur l'email reel du parent.
+    void convertToDTO_membreSansCompteUtilisateur_utiliseEmailDuParentAvecSuffixe() {
         InscriptionEvenementDTO created = inscriptionService.inscrireMembres(
                 evenement.getId(), List.of(enfant.getId()), null).get(0);
 
-        assertEquals("Email non disponible", created.getMembreEmail());
+        assertTrue(created.getMembreEmail().endsWith("(parent)"));
     }
 }

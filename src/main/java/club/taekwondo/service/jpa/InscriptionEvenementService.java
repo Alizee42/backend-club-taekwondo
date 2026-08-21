@@ -10,6 +10,7 @@ import club.taekwondo.repository.jpa.InscriptionEvenementRepository;
 import club.taekwondo.repository.jpa.MembreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class InscriptionEvenementService {
     private EvenementRepository evenementRepository;
 
     // 🔹 Récupérer toutes les inscriptions
+    @Transactional(readOnly = true)
     public List<InscriptionEvenementDTO> getAllInscriptions() {
         return inscriptionRepository.findAll().stream()
                 .map(this::convertToDTO)
@@ -37,6 +39,7 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Récupérer les inscriptions par événement et statut
+    @Transactional(readOnly = true)
     public List<InscriptionEvenementDTO> getInscriptionsByEvenementAndStatut(Long evenementId, String statut) {
         if (statut != null) {
             return inscriptionRepository.findByEvenementIdAndStatutWithMembre(evenementId, StatutInscription.valueOf(statut))
@@ -52,11 +55,13 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Récupérer une inscription par ID
+    @Transactional(readOnly = true)
     public Optional<InscriptionEvenementDTO> getInscriptionById(Long id) {
         return inscriptionRepository.findById(id).map(this::convertToDTO);
     }
 
     // 🔹 Créer une nouvelle inscription pour plusieurs enfants
+    @Transactional
     public List<InscriptionEvenementDTO> inscrireMembres(Long evenementId, List<Long> membresIds, String commentaire) {
         Evenement evenement = evenementRepository.findById(evenementId)
                 .orElseThrow(() -> new RuntimeException("Événement non trouvé"));
@@ -84,8 +89,11 @@ public class InscriptionEvenementService {
                 throw new RuntimeException("L’enfant " + membre.getPrenom() + " est déjà inscrit.");
             }
 
-            // Créer l’inscription
-            InscriptionEvenement inscription = new InscriptionEvenement();
+            // La contrainte UNIQUE(membre_id, evenement_id) impose une seule ligne par couple :
+            // si une inscription annulée existe déjà, on la réactive plutôt que d'en créer une nouvelle.
+            InscriptionEvenement inscription = inscriptionRepository
+                    .findByMembreIdAndEvenementId(membreId, evenementId)
+                    .orElseGet(InscriptionEvenement::new);
             inscription.setMembre(membre);
             inscription.setEvenement(evenement);
             inscription.setDateInscription(LocalDateTime.now());
@@ -100,6 +108,7 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Mettre à jour une inscription
+    @Transactional
     public InscriptionEvenementDTO updateInscription(Long id, InscriptionEvenementDTO dto) {
         if (!inscriptionRepository.existsById(id)) {
             throw new RuntimeException("Inscription non trouvée avec l'ID : " + id);
@@ -111,6 +120,7 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Mettre à jour uniquement le statut d'une inscription
+    @Transactional
     public void updateStatutInscription(Long id, String statut) {
         InscriptionEvenement inscription = inscriptionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inscription non trouvée avec l'ID : " + id));
@@ -125,6 +135,7 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Annuler une inscription (soft delete)
+    @Transactional
     public void annulerInscription(Long id) {
         InscriptionEvenement inscription = inscriptionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inscription non trouvée avec l'ID : " + id));
@@ -190,6 +201,7 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Récupérer les inscriptions des enfants d'un parent connecté
+    @Transactional(readOnly = true)
     public List<InscriptionEvenementDTO> getInscriptionsByParent(Long parentId) {
         return inscriptionRepository.findByParentIdWithMembreAndEvenement(parentId)
                 .stream()
@@ -197,6 +209,7 @@ public class InscriptionEvenementService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<InscriptionEvenementDTO> getInscriptionsByMembreId(Long membreId) {
         return inscriptionRepository.findActiveByMembreIdWithEvenement(membreId)
                 .stream()
@@ -205,6 +218,7 @@ public class InscriptionEvenementService {
     }
 
     // 🔹 Récupérer toutes les inscriptions d'un club
+    @Transactional(readOnly = true)
     public List<InscriptionEvenementDTO> getInscriptionsByClubId(Long clubId) {
         return inscriptionRepository.findByMembre_Club_Id(clubId)
                 .stream()

@@ -28,6 +28,10 @@ public interface InscriptionEvenementRepository extends JpaRepository<Inscriptio
     // 🔹 Vérifier si un membre est déjà inscrit sauf si statut = ANNULEE
     boolean existsByMembreIdAndEvenementIdAndStatutNot(Long membreId, Long evenementId, StatutInscription statut);
 
+    // 🔹 Retrouver l'inscription existante (y compris annulée) pour un couple membre/événement
+    // — contrainte UNIQUE(membre_id, evenement_id) en base : une réinscription doit réutiliser cette ligne
+    java.util.Optional<InscriptionEvenement> findByMembreIdAndEvenementId(Long membreId, Long evenementId);
+
     // 🔹 Récupérer toutes les inscriptions d'un événement AVEC les données du membre
     @Query("SELECT i FROM InscriptionEvenement i JOIN FETCH i.membre m JOIN FETCH i.evenement LEFT JOIN FETCH m.compteUtilisateur LEFT JOIN FETCH m.parent WHERE i.evenement.id = :evenementId")
     List<InscriptionEvenement> findByEvenementIdWithMembre(@Param("evenementId") Long evenementId);
