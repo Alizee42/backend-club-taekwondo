@@ -195,6 +195,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <useModulePath>false</useModulePath>
+          <!-- Ordre deterministe: l'ordre "filesystem" par defaut differe entre OS/CI,
+               ce qui exposait des tests @SpringBootTest polluant la meme base H2 partagee
+               dans un ordre different en local (Windows) et en CI (Linux). -->
+          <runOrder>alphabetical</runOrder>
         </configuration>
       </plugin>
 
