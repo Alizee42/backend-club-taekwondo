@@ -162,5 +162,298 @@ class UtilisateurServiceTest {
 
         assertFalse(result.isPresent());
     }
+
+    // ---- getAllUtilisateurs / getAllUtilisateursByClubId / getAllWithPaiements ----
+
+    @Test
+    void testGetAllUtilisateurs_convertitTousLesUtilisateurs() {
+        Utilisateur u1 = new Utilisateur();
+        u1.setId(1L);
+        u1.setNom("A");
+        Utilisateur u2 = new Utilisateur();
+        u2.setId(2L);
+        u2.setNom("B");
+        when(utilisateurRepository.findAll()).thenReturn(List.of(u1, u2));
+
+        List<UtilisateurDTO> result = utilisateurService.getAllUtilisateurs();
+
+        assertEquals(2, result.size());
+        assertEquals("A", result.get(0).getNom());
+    }
+
+    @Test
+    void testGetAllUtilisateursByClubId_filtreParClub() {
+        Utilisateur u1 = new Utilisateur();
+        u1.setId(1L);
+        u1.setNom("ClubUser");
+        when(utilisateurRepository.findByClub_Id(10L)).thenReturn(List.of(u1));
+
+        List<UtilisateurDTO> result = utilisateurService.getAllUtilisateursByClubId(10L);
+
+        assertEquals(1, result.size());
+        assertEquals("ClubUser", result.get(0).getNom());
+    }
+
+    @Test
+    void testGetAllWithPaiements_mappeVersDtoLeger() {
+        Utilisateur u = new Utilisateur();
+        u.setId(1L);
+        u.setNom("Dupont");
+        u.setPrenom("Jean");
+        u.setEmail("jean@test.com");
+        u.setRole(Role.ADMIN);
+        when(utilisateurRepository.findAll()).thenReturn(List.of(u));
+
+        var result = utilisateurService.getAllWithPaiements();
+
+        assertEquals(1, result.size());
+        assertEquals("Dupont", result.get(0).getNom());
+        assertEquals("ADMIN", result.get(0).getRole());
+    }
+
+    @Test
+    void testGetAllWithPaiements_roleNull_utiliseMembreParDefaut() {
+        Utilisateur u = new Utilisateur();
+        u.setId(1L);
+        u.setNom("SansRole");
+        when(utilisateurRepository.findAll()).thenReturn(List.of(u));
+
+        var result = utilisateurService.getAllWithPaiements();
+
+        assertEquals("MEMBRE", result.get(0).getRole());
+    }
+
+    // ---- lookups par email / nom-prenom ----
+
+    @Test
+    void testGetUtilisateurByEmail_trouve() {
+        Utilisateur u = new Utilisateur();
+        u.setId(1L);
+        u.setEmail("test@example.com");
+        when(utilisateurRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(u));
+
+        Optional<UtilisateurDTO> result = utilisateurService.getUtilisateurByEmail("TEST@example.com");
+
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void testGetUtilisateurByEmail_emailNull_retourneEmpty() {
+        Optional<UtilisateurDTO> result = utilisateurService.getUtilisateurByEmail(null);
+
+        assertTrue(result.isEmpty());
+        verify(utilisateurRepository, never()).findByEmailIgnoreCase(anyString());
+    }
+
+    @Test
+    void testGetUtilisateurByEmail_emailBlanc_retourneEmpty() {
+        Optional<UtilisateurDTO> result = utilisateurService.getUtilisateurByEmail("   ");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetUtilisateurEntityByEmail_trouve() {
+        Utilisateur u = new Utilisateur();
+        u.setId(1L);
+        u.setEmail("test@example.com");
+        when(utilisateurRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(u));
+
+        Optional<Utilisateur> result = utilisateurService.getUtilisateurEntityByEmail("Test@Example.com");
+
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void testGetUtilisateurEntityByEmail_emailNull_retourneEmptySansAppelRepo() {
+        Optional<Utilisateur> result = utilisateurService.getUtilisateurEntityByEmail(null);
+
+        assertTrue(result.isEmpty());
+        verify(utilisateurRepository, never()).findByEmailIgnoreCase(anyString());
+    }
+
+    @Test
+    void testFindByEmail_trouve() {
+        Utilisateur u = new Utilisateur();
+        u.setId(1L);
+        when(utilisateurRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(u));
+
+        Optional<Utilisateur> result = utilisateurService.findByEmail("test@example.com");
+
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void testFindByNomPrenom_trouve() {
+        Utilisateur u = new Utilisateur();
+        u.setId(1L);
+        when(utilisateurRepository.findByNomIgnoreCaseAndPrenomIgnoreCase("Dupont", "Jean")).thenReturn(Optional.of(u));
+
+        Optional<Utilisateur> result = utilisateurService.findByNomPrenom("Dupont", "Jean");
+
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void testFindByNomPrenom_nomNull_retourneEmptySansAppelRepo() {
+        Optional<Utilisateur> result = utilisateurService.findByNomPrenom(null, "Jean");
+
+        assertTrue(result.isEmpty());
+        verify(utilisateurRepository, never()).findByNomIgnoreCaseAndPrenomIgnoreCase(anyString(), anyString());
+    }
+
+    @Test
+    void testFindByNomPrenom_prenomNull_retourneEmptySansAppelRepo() {
+        Optional<Utilisateur> result = utilisateurService.findByNomPrenom("Dupont", null);
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ---- updateProfilPersonnel ----
+
+    @Test
+    void testUpdateProfilPersonnel_metAJourLesChampsPersonnelsUniquement() {
+        Utilisateur existing = new Utilisateur();
+        existing.setId(1L);
+        existing.setNom("Ancien");
+        existing.setRole(Role.MEMBRE);
+        when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UtilisateurDTO update = new UtilisateurDTO();
+        update.setNom("Nouveau");
+        update.setTelephone("0102030405");
+
+        utilisateurService.updateProfilPersonnel(1L, update);
+
+        assertEquals("Nouveau", existing.getNom());
+        assertEquals("0102030405", existing.getTelephone());
+        assertEquals(Role.MEMBRE, existing.getRole());
+        verify(utilisateurRepository).save(existing);
+    }
+
+    @Test
+    void testUpdateProfilPersonnel_utilisateurIntrouvable_neSauvegardePas() {
+        when(utilisateurRepository.findById(99L)).thenReturn(Optional.empty());
+
+        utilisateurService.updateProfilPersonnel(99L, new UtilisateurDTO());
+
+        verify(utilisateurRepository, never()).save(any());
+    }
+
+    // ---- changerMotDePassePersonnel ----
+
+    @Test
+    void testChangerMotDePassePersonnel_succes_retourneTrue() {
+        Utilisateur existing = new Utilisateur();
+        existing.setId(1L);
+        existing.setPassword("hashedOld");
+        when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(passwordEncoder.matches("old", "hashedOld")).thenReturn(true);
+        when(passwordEncoder.encode("new")).thenReturn("hashedNew");
+
+        boolean result = utilisateurService.changerMotDePassePersonnel(1L, "old", "new");
+
+        assertTrue(result);
+        assertEquals("hashedNew", existing.getPassword());
+        assertFalse(existing.isPasswordTemporaire());
+        verify(utilisateurRepository).save(existing);
+    }
+
+    @Test
+    void testChangerMotDePassePersonnel_mauvaisMotDePasseActuel_retourneFalse() {
+        Utilisateur existing = new Utilisateur();
+        existing.setId(1L);
+        existing.setPassword("hashedOld");
+        when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(passwordEncoder.matches("wrong", "hashedOld")).thenReturn(false);
+
+        boolean result = utilisateurService.changerMotDePassePersonnel(1L, "wrong", "new");
+
+        assertFalse(result);
+        verify(utilisateurRepository, never()).save(any());
+    }
+
+    @Test
+    void testChangerMotDePassePersonnel_utilisateurIntrouvable_retourneFalse() {
+        when(utilisateurRepository.findById(99L)).thenReturn(Optional.empty());
+
+        boolean result = utilisateurService.changerMotDePassePersonnel(99L, "old", "new");
+
+        assertFalse(result);
+    }
+
+    // ---- save (bas niveau) ----
+
+    @Test
+    void testSave_normaliseEmailEnMinuscule() {
+        Utilisateur u = new Utilisateur();
+        u.setEmail("Test@EXAMPLE.com");
+        when(utilisateurRepository.save(any(Utilisateur.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Utilisateur result = utilisateurService.save(u);
+
+        assertEquals("test@example.com", result.getEmail());
+    }
+
+    // ---- login : cas complementaires ----
+
+    @Test
+    void testLogin_adminSansClub_refuse() {
+        Utilisateur user = new Utilisateur();
+        user.setId(1L);
+        user.setEmail("admin@example.com");
+        user.setPassword("hashed");
+        user.setRole(Role.ADMIN);
+
+        when(utilisateurRepository.findByEmailIgnoreCase("admin@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secret", "hashed")).thenReturn(true);
+
+        Optional<UtilisateurDTO> result = utilisateurService.login("admin@example.com", "secret");
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void testLogin_emailAvecClubIdEtMismatch_refuse() {
+        Utilisateur user = new Utilisateur();
+        user.setId(1L);
+        user.setEmail("admin@example.com");
+        user.setPassword("hashed");
+        user.setRole(Role.ADMIN);
+        club.taekwondo.entity.jpa.Club club = new club.taekwondo.entity.jpa.Club();
+        club.setId(10L);
+        user.setClub(club);
+
+        when(utilisateurRepository.findByEmailIgnoreCase("admin@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secret", "hashed")).thenReturn(true);
+
+        Optional<UtilisateurDTO> result = utilisateurService.login("admin@example.com|99", "secret");
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void testLogin_emailAvecClubIdMatch_bugConnu_rechercheAvecLeSuffixeEtEchoueQuandMeme() {
+        // Bug connu : le split "email|clubId" (lignes 273+) intervient APRES l'appel au
+        // repository (ligne 262), qui reçoit donc "admin@example.com|10" tel quel.
+        // La convention "login multi-club via email|clubId" ne peut donc jamais fonctionner :
+        // findByEmailIgnoreCase ne trouvera jamais cet email compose en base.
+        Utilisateur user = new Utilisateur();
+        user.setId(1L);
+        user.setEmail("admin@example.com");
+        user.setPassword("hashed");
+        user.setRole(Role.ADMIN);
+        club.taekwondo.entity.jpa.Club club = new club.taekwondo.entity.jpa.Club();
+        club.setId(10L);
+        user.setClub(club);
+
+        when(utilisateurRepository.findByEmailIgnoreCase("admin@example.com|10")).thenReturn(Optional.empty());
+
+        Optional<UtilisateurDTO> result = utilisateurService.login("admin@example.com|10", "secret");
+
+        assertFalse(result.isPresent());
+        verify(utilisateurRepository, never()).findByEmailIgnoreCase("admin@example.com");
+    }
 }
 
