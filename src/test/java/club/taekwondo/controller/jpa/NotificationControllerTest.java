@@ -171,6 +171,111 @@ class NotificationControllerTest {
         verify(notificationService, never()).deleteNotification(anyLong());
     }
 
+    // ── POST /api/notifications/envoyer ────────────────────────
+
+    @Test
+    void envoyerNotification_succes_retourne200() {
+        NotificationDTO dto = buildDTO(1L, "Titre", "Message", false);
+        when(notificationService.envoyerNotification(1L, "Message")).thenReturn(dto);
+
+        ResponseEntity<?> response = controller.envoyerNotification(1L, "Message");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void envoyerNotification_utilisateurInexistant_retourneBadRequest() {
+        when(notificationService.envoyerNotification(999L, "Message"))
+                .thenThrow(new IllegalArgumentException("Utilisateur introuvable"));
+
+        ResponseEntity<?> response = controller.envoyerNotification(999L, "Message");
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    // ── GET /api/notifications/utilisateur/{id} ────────────────
+
+    @Test
+    void getNotificationsUtilisateur_sansAuth_retourneUnauthorized() {
+        ResponseEntity<List<NotificationDTO>> response = controller.getNotificationsUtilisateur(1L, null);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void getNotificationsUtilisateur_admin_accedeAuxNotificationsDeNimporteQui() {
+        Authentication auth = new TestingAuthenticationToken("admin@test.com", null, "ROLE_ADMIN");
+        auth.setAuthenticated(true);
+        when(notificationService.getToutesNotificationsUtilisateur(5L)).thenReturn(List.of());
+
+        ResponseEntity<List<NotificationDTO>> response = controller.getNotificationsUtilisateur(5L, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(utilisateurRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void getNotificationsUtilisateur_membrePourSoiMeme_retourneOk() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getToutesNotificationsUtilisateur(1L)).thenReturn(List.of());
+
+        ResponseEntity<List<NotificationDTO>> response = controller.getNotificationsUtilisateur(1L, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getNotificationsUtilisateur_membrePourAutrui_retourneForbidden() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+
+        ResponseEntity<List<NotificationDTO>> response = controller.getNotificationsUtilisateur(999L, auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void getNotificationsUtilisateur_appelantIntrouvable_retourneForbidden() {
+        Authentication auth = new TestingAuthenticationToken("inconnu@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("inconnu@test.com")).thenReturn(Optional.empty());
+
+        ResponseEntity<List<NotificationDTO>> response = controller.getNotificationsUtilisateur(1L, auth);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    // ── PUT /api/notifications/{id}/lue ────────────────────────
+
+    @Test
+    void marquerCommeLue_succes_retourne200() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(5L)).thenReturn(1L);
+
+        ResponseEntity<?> response = controller.marquerCommeLue(5L, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(notificationService).marquerCommeLue(5L);
+    }
+
+    @Test
+    void marquerCommeLue_notificationInexistante_retourne404() {
+        Authentication auth = new TestingAuthenticationToken("membre@test.com", null, "ROLE_MEMBRE");
+        auth.setAuthenticated(true);
+        when(utilisateurRepository.findByEmail("membre@test.com")).thenReturn(Optional.of(utilisateur));
+        when(notificationService.getOwnerId(999L)).thenReturn(1L);
+        doThrow(new IllegalArgumentException("Not found")).when(notificationService).marquerCommeLue(999L);
+
+        ResponseEntity<?> response = controller.marquerCommeLue(999L, auth);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
     // ── helpers ─────────────────────────────────────────────────
 
     private NotificationDTO buildDTO(Long id, String titre, String message, boolean lu) {
