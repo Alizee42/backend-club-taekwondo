@@ -214,4 +214,98 @@ class InscriptionEvenementServiceTest extends AbstractServiceIntegrationTest {
 
         assertTrue(created.getMembreEmail().endsWith("(parent)"));
     }
+
+    @Test
+    void convertToDTO_membreAvecCompteUtilisateurDirect_utiliseSonEmail() {
+        Utilisateur compte = new Utilisateur();
+        compte.setNom("Adulte");
+        compte.setPrenom("Pratiquant");
+        compte.setEmail("adulte-pratiquant@test.com");
+        compte.setPassword("secret");
+        compte.setRole(Role.MEMBRE);
+        compte.setClub(club);
+        compte = utilisateurService.save(compte);
+
+        Membre adulte = new Membre();
+        adulte.setNom("Adulte");
+        adulte.setPrenom("Pratiquant");
+        adulte.setEstAdulte(true);
+        adulte.setCompteUtilisateur(compte);
+        adulte.setClub(club);
+        adulte = membreService.save(adulte);
+
+        InscriptionEvenementDTO created = inscriptionService.inscrireMembres(
+                evenement.getId(), List.of(adulte.getId()), null).get(0);
+
+        assertEquals("adulte-pratiquant@test.com", created.getMembreEmail());
+    }
+
+    @Test
+    void getAllInscriptions_retourneToutesLesInscriptions() {
+        inscriptionService.inscrireMembres(evenement.getId(), List.of(enfant.getId()), null);
+
+        List<InscriptionEvenementDTO> all = inscriptionService.getAllInscriptions();
+
+        assertEquals(1, all.size());
+    }
+
+    @Test
+    void getInscriptionsByEvenementAndStatut_sansStatut_retourneToutes() {
+        inscriptionService.inscrireMembres(evenement.getId(), List.of(enfant.getId()), null);
+
+        List<InscriptionEvenementDTO> toutes =
+                inscriptionService.getInscriptionsByEvenementAndStatut(evenement.getId(), null);
+
+        assertEquals(1, toutes.size());
+    }
+
+    @Test
+    void getInscriptionsByMembreId_retourneLesInscriptionsActivesDuMembre() {
+        InscriptionEvenementDTO created = inscriptionService.inscrireMembres(
+                evenement.getId(), List.of(enfant.getId()), null).get(0);
+
+        List<InscriptionEvenementDTO> inscriptions = inscriptionService.getInscriptionsByMembreId(enfant.getId());
+
+        assertEquals(1, inscriptions.size());
+        assertEquals(created.getId(), inscriptions.get(0).getId());
+    }
+
+    @Test
+    void getInscriptionsByMembreId_neRetournePasLesAnnulees() {
+        InscriptionEvenementDTO created = inscriptionService.inscrireMembres(
+                evenement.getId(), List.of(enfant.getId()), null).get(0);
+        inscriptionService.annulerInscription(created.getId());
+
+        List<InscriptionEvenementDTO> inscriptions = inscriptionService.getInscriptionsByMembreId(enfant.getId());
+
+        assertTrue(inscriptions.isEmpty());
+    }
+
+    @Test
+    void updateInscription_succes_metAJourLesChamps() {
+        InscriptionEvenementDTO created = inscriptionService.inscrireMembres(
+                evenement.getId(), List.of(enfant.getId()), null).get(0);
+
+        InscriptionEvenementDTO update = new InscriptionEvenementDTO();
+        update.setMembreId(enfant.getId());
+        update.setEvenementId(evenement.getId());
+        update.setStatut(StatutInscription.VALIDEE);
+        update.setCommentaire("Commentaire modifie");
+        update.setPresence(true);
+
+        InscriptionEvenementDTO updated = inscriptionService.updateInscription(created.getId(), update);
+
+        assertEquals(StatutInscription.VALIDEE, updated.getStatut());
+        assertEquals("Commentaire modifie", updated.getCommentaire());
+        assertEquals(Boolean.TRUE, updated.getPresence());
+    }
+
+    @Test
+    void updateInscription_introuvable_leveRuntimeException() {
+        InscriptionEvenementDTO dto = new InscriptionEvenementDTO();
+        dto.setMembreId(enfant.getId());
+        dto.setEvenementId(evenement.getId());
+
+        assertThrows(RuntimeException.class, () -> inscriptionService.updateInscription(999999L, dto));
+    }
 }
