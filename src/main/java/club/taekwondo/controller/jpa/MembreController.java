@@ -46,6 +46,13 @@ public class MembreController {
             }
 
             if (parentId != null) {
+                boolean isAdminOrSuper = authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN")
+                                || a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("SUPER_ADMIN"));
+                if (!isAdminOrSuper) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("message", "Accès refusé."));
+                }
                 List<MembreDTO> children = membreService.getMembresByUtilisateurId(parentId);
                 return children.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(children);
             }
@@ -83,31 +90,36 @@ public class MembreController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getMembreById(@PathVariable Long id, Authentication authentication) {
-        boolean isAdminOrSuper = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN")
-                        || a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("SUPER_ADMIN"));
-        if (!isAdminOrSuper) {
-            String email = authentication.getName();
-            boolean isParent = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
-            if (isParent) {
-                boolean ownsChild = membreService.getMembresByParentEmail(email).stream()
-                        .anyMatch(m -> id.equals(m.getId()));
-                if (!ownsChild) return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Accès refusé : ce membre ne fait pas partie de votre famille."));
-            } else {
-                // MEMBRE : seulement sa propre fiche
-                return membreService.getMembreByUtilisateurEmail(email)
-                        .filter(m -> id.equals(m.getId()))
-                        .<ResponseEntity<?>>map(ResponseEntity::ok)
-                        .orElseGet(() -> ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .body(Map.of("message", "Accès refusé.")));
-            }
+        if (!canAccessMembre(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Accès refusé."));
         }
         return membreService.getMembreById(id)
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "Membre non trouvé avec l'ID : " + id)));
+    }
+
+    /** Vrai si l'utilisateur connecté est ADMIN/SUPER_ADMIN, ou PARENT proprietaire de cet
+     * enfant, ou MEMBRE proprietaire de cette fiche. Reutilise pour GET/PUT/DELETE /{id}. */
+    private boolean canAccessMembre(Long id, Authentication authentication) {
+        boolean isAdminOrSuper = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN")
+                        || a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("SUPER_ADMIN"));
+        if (isAdminOrSuper) {
+            return true;
+        }
+        String email = authentication.getName();
+        boolean isParent = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PARENT") || a.getAuthority().equals("PARENT"));
+        if (isParent) {
+            return membreService.getMembresByParentEmail(email).stream()
+                    .anyMatch(m -> id.equals(m.getId()));
+        }
+        // MEMBRE : seulement sa propre fiche
+        return membreService.getMembreByUtilisateurEmail(email)
+                .filter(m -> id.equals(m.getId()))
+                .isPresent();
     }
 
     /** Parent : récupère uniquement SES enfants (via le JWT) */
@@ -119,6 +131,7 @@ public class MembreController {
     }
 
     /** 1-1 éventuel : membre rattaché à un utilisateur adulte, renvoie DTO */
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping("/by-user/{utilisateurId}")
     public ResponseEntity<?> getMembreByUtilisateurId(@PathVariable Long utilisateurId) {
         return membreService.getMembreEntityByIdUtilisateur(utilisateurId)
@@ -128,6 +141,7 @@ public class MembreController {
     }
 
     /** Alias pour compatibilité frontend : membre rattaché à un utilisateur adulte */
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping("/by-utilisateur/{utilisateurId}")
     public ResponseEntity<?> getMembreByUtilisateurIdAlias(@PathVariable Long utilisateurId) {
         return membreService.getMembreEntityByIdUtilisateur(utilisateurId)
@@ -137,6 +151,7 @@ public class MembreController {
     }
 
     /** Admin: utile pour sélecteur enfants par parent en BO */
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @GetMapping("/by-parent/{parentId}")
     public ResponseEntity<List<Map<String, Object>>> getByParent(@PathVariable Long parentId) {
         List<MembreDTO> enfants = membreService.getMembresByUtilisateurId(parentId);
@@ -172,10 +187,14 @@ public class MembreController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateMembre(@PathVariable Long id, @RequestBody MembreDTO membreDTO) {
+    public ResponseEntity<?> updateMembre(@PathVariable Long id, @RequestBody MembreDTO membreDTO, Authentication authentication) {
         if (membreService.getMembreById(id).isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
+        }
+        if (!canAccessMembre(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Accès refusé."));
         }
         try {
             MembreDTO membreMisAJour = membreService.updateMembre(id, membreDTO);
@@ -187,10 +206,14 @@ public class MembreController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMembre(@PathVariable Long id) {
+    public ResponseEntity<?> deleteMembre(@PathVariable Long id, Authentication authentication) {
         if (membreService.getMembreById(id).isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Membre non trouvé avec l'ID : " + id));
+        }
+        if (!canAccessMembre(id, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Accès refusé."));
         }
         try {
             membreService.deleteMembre(id);
