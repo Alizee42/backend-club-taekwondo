@@ -129,6 +129,7 @@ class MembreControllerTest {
         Authentication auth = auth("membre@test.com", "ROLE_MEMBRE");
         MembreDTO own = membre(3L, "Alizee");
         when(membreService.getMembreByUtilisateurEmail("membre@test.com")).thenReturn(Optional.of(own));
+        when(membreService.getMembreById(3L)).thenReturn(Optional.of(own));
 
         ResponseEntity<?> forbidden = controller.getMembreById(999L, auth);
         ResponseEntity<?> allowed = controller.getMembreById(3L, auth);
@@ -152,7 +153,7 @@ class MembreControllerTest {
     void updateMembre_notFound_returns404() {
         when(membreService.getMembreById(99L)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.updateMembre(99L, new MembreDTO());
+        ResponseEntity<?> response = controller.updateMembre(99L, new MembreDTO(), auth("admin@test.com", "ROLE_ADMIN"));
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
@@ -349,7 +350,7 @@ class MembreControllerTest {
         when(membreService.updateMembre(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(membre(1L, "Leo modifie"));
 
-        ResponseEntity<?> response = controller.updateMembre(1L, new MembreDTO());
+        ResponseEntity<?> response = controller.updateMembre(1L, new MembreDTO(), auth("admin@test.com", "ROLE_ADMIN"));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
@@ -360,7 +361,7 @@ class MembreControllerTest {
         when(membreService.updateMembre(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new RuntimeException("boom"));
 
-        ResponseEntity<?> response = controller.updateMembre(1L, new MembreDTO());
+        ResponseEntity<?> response = controller.updateMembre(1L, new MembreDTO(), auth("admin@test.com", "ROLE_ADMIN"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
@@ -371,7 +372,7 @@ class MembreControllerTest {
     void deleteMembre_notFound_retourne404() {
         when(membreService.getMembreById(99L)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.deleteMembre(99L);
+        ResponseEntity<?> response = controller.deleteMembre(99L, auth("admin@test.com", "ROLE_ADMIN"));
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
@@ -380,7 +381,7 @@ class MembreControllerTest {
     void deleteMembre_succes_retourneOk() {
         when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
 
-        ResponseEntity<?> response = controller.deleteMembre(1L);
+        ResponseEntity<?> response = controller.deleteMembre(1L, auth("admin@test.com", "ROLE_ADMIN"));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(membreService).deleteMembre(1L);
@@ -391,7 +392,7 @@ class MembreControllerTest {
         when(membreService.getMembreById(1L)).thenReturn(Optional.of(membre(1L, "Leo")));
         org.mockito.Mockito.doThrow(new RuntimeException("boom")).when(membreService).deleteMembre(1L);
 
-        ResponseEntity<?> response = controller.deleteMembre(1L);
+        ResponseEntity<?> response = controller.deleteMembre(1L, auth("admin@test.com", "ROLE_ADMIN"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
