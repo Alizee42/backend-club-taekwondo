@@ -203,7 +203,11 @@ public class UtilisateurController {
                         .body(Map.of("message", "Cet email est déjà utilisé."));
             }
 
-            if (utilisateurDTO.getRole() == null || String.valueOf(utilisateurDTO.getRole()).isBlank()) {
+            // Auto-inscription publique : seuls MEMBRE et PARENT sont selectionnables par
+            // l'utilisateur lui-meme. Toute autre valeur (notamment ADMIN/SUPER_ADMIN) est
+            // ignoree pour empecher une elevation de privileges via ce endpoint sans auth.
+            String roleDemande = String.valueOf(utilisateurDTO.getRole()).toUpperCase(Locale.ROOT);
+            if (!Role.MEMBRE.name().equals(roleDemande) && !Role.PARENT.name().equals(roleDemande)) {
                 utilisateurDTO.setRole(Role.MEMBRE.name());
             }
 
