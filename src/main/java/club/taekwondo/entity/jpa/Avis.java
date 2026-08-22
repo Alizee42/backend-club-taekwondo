@@ -1,6 +1,8 @@
 package club.taekwondo.entity.jpa;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDate;
 
 @Entity
@@ -25,6 +27,7 @@ public class Avis {
     private String pseudoVisiteur;
 
     @Column(name = "note", columnDefinition = "SMALLINT")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     private Integer note;
 
     @Column(name = "type_avis", length = 50)
