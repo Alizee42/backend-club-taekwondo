@@ -8,6 +8,7 @@ import club.taekwondo.service.jpa.UtilisateurService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +43,7 @@ public class EnseignantController {
     }
 
     // Création: restreinte ADMIN (club) & SUPER_ADMIN
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping
     public ResponseEntity<EnseignantDTO> create(@RequestBody EnseignantDTO dto, Authentication authentication) {
         String email = authentication != null ? authentication.getName() : null;
@@ -60,6 +62,7 @@ public class EnseignantController {
     }
 
     // Mise à jour
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<EnseignantDTO> update(@PathVariable Long id, @RequestBody EnseignantDTO dto, Authentication authentication) {
         String email = authentication != null ? authentication.getName() : null;
@@ -78,6 +81,7 @@ public class EnseignantController {
     }
 
     // Suppression
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
         String email = authentication != null ? authentication.getName() : null;
@@ -96,6 +100,7 @@ public class EnseignantController {
     }
 
     // Upload de photo d'enseignant (ADMIN/SUPER_ADMIN)
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/upload-photo")
     public ResponseEntity<Map<String, String>> uploadPhoto(@RequestParam("photo") MultipartFile photo) {
         try {
