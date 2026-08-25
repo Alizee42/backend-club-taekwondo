@@ -38,10 +38,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
+
+    private static final Set<String> ALLOWED_DOCUMENT_EXTENSIONS = Set.of(
+            "pdf", "jpg", "jpeg", "png", "webp", "doc", "docx");
 
     private final DocumentService documentService;
     private final UtilisateurService utilisateurService;
@@ -342,9 +346,18 @@ public class DocumentController {
     }
 
     private String saveFileLocally(MultipartFile file) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename != null && originalFilename.contains(".")
+                ? originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase()
+                : "";
+        if (extension.isEmpty() || !ALLOWED_DOCUMENT_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("Type de fichier non autorisé. Formats acceptés : "
+                    + String.join(", ", ALLOWED_DOCUMENT_EXTENSIONS) + ".");
+        }
+
         Path base = Paths.get(uploadDir).toAbsolutePath().normalize().resolve("documents").normalize();
         Files.createDirectories(base);
-        String safeName = System.currentTimeMillis() + "_" + file.getOriginalFilename().replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeName = System.currentTimeMillis() + "_" + originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_");
         Path target = base.resolve(safeName);
         try (InputStream in = file.getInputStream()) {
             Files.copy(in, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);

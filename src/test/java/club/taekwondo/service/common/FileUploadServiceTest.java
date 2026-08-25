@@ -66,7 +66,7 @@ class FileUploadServiceTest {
     @Test
     void uploadFile_creeLeSousDossierSiAbsent() throws Exception {
         FileUploadService service = new FileUploadService(tempDir.toString());
-        MultipartFile file = new MockMultipartFile("file", "doc.pdf", "application/pdf", "contenu".getBytes());
+        MultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", "contenu".getBytes());
 
         service.uploadFile(file, "documents/nested");
 
@@ -89,12 +89,26 @@ class FileUploadServiceTest {
     }
 
     @Test
-    void uploadFile_sansExtension_fonctionneQuandMeme() throws Exception {
+    void uploadFile_sansExtension_leveIllegalArgument() {
         FileUploadService service = new FileUploadService(tempDir.toString());
         MultipartFile file = new MockMultipartFile("file", "fichiersansextension", "text/plain", "contenu".getBytes());
 
-        String result = service.uploadFile(file, "avis");
+        assertThrows(IllegalArgumentException.class, () -> service.uploadFile(file, "avis"));
+    }
 
-        assertTrue(Files.exists(tempDir.resolve(result)));
+    @Test
+    void uploadFile_extensionNonAutorisee_leveIllegalArgument() {
+        FileUploadService service = new FileUploadService(tempDir.toString());
+        MultipartFile file = new MockMultipartFile("file", "page.html", "text/html", "<script>alert(1)</script>".getBytes());
+
+        assertThrows(IllegalArgumentException.class, () -> service.uploadFile(file, "avis"));
+    }
+
+    @Test
+    void uploadFile_extensionAutoriseeMaisContentTypeIncoherent_leveIllegalArgument() {
+        FileUploadService service = new FileUploadService(tempDir.toString());
+        MultipartFile file = new MockMultipartFile("file", "faux.jpg", "text/html", "<script>alert(1)</script>".getBytes());
+
+        assertThrows(IllegalArgumentException.class, () -> service.uploadFile(file, "avis"));
     }
 }

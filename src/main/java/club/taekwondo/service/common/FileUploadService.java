@@ -6,9 +6,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.Set;
 
 @Service
 public class FileUploadService {
+
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp", "svg");
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml");
 
     private final Path uploadRoot;
 
@@ -20,10 +25,25 @@ public class FileUploadService {
      * Enregistre un fichier dans un sous-dossier spécifique (ex: "evenements", "photos", etc.).
      * Retourne le chemin relatif (ex: "evenements/image.jpg") à stocker côté base ou front.
      */
-    
+
     public String uploadFile(MultipartFile file, String subFolder) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Le fichier est vide ou invalide.");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            throw new IllegalArgumentException("Le nom du fichier est invalide.");
+        }
+
+        String extension = extractExtension(originalFilename);
+        if (extension.isEmpty() || !ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("Type de fichier non autorisé. Formats acceptés : "
+                    + String.join(", ", ALLOWED_EXTENSIONS) + ".");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+            throw new IllegalArgumentException("Type de fichier non autorisé (contenu détecté : " + contentType + ").");
         }
 
         // Crée le répertoire cible s’il n’existe pas
@@ -33,12 +53,6 @@ public class FileUploadService {
         }
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
-        }
-
-        // Nom de fichier original
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("Le nom du fichier est invalide.");
         }
 
         // Génère un nom unique
@@ -76,6 +90,14 @@ public class FileUploadService {
         }
 
         return uniqueFilename;
+    }
+
+    private String extractExtension(String filename) {
+        int dotIndex = filename.lastIndexOf(".");
+        if (dotIndex < 0 || dotIndex == filename.length() - 1) {
+            return "";
+        }
+        return filename.substring(dotIndex + 1).toLowerCase();
     }
 }
 
