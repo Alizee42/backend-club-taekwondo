@@ -25,6 +25,7 @@ public class NotificationController {
     private UtilisateurRepository utilisateurRepository;
 
     // 🔹 Envoyer une notification à un utilisateur
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/envoyer")
     public ResponseEntity<?> envoyerNotification(@RequestParam Long utilisateurId, @RequestParam String message) {
         try {
