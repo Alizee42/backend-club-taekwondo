@@ -129,7 +129,16 @@ public class EmailService {
        💬 EMAIL - Message de contact
        ============================================ */
     public void envoyerMessageContact(String nom, String email, String objet, String contenu) {
+        envoyerMessageContact(null, nom, email, objet, contenu);
+    }
+
+    public void envoyerMessageContact(Club club, String nom, String email, String objet, String contenu) {
         String sujet = "[Contact Site] " + objet;
+
+        // Destinataire côté club : l'email public du club si connu, sinon le fallback historique.
+        String destinataireClub = club != null && club.getEmail() != null && !club.getEmail().isBlank()
+                ? club.getEmail()
+                : (contactTo != null && !contactTo.isBlank() ? contactTo : fromEmail);
 
         // message reçu côté club
         String htmlContact = baseTemplate("Nouveau message de contact",
@@ -143,7 +152,7 @@ public class EmailService {
                 """.formatted(escape(nom), escape(email), escape(objet), escape(contenu))
         );
 
-        envoyerEmailHtml(contactTo != null && !contactTo.isBlank() ? contactTo : fromEmail, sujet, htmlContact);
+        envoyerEmailHtml(club, destinataireClub, sujet, htmlContact);
 
         // accusé de réception côté utilisateur
         try {
@@ -159,7 +168,7 @@ public class EmailService {
                     <p style="margin-top:24px;">Cordialement,<br><strong>L'équipe du Club de Taekwondo</strong></p>
                     """.formatted(escape(nom), escape(objet))
             );
-            envoyerEmailHtml(email, ackSujet, ackHtml);
+            envoyerEmailHtml(club, email, ackSujet, ackHtml);
         } catch (Exception ignored) {}
     }
 

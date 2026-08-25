@@ -5,6 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class ContactMessageDTO {
+
+    /** Club depuis lequel le formulaire est soumis (optionnel : null si aucun club selectionne). */
+    private Long clubId;
+
     @NotBlank(message = "Le nom est requis")
     @Size(max = 120, message = "Nom trop long")
     private String name;
@@ -21,6 +25,8 @@ public class ContactMessageDTO {
     @Size(min = 10, max = 4000, message = "Le message doit faire entre 10 et 4000 caractères")
     private String message;
 
+    public Long getClubId() { return clubId; }
+    public void setClubId(Long clubId) { this.clubId = clubId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getEmail() { return email; }
