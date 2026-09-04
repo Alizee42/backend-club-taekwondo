@@ -28,7 +28,23 @@ Flyway applique automatiquement les migrations au démarrage.
 
 - Java 17+
 - Maven
-- PostgreSQL en cours d'exécution
+- PostgreSQL en cours d'exécution (voir ci-dessous pour le lancer via Docker)
+
+## Base de données locale (Docker)
+
+Un `docker-compose.local.yml` lance une base PostgreSQL isolée pour le développement, sans toucher aux données de production :
+
+```bash
+docker compose -f docker-compose.local.yml up -d
+```
+
+Identifiants par défaut (déjà alignés avec `application-local.properties` et `.env.example`) : `postgres` / `postgres` / base `taekwondodb`, exposée uniquement sur `127.0.0.1:5432`. Le profil `local` seed automatiquement les comptes et données de démo (`test.data.seed=true`).
+
+Pour tout arrêter et repartir d'une base vierge :
+
+```bash
+docker compose -f docker-compose.local.yml down -v
+```
 
 ## Variables d'environnement requises
 
@@ -95,7 +111,11 @@ docker run -p 8080:8080 --env-file .env club-taekwondo
 
 ## CI/CD
 
-Chaque push sur `main` déclenche un pipeline GitHub Actions (`.github/workflows/deploy-ionos.yml`) qui :
-1. Build l'image Docker
-2. La pousse sur le VPS IONOS via SSH
-3. Redémarre le service `taekwondo-api` via Docker Compose
+`main` est protégée : toute modification passe par une Pull Request, avec le CI (`.github/workflows/ci.yml` — compilation + tests) obligatoire avant de pouvoir merger.
+
+Une fois mergé sur `main`, `.github/workflows/deploy-ionos.yml` se déclenche automatiquement et :
+1. Envoie le code source sur le VPS IONOS via SSH
+2. Rebuild l'image Docker directement sur le serveur (`docker compose up -d --build`)
+3. Vérifie que `/actuator/health` répond `UP` avant de considérer le déploiement réussi
+
+Pour tester du code avant de le merger, sans risquer de casser la prod : lancer la base locale (`docker-compose.local.yml` ci-dessus) et démarrer l'app avec le profil `local`.
