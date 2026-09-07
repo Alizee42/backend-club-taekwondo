@@ -38,6 +38,9 @@ public class Echeance {
     @Column(name = "reference")
     private String reference;
 
+    @Column(name = "derniere_relance")
+    private java.time.LocalDateTime derniereRelance;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "paiement_id")
     @JsonBackReference
@@ -101,6 +104,9 @@ public class Echeance {
 
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
+
+    public java.time.LocalDateTime getDerniereRelance() { return derniereRelance; }
+    public void setDerniereRelance(java.time.LocalDateTime derniereRelance) { this.derniereRelance = derniereRelance; }
 
     public Paiement getPaiement() { return paiement; }
     public void setPaiement(Paiement paiement) { this.paiement = paiement; }

@@ -147,4 +147,23 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
            OR (u IS NOT NULL AND u.club.id = :clubId)
     """)
     List<Paiement> findByClubIdAny(Long clubId);
+
+    // 🔹 Paiements payés d'un club sur une période (vue caisse) — même couverture club que findByClubIdAny
+    @Query("""
+        SELECT p FROM Paiement p
+        LEFT JOIN p.commande c
+        LEFT JOIN p.membre m
+        LEFT JOIN p.utilisateur u
+        WHERE LOWER(p.statut) = 'payé'
+          AND p.datePaiement BETWEEN :from AND :to
+          AND (
+                (:clubId IS NULL)
+             OR (c IS NOT NULL AND c.club.id = :clubId)
+             OR (m IS NOT NULL AND m.club.id = :clubId)
+             OR (u IS NOT NULL AND u.club.id = :clubId)
+          )
+    """)
+    List<Paiement> findPayesByClubIdAnyAndDatePaiementBetween(@Param("clubId") Long clubId,
+                                                               @Param("from") LocalDate from,
+                                                               @Param("to") LocalDate to);
 }

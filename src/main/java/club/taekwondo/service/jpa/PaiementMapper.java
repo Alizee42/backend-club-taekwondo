@@ -28,6 +28,9 @@ public class PaiementMapper {
         dto.setMotifAnnulation(paiement.getMotifAnnulation());
         dto.setDateAnnulation(paiement.getDateAnnulation());
         dto.setAdminResponsable(paiement.getAdminResponsable());
+        dto.setCreeParNom(nomComplet(paiement.getCreePar()));
+        dto.setValideParNom(nomComplet(paiement.getValidePar()));
+        dto.setDateValidation(paiement.getDateValidation());
 
         // Club : priorité commande.club > membre.club > utilisateur.club
         Long clubId = null;
@@ -93,5 +96,12 @@ public class PaiementMapper {
 
     private double safe(Double v) {
         return v != null ? v : 0.0;
+    }
+
+    private String nomComplet(club.taekwondo.entity.jpa.Utilisateur u) {
+        if (u == null) return null;
+        String v = (Optional.ofNullable(u.getPrenom()).orElse("") + " " +
+                Optional.ofNullable(u.getNom()).orElse("")).trim();
+        return v.isEmpty() ? null : v;
     }
 }
