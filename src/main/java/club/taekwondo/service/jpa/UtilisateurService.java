@@ -1,5 +1,8 @@
 package club.taekwondo.service.jpa;
 
+import club.taekwondo.dto.InscriptionClubRequestDTO;
+import club.taekwondo.dto.InscriptionResultDTO;
+import club.taekwondo.dto.MembreDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.dto.UtilisateurPaiementDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
@@ -15,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import club.taekwondo.enums.Genre;
 
 import java.time.OffsetDateTime;
@@ -33,18 +37,21 @@ public class UtilisateurService {
     private final MembreRepository membreRepository;
     private final ClubRepository clubRepository;
     private final NotificationService notificationService;
+    private final MembreService membreService;
 
     @Autowired
-    public UtilisateurService(UtilisateurRepository utilisateurRepository, 
+    public UtilisateurService(UtilisateurRepository utilisateurRepository,
                               PasswordEncoder passwordEncoder,
                               MembreRepository membreRepository,
                               ClubRepository clubRepository,
-                              @Lazy NotificationService notificationService) {
+                              @Lazy NotificationService notificationService,
+                              @Lazy MembreService membreService) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
         this.membreRepository = membreRepository;
         this.clubRepository = clubRepository;
         this.notificationService = notificationService;
+        this.membreService = membreService;
     }
 
     /**
@@ -356,6 +363,19 @@ public class UtilisateurService {
             log.debug("[USR-SVC][createUtilisateur] role reçu='{}'", dto.getRole());
         }
 
+        // Auto-inscription (MEMBRE/PARENT) : le club est obligatoire cote serveur, pas
+        // seulement cote formulaire. Sans cela un compte peut etre cree sans club et se
+        // retrouver bloque a la connexion (UtilisateurService.login refuse les non
+        // SUPER_ADMIN sans club), sans que l'utilisateur sache pourquoi.
+        if (!adminCreation && (dto.getRole() == Role.MEMBRE || dto.getRole() == Role.PARENT)) {
+            if (dto.getClubId() == null) {
+                throw new IllegalArgumentException("Un club est obligatoire pour s'inscrire.");
+            }
+            if (!clubRepository.existsById(dto.getClubId())) {
+                throw new IllegalArgumentException("Club invalide.");
+            }
+        }
+
     // Propager l'état temporaire dans le DTO pour toEntity(), puis s'assurer sur l'entité
     dto.setPasswordTemporaire(adminCreation);
         Utilisateur utilisateur = toUtilisateurEntity(dto);
@@ -398,6 +418,36 @@ public class UtilisateurService {
         return saved;
     }
 
+    /**
+     * Auto-inscription complete (utilisateur + membre(s)) en une seule transaction :
+     * si la creation d'un membre echoue (licence dupliquee, parent sans club...), tout
+     * est annule (rollback), pour ne jamais laisser un utilisateur orphelin sans membre.
+     */
+    @Transactional
+    public InscriptionResultDTO inscrireComplet(InscriptionClubRequestDTO req) {
+        if (req == null || req.getUtilisateur() == null) {
+            throw new IllegalArgumentException("Données d'inscription manquantes.");
+        }
+
+        Utilisateur utilisateur = createUtilisateur(req.getUtilisateur(), false);
+
+        List<MembreDTO> membresCrees = new ArrayList<>();
+        List<MembreDTO> demandes = req.getMembres();
+        if (demandes != null) {
+            for (MembreDTO m : demandes) {
+                m.setUtilisateurId(utilisateur.getId());
+                membresCrees.add(membreService.createMembre(m, utilisateur.getId()));
+            }
+        }
+
+        return new InscriptionResultDTO(
+                utilisateur.getId(),
+                utilisateur.getEmail(),
+                utilisateur.getRole() != null ? utilisateur.getRole().name() : null,
+                false,
+                membresCrees
+        );
+    }
 
     public void updateUtilisateurFromDTO(Long id, UtilisateurDTO dto) {
         System.out.println("[" + now() + "][USR-SVC][updateUtilisateurFromDTO] id=" + id + ", DTO: " + safeDto(dto));
