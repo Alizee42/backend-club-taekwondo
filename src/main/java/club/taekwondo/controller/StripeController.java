@@ -449,10 +449,7 @@ public class StripeController {
             Paiement p = paiementService.getById(paiementId)
                     .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable"));
 
-            if (authentication != null && authentication.isAuthenticated()
-                    && !"anonymousUser".equals(authentication.getPrincipal())) {
-                paiementAccessService.assertCanAccessPaiement(authentication, p);
-            }
+            paiementAccessService.assertCanAccessPaiement(authentication, p);
 
             String receiptUrl = stripeService.getReceiptUrl(p).orElse(null);
             if (receiptUrl == null || receiptUrl.isBlank()) {
