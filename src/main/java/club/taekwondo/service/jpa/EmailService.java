@@ -200,7 +200,24 @@ public class EmailService {
     }
 
     /* ============================================
-       �🧩 Template de base pour tous les emails
+       ⚠️ EMAIL - Rappel de paiement en retard
+       ============================================ */
+    public void envoyerRappelPaiement(Club club, String destinataire, String prenom, String message) {
+        String sujet = "Rappel : paiement en retard - Club de Taekwondo";
+        String body = baseTemplate("Rappel de paiement",
+                ("""
+                <p>Bonjour %s,</p>
+                <p>%s</p>
+                <p>Merci de régulariser votre situation dans les plus brefs délais en vous connectant à votre espace membre.</p>
+                <p style=\"margin-top:24px;\">Cordialement,<br><strong>L'équipe du Club de Taekwondo</strong></p>
+                """
+                        ).formatted(escape(prenom == null ? "" : prenom), escape(message))
+        );
+        envoyerEmailHtml(club, destinataire, sujet, body);
+    }
+
+    /* ============================================
+       🧩 Template de base pour tous les emails
        ============================================ */
     private String baseTemplate(String titre, String contenuHtml) {
         return """

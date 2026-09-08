@@ -62,6 +62,12 @@ public class Paiement {
     @Column(name = "admin_responsable")
     private String adminResponsable;
 
+    @Column(name = "date_validation")
+    private LocalDateTime dateValidation;
+
+    @Column(name = "derniere_relance")
+    private LocalDateTime derniereRelance;
+
     @Column(name = "charge_id", length = 100)
     private String chargeId;
 
@@ -86,6 +92,14 @@ public class Paiement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commande_id", nullable = true)
     private Commande commande;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cree_par_id", nullable = true)
+    private Utilisateur creePar;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "valide_par_id", nullable = true)
+    private Utilisateur validePar;
 
     @OneToMany(mappedBy = "paiement", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("numero ASC, dateEcheance ASC")
@@ -188,6 +202,18 @@ public class Paiement {
 
     public Commande getCommande() { return commande; }
     public void setCommande(Commande commande) { this.commande = commande; }
+
+    public Utilisateur getCreePar() { return creePar; }
+    public void setCreePar(Utilisateur creePar) { this.creePar = creePar; }
+
+    public Utilisateur getValidePar() { return validePar; }
+    public void setValidePar(Utilisateur validePar) { this.validePar = validePar; }
+
+    public LocalDateTime getDateValidation() { return dateValidation; }
+    public void setDateValidation(LocalDateTime dateValidation) { this.dateValidation = dateValidation; }
+
+    public LocalDateTime getDerniereRelance() { return derniereRelance; }
+    public void setDerniereRelance(LocalDateTime derniereRelance) { this.derniereRelance = derniereRelance; }
 
     public List<Echeance> getEcheances() { return echeances; }
     public void setEcheances(List<Echeance> echeances) { this.echeances = echeances; }

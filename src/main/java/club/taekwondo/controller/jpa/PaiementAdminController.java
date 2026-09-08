@@ -56,8 +56,10 @@ public class PaiementAdminController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping(value = "/ajouter-manuel", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> ajouterPaiementManuel(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> ajouterPaiementManuel(@RequestBody Map<String, Object> body,
+                                                                     Authentication authentication) {
         try {
+            Utilisateur creePar = paiementAccessService.requireAuthenticatedUser(authentication);
             PaiementRequestDTO req = new PaiementRequestDTO();
 
             Long utilisateurId = PaiementRequestValues.longOrNull(body.get("utilisateurId"));
@@ -100,7 +102,7 @@ public class PaiementAdminController {
                 req.setEcheances(items);
             }
 
-            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
+            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null, creePar);
             if (created == null || created.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("message", "Aucun paiement créé"));
@@ -121,13 +123,15 @@ public class PaiementAdminController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping(value = "/ajouter-complet", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> ajouterPaiementCompletJson(@Valid @RequestBody PaiementRequestDTO req) {
+    public ResponseEntity<Map<String, Object>> ajouterPaiementCompletJson(@Valid @RequestBody PaiementRequestDTO req,
+                                                                          Authentication authentication) {
         try {
             if (req.getDatePaiement() == null || req.getDatePaiement().isBlank()) {
                 req.setDatePaiement(LocalDate.now().toString());
             }
 
-            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null);
+            Utilisateur creePar = paiementAccessService.requireAuthenticatedUser(authentication);
+            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, null, creePar);
             Long firstId = (created != null && !created.isEmpty()) ? created.get(0).getId() : null;
 
             Map<String, Object> response = new HashMap<>();
@@ -153,8 +157,10 @@ public class PaiementAdminController {
             @RequestPart("modePaiement") String modeHuman,
             @RequestPart("datePaiement") String datePaiement,
             @RequestPart(value = "echeances", required = false) String echeancesJson,
-            @RequestPart(value = "justificatif", required = false) MultipartFile justificatif) {
+            @RequestPart(value = "justificatif", required = false) MultipartFile justificatif,
+            Authentication authentication) {
         try {
+            Utilisateur creePar = paiementAccessService.requireAuthenticatedUser(authentication);
             PaiementRequestDTO req = new PaiementRequestDTO();
             req.setUtilisateurNom(utilisateurNom);
             req.setUtilisateurPrenom(utilisateurPrenom);
@@ -174,7 +180,7 @@ public class PaiementAdminController {
                 req.setEcheances(echeances);
             }
 
-            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, justificatif);
+            List<PaiementDTO> created = paiementService.ajouterPaiementsCompletFromDto(req, justificatif, creePar);
             Long firstId = (created != null && !created.isEmpty()) ? created.get(0).getId() : null;
 
             Map<String, Object> response = new HashMap<>();
@@ -219,6 +225,14 @@ public class PaiementAdminController {
     public ResponseEntity<PaiementDTO> annulerPaiement(@PathVariable Long id,
                                                        @RequestBody AnnulationRequestDTO dto) {
         return ResponseEntity.ok(paiementService.annulerPaiement(id, dto));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PostMapping("/{id}/relancer")
+    public ResponseEntity<Map<String, Object>> relancerPaiement(@PathVariable Long id, Authentication authentication) {
+        Utilisateur admin = paiementAccessService.requireAuthenticatedUser(authentication);
+        paiementService.relancerPaiement(id, admin);
+        return ResponseEntity.ok(Map.of("message", "Relance envoyée"));
     }
 
     private ResponseEntity<Map<String, Object>> created(String location, Map<String, Object> body) {

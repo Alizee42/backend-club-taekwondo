@@ -2,7 +2,9 @@ package club.taekwondo.config;
 
 import club.taekwondo.entity.jpa.AboutConfig;
 import club.taekwondo.entity.jpa.AboutValue;
+import club.taekwondo.entity.jpa.Club;
 import club.taekwondo.repository.jpa.AboutConfigRepository;
+import club.taekwondo.repository.jpa.ClubRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -19,15 +21,22 @@ public class AboutConfigBootstrap {
 
     @Bean
     @Order(21)
-    CommandLineRunner seedAboutConfig(AboutConfigRepository repo) {
+    CommandLineRunner seedAboutConfig(AboutConfigRepository repo, ClubRepository clubRepository) {
         return args -> {
-            if (repo.existsById(1L)) {
-                log.info("[AboutConfigBootstrap] Config À propos déjà présente, seed ignoré.");
+            List<Club> clubs = clubRepository.findAll();
+            if (clubs.isEmpty()) {
+                log.warn("[AboutConfigBootstrap] Aucun club en base, seed ignoré (club_id requis).");
+                return;
+            }
+
+            Club premierClub = clubs.get(0);
+            if (repo.findByClub_Id(premierClub.getId()).isPresent()) {
+                log.info("[AboutConfigBootstrap] Config À propos déjà présente pour le club {}, seed ignoré.", premierClub.getId());
                 return;
             }
 
             AboutConfig c = new AboutConfig();
-            c.setId(1L);
+            c.setClub(premierClub);
             c.setHeadingLine1("Un club fondé sur");
             c.setHeadingLine2("l'excellence et le respect");
             c.setLeadText("fondé en 1995, accueille des pratiquants de tous niveaux dans un environnement de respect et de discipline.");

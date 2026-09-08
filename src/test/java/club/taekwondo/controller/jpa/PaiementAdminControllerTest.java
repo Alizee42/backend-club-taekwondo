@@ -101,7 +101,8 @@ class PaiementAdminControllerTest {
     @Test
     void ajouterPaiementManuel_succes_retourneCreated() {
         PaiementDTO created = paiement(5L);
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of(created));
 
         Map<String, Object> body = Map.of(
@@ -112,7 +113,7 @@ class PaiementAdminControllerTest {
                 "montantTotal", 100.0
         );
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(body);
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(body, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(5L, response.getBody().get("paiementId"));
@@ -120,20 +121,22 @@ class PaiementAdminControllerTest {
 
     @Test
     void ajouterPaiementManuel_aucunPaiementCree_retourneInternalServerError() {
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of());
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(Map.of("utilisateurId", 1));
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(Map.of("utilisateurId", 1), auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
 
     @Test
     void ajouterPaiementManuel_erreurValidation_retourneBadRequest() {
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new IllegalArgumentException("montant invalide"));
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(Map.of("utilisateurId", 1));
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(Map.of("utilisateurId", 1), auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
@@ -141,7 +144,8 @@ class PaiementAdminControllerTest {
     @Test
     void ajouterPaiementManuel_avecEcheances_retourneCreated() {
         PaiementDTO created = paiement(7L);
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of(created));
 
         Map<String, Object> echeance = Map.of("dateEcheance", "2026-01-01", "montant", 50.0);
@@ -152,17 +156,18 @@ class PaiementAdminControllerTest {
                 "echeances", List.of(echeance)
         );
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(body);
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(body, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
     @Test
     void ajouterPaiementManuel_erreurInattendue_retourneInternalServerError() {
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new RuntimeException("boom"));
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(Map.of("utilisateurId", 1));
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementManuel(Map.of("utilisateurId", 1), auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
@@ -172,14 +177,15 @@ class PaiementAdminControllerTest {
     @Test
     void ajouterPaiementCompletJson_succes_retourneCreated() {
         PaiementDTO created = paiement(9L);
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of(created));
 
         PaiementRequestDTO req = new PaiementRequestDTO();
         req.setUtilisateurId(1L);
         req.setMontantTotal(100.0);
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletJson(req);
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletJson(req, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(9L, response.getBody().get("paiementId"));
@@ -187,20 +193,22 @@ class PaiementAdminControllerTest {
 
     @Test
     void ajouterPaiementCompletJson_erreurValidation_retourneBadRequest() {
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new IllegalArgumentException("invalide"));
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletJson(new PaiementRequestDTO());
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletJson(new PaiementRequestDTO(), auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
     void ajouterPaiementCompletJson_erreurInattendue_retourneInternalServerError() {
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new RuntimeException("boom"));
 
-        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletJson(new PaiementRequestDTO());
+        ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletJson(new PaiementRequestDTO(), auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
@@ -210,19 +218,22 @@ class PaiementAdminControllerTest {
     @Test
     void ajouterPaiementCompletMultipart_succes_retourneCreated() throws Exception {
         PaiementDTO created = paiement(11L);
-        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull()))
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+        when(paiementService.ajouterPaiementsCompletFromDto(any(PaiementRequestDTO.class), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of(created));
 
         ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletMultipart(
-                "Dupont", "Jean", "jean@test.com", "unique", "150.0", "cb", "2026-01-15", null, null);
+                "Dupont", "Jean", "jean@test.com", "unique", "150.0", "cb", "2026-01-15", null, null, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
     @Test
     void ajouterPaiementCompletMultipart_montantInvalide_retourneBadRequest() {
+        when(paiementAccessService.requireAuthenticatedUser(any())).thenReturn(user(1L, 10L));
+
         ResponseEntity<Map<String, Object>> response = controller.ajouterPaiementCompletMultipart(
-                "Dupont", "Jean", "jean@test.com", "unique", "pas-un-nombre", "cb", "2026-01-15", null, null);
+                "Dupont", "Jean", "jean@test.com", "unique", "pas-un-nombre", "cb", "2026-01-15", null, null, auth("admin@test.com", "ADMIN"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }

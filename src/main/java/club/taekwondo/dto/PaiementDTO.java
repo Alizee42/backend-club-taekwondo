@@ -41,6 +41,11 @@ public class PaiementDTO {
     private LocalDateTime dateAnnulation;
     private String adminResponsable;
 
+    /** Traçabilité : qui a créé / validé ce paiement (null si aucun admin identifié) */
+    private String creeParNom;
+    private String valideParNom;
+    private LocalDateTime dateValidation;
+
     // ===== Getters / Setters =====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -107,4 +112,13 @@ public class PaiementDTO {
 
     public String getAdminResponsable() { return adminResponsable; }
     public void setAdminResponsable(String adminResponsable) { this.adminResponsable = adminResponsable; }
+
+    public String getCreeParNom() { return creeParNom; }
+    public void setCreeParNom(String creeParNom) { this.creeParNom = creeParNom; }
+
+    public String getValideParNom() { return valideParNom; }
+    public void setValideParNom(String valideParNom) { this.valideParNom = valideParNom; }
+
+    public LocalDateTime getDateValidation() { return dateValidation; }
+    public void setDateValidation(LocalDateTime dateValidation) { this.dateValidation = dateValidation; }
 }

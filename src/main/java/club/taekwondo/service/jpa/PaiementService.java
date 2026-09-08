@@ -9,10 +9,12 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.model.Charge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
@@ -46,6 +48,7 @@ public class PaiementService {
     private final PaiementStatsService paiementStatsService;
     private final PaiementStripeService paiementStripeService;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public PaiementService(
             PaiementRepository paiementRepository,
@@ -57,7 +60,8 @@ public class PaiementService {
             PaiementMapper paiementMapper,
             PaiementStatsService paiementStatsService,
             PaiementStripeService paiementStripeService,
-            NotificationService notificationService
+            NotificationService notificationService,
+            EmailService emailService
     ) {
         this.paiementRepository = paiementRepository;
         this.echeanceService = echeanceService;
@@ -69,6 +73,7 @@ public class PaiementService {
         this.paiementStatsService = paiementStatsService;
         this.paiementStripeService = paiementStripeService;
         this.notificationService = notificationService;
+        this.emailService = emailService;
     }
 
     /* ===========================
@@ -269,9 +274,41 @@ public class PaiementService {
         return paiementStatsService.buildDashboardStats(clubId);
     }
 
+    /**
+     * Vue caisse : répartition des paiements encaissés par mode sur une période, pour
+     * le rapprochement (espèces/virement/CB...). Limitation connue : pour un paiement
+     * ECHELONNE, on se base sur datePaiement du paiement global plutôt que la date de
+     * chaque échéance individuelle — suffisant pour une v1.
+     */
+    @Transactional(readOnly = true)
+    public CaisseSuiviDTO buildCaisseSuivi(Long clubId, LocalDate from, LocalDate to) {
+        List<Paiement> paiements = paiementRepository.findPayesByClubIdAnyAndDatePaiementBetween(clubId, from, to);
+
+        Map<String, Double> totalParMode = new LinkedHashMap<>();
+        Map<String, Integer> nbParMode = new LinkedHashMap<>();
+        double totalGeneral = 0.0;
+
+        for (Paiement p : paiements) {
+            String mode = normalizeMode(p.getModePaiement());
+            if (mode == null || mode.isBlank()) mode = "AUTRE";
+            double montant = safeMontant(p.getMontantTotal());
+            totalParMode.merge(mode, montant, Double::sum);
+            nbParMode.merge(mode, 1, Integer::sum);
+            totalGeneral += montant;
+        }
+
+        return new CaisseSuiviDTO(from, to, totalParMode, nbParMode, totalGeneral);
+    }
+
     @Transactional
     public Paiement ajouterPaiementManuel(PaiementDTO dto) {
+        return ajouterPaiementManuel(dto, null);
+    }
+
+    @Transactional
+    public Paiement ajouterPaiementManuel(PaiementDTO dto, Utilisateur creePar) {
         Paiement paiement = new Paiement();
+        paiement.setCreePar(creePar);
         String type = (dto.getType() == null || dto.getType().isBlank()) ? "COTISATION" : norm(dto.getType());
         paiement.setType(type);
         paiement.setModePaiement(normalizeMode(dto.getModePaiement()));
@@ -378,6 +415,11 @@ public class PaiementService {
 
     @Transactional
     public List<PaiementDTO> ajouterPaiementsCompletFromDto(PaiementRequestDTO req, MultipartFile justificatif) {
+        return ajouterPaiementsCompletFromDto(req, justificatif, null);
+    }
+
+    @Transactional
+    public List<PaiementDTO> ajouterPaiementsCompletFromDto(PaiementRequestDTO req, MultipartFile justificatif, Utilisateur creePar) {
         final String type = normalizeType(req.getTypePaiement());
         final String mode = normalizeMode(req.getModePaiement());
         final LocalDate date = LocalDate.parse(req.getDatePaiement());
@@ -408,6 +450,7 @@ public class PaiementService {
             p.setModePaiement(mode);
             p.setType(type);
             p.setCommande(commande);
+            p.setCreePar(creePar);
 
             if ("UNIQUE".equals(type)) {
                 p.setMontantTotal(total);
@@ -927,11 +970,21 @@ public class PaiementService {
 
     @Transactional
     public Paiement validerPaiementAdmin(Long id) {
+        return validerPaiementAdmin(id, null);
+    }
+
+    @Transactional
+    public Paiement validerPaiementAdmin(Long id, Utilisateur validePar) {
         Paiement p = paiementRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + id));
 
         log.debug("[PAY] Validation admin id={} type={} mode={} total={}",
                 p.getId(), p.getType(), p.getModePaiement(), p.getMontantTotal());
+
+        if (validePar != null) {
+            p.setValidePar(validePar);
+            p.setDateValidation(LocalDateTime.now());
+        }
 
         if (p.getEcheances() != null && !p.getEcheances().isEmpty()) {
             for (Echeance e : p.getEcheances()) {
@@ -980,6 +1033,75 @@ public class PaiementService {
         log.info("✅ [PAY] Paiement validé id={} statut={} payé={} restant={}",
                 saved.getId(), saved.getStatut(), saved.getMontantPaye(), saved.getMontantRestant());
         return saved;
+    }
+
+    /**
+     * Relance manuelle (email) d'un paiement en retard. Couvre les paiements UNIQUE
+     * et ECHELONNE, contrairement au job automatique EcheanceReminderJob qui ne
+     * scanne que les échéances (ECHELONNE).
+     */
+    @Transactional
+    public void relancerPaiement(Long id, Utilisateur admin) {
+        Paiement p = paiementRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Paiement introuvable id=" + id));
+
+        if (!isPaiementEnRetard(p)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ce paiement n'est pas en retard.");
+        }
+
+        if (p.getDerniereRelance() != null
+                && p.getDerniereRelance().isAfter(LocalDateTime.now().minusHours(24))) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Une relance a déjà été envoyée pour ce paiement il y a moins de 24h.");
+        }
+
+        Utilisateur destinataire = p.getUtilisateur();
+        if (destinataire == null && p.getMembre() != null) {
+            destinataire = p.getMembre().getCompteUtilisateur();
+            if (destinataire == null) {
+                destinataire = p.getMembre().getParent();
+            }
+        }
+        if (destinataire == null || destinataire.getEmail() == null || destinataire.getEmail().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Aucun destinataire avec email trouvé pour ce paiement.");
+        }
+
+        double montantRestant = safeMontant(p.getMontantRestant());
+        String message = String.format(
+                "Votre paiement de %.2f € restant dû (sur %.2f €) est en retard.",
+                montantRestant, safeMontant(p.getMontantTotal())
+        );
+
+        emailService.envoyerRappelPaiement(destinataire.getClub(), destinataire.getEmail(),
+                destinataire.getPrenom(), message);
+
+        p.setDerniereRelance(LocalDateTime.now());
+        paiementRepository.save(p);
+
+        log.info("[PAY] Relance envoyée paiementId={} destinataire={} par admin={}",
+                p.getId(), destinataire.getEmail(), admin != null ? admin.getEmail() : "?");
+    }
+
+    private boolean isPaiementEnRetard(Paiement p) {
+        if (p == null) return false;
+        if (stripAccents(safeStatut(p.getStatut())).toLowerCase(Locale.ROOT).contains("retard")) return true;
+        LocalDate today = LocalDate.now();
+        if (p.getEcheances() != null && !p.getEcheances().isEmpty()) {
+            return p.getEcheances().stream().anyMatch(e ->
+                    !"payé".equalsIgnoreCase(safeStatut(e.getStatut()))
+                            && e.getDateEcheance() != null
+                            && e.getDateEcheance().isBefore(today));
+        }
+        // Paiement unique : en retard si non payé et que la date de paiement prevue est depassee.
+        return !"payé".equalsIgnoreCase(safeStatut(p.getStatut()))
+                && p.getDatePaiement() != null
+                && p.getDatePaiement().isBefore(today)
+                && safeMontant(p.getMontantRestant()) > 0.0;
+    }
+
+    private String safeStatut(String s) {
+        return s == null ? "" : s;
     }
 
     private void recomputeAggregates(Paiement p) {

@@ -1,5 +1,6 @@
 package club.taekwondo.controller.jpa;
 
+import club.taekwondo.dto.CaisseSuiviDTO;
 import club.taekwondo.dto.DashboardStatsDTO;
 import club.taekwondo.dto.PaiementDTO;
 import club.taekwondo.entity.jpa.Echeance;
@@ -19,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -126,7 +128,10 @@ public class PaiementCommonController {
         paiementAccessService.assertCanAccessPaiement(authentication, paiement);
 
         try {
-            Paiement saved = paiementService.validerPaiementAdmin(id);
+            Utilisateur validePar = paiementAccessService.hasAnyRole(authentication, "ADMIN", "SUPER_ADMIN")
+                    ? paiementAccessService.requireAuthenticatedUser(authentication)
+                    : null;
+            Paiement saved = paiementService.validerPaiementAdmin(id, validePar);
             return ResponseEntity.ok(paiementService.toPaiementDTO(saved));
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -146,6 +151,30 @@ public class PaiementCommonController {
             clubId = (admin.getClub() != null) ? admin.getClub().getId() : null;
         }
         return ResponseEntity.ok(paiementService.buildDashboardStats(clubId));
+    }
+
+    @GetMapping("/suivi")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+    public ResponseEntity<CaisseSuiviDTO> getSuivi(@RequestParam(required = false) String from,
+                                                   @RequestParam(required = false) String to,
+                                                   Authentication authentication) {
+        Long clubId = null;
+        if (paiementAccessService.hasAnyRole(authentication, "ADMIN")
+                && !paiementAccessService.hasAnyRole(authentication, "SUPER_ADMIN")) {
+            Utilisateur admin = paiementAccessService.requireAuthenticatedUser(authentication);
+            clubId = (admin.getClub() != null) ? admin.getClub().getId() : null;
+        }
+
+        LocalDate dateFrom;
+        LocalDate dateTo;
+        try {
+            dateTo = (to != null && !to.isBlank()) ? LocalDate.parse(to) : LocalDate.now();
+            dateFrom = (from != null && !from.isBlank()) ? LocalDate.parse(from) : dateTo.withDayOfMonth(1);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dates invalides (format attendu: yyyy-MM-dd)");
+        }
+
+        return ResponseEntity.ok(paiementService.buildCaisseSuivi(clubId, dateFrom, dateTo));
     }
 
     @GetMapping("/{paiementId}/facture")

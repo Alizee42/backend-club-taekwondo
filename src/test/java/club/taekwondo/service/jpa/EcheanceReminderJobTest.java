@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -75,7 +76,7 @@ class EcheanceReminderJobTest {
         job.rappelerEcheancesEnRetard();
 
         verify(notificationService, never()).envoyerNotification(anyLong(), anyString(), anyString(), anyString(), anyString());
-        verify(emailService, never()).envoyerEmailHtml(any(), anyString(), anyString(), anyString());
+        verify(emailService, never()).envoyerRappelPaiement(any(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -105,7 +106,41 @@ class EcheanceReminderJobTest {
 
         verify(notificationService).envoyerNotification(
                 eq(1L), eq("Échéance en retard"), anyString(), eq("paiement"), eq("/parent/paiements"));
-        verify(emailService).envoyerEmailHtml(any(), eq("parent@test.com"), anyString(), anyString());
+        verify(emailService).envoyerRappelPaiement(any(), eq("parent@test.com"), eq("Jean"), anyString());
+        verify(echeanceRepository).save(argThat(e -> e.getDerniereRelance() != null));
+    }
+
+    @Test
+    void rappelerEcheancesEnRetard_relanceeRecemment_estIgnoree() {
+        Utilisateur parent = utilisateur(8L, "recent@test.com", "Ana", Role.PARENT);
+        Paiement paiement = new Paiement();
+        paiement.setUtilisateur(parent);
+        Echeance echeance = echeanceAvecPaiement(paiement);
+        echeance.setDerniereRelance(java.time.LocalDateTime.now().minusDays(1));
+
+        when(echeanceRepository.findByStatutAndDateEcheanceBefore(eq("en attente"), any(LocalDate.class)))
+                .thenReturn(List.of(echeance));
+
+        job.rappelerEcheancesEnRetard();
+
+        verify(notificationService, never()).envoyerNotification(anyLong(), anyString(), anyString(), anyString(), anyString());
+        verify(emailService, never()).envoyerRappelPaiement(any(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void rappelerEcheancesEnRetard_relanceeIlYaPlusDe3Jours_estRetraitee() {
+        Utilisateur parent = utilisateur(9L, "ancien@test.com", "Leo", Role.PARENT);
+        Paiement paiement = new Paiement();
+        paiement.setUtilisateur(parent);
+        Echeance echeance = echeanceAvecPaiement(paiement);
+        echeance.setDerniereRelance(java.time.LocalDateTime.now().minusDays(4));
+
+        when(echeanceRepository.findByStatutAndDateEcheanceBefore(eq("en attente"), any(LocalDate.class)))
+                .thenReturn(List.of(echeance));
+
+        job.rappelerEcheancesEnRetard();
+
+        verify(notificationService).envoyerNotification(eq(9L), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -177,7 +212,7 @@ class EcheanceReminderJobTest {
         job.rappelerEcheancesEnRetard();
 
         verify(notificationService).envoyerNotification(eq(4L), anyString(), anyString(), anyString(), anyString());
-        verify(emailService, never()).envoyerEmailHtml(any(), anyString(), anyString(), anyString());
+        verify(emailService, never()).envoyerRappelPaiement(any(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -190,7 +225,7 @@ class EcheanceReminderJobTest {
         when(echeanceRepository.findByStatutAndDateEcheanceBefore(eq("en attente"), any(LocalDate.class)))
                 .thenReturn(List.of(echeance));
         doThrow(new RuntimeException("SMTP down")).when(emailService)
-                .envoyerEmailHtml(any(), anyString(), anyString(), anyString());
+                .envoyerRappelPaiement(any(), anyString(), anyString(), anyString());
 
         assertDoesNotThrow(() -> job.rappelerEcheancesEnRetard());
 
