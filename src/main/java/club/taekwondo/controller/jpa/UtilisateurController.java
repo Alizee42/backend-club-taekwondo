@@ -1,5 +1,7 @@
 package club.taekwondo.controller.jpa;
 
+import club.taekwondo.dto.InscriptionClubRequestDTO;
+import club.taekwondo.dto.InscriptionResultDTO;
 import club.taekwondo.dto.LoginDTO;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
@@ -251,6 +253,69 @@ public class UtilisateurController {
             response.put("emailSent", emailSent);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erreur lors de l'inscription."));
+        }
+    }
+
+    /**
+     * Auto-inscription complete : cree l'utilisateur ET son/ses membre(s) associe(s)
+     * en une seule operation transactionnelle (voir UtilisateurService.inscrireComplet).
+     * Remplace le flux register() + N x POST /membres cote frontend, qui pouvait
+     * laisser un utilisateur orphelin sans membre si le second appel echouait.
+     */
+    @PostMapping("/inscription-complete")
+    public ResponseEntity<?> inscriptionComplete(@RequestBody(required = false) InscriptionClubRequestDTO req) {
+        try {
+            if (req == null || req.getUtilisateur() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Requête invalide : données manquantes."));
+            }
+
+            String email = req.getUtilisateur().getEmail();
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Email obligatoire."));
+            }
+
+            // Auto-inscription publique : seuls MEMBRE et PARENT sont selectionnables,
+            // meme regle que /register.
+            String roleDemande = String.valueOf(req.getUtilisateur().getRole()).toUpperCase(Locale.ROOT);
+            if (!Role.MEMBRE.name().equals(roleDemande) && !Role.PARENT.name().equals(roleDemande)) {
+                req.getUtilisateur().setRole(Role.MEMBRE.name());
+            }
+
+            InscriptionResultDTO result = utilisateurService.inscrireComplet(req);
+
+            boolean emailSent = false;
+            try {
+                Utilisateur nouvelUtilisateur = utilisateurService.getUtilisateurEntityById(result.getId()).orElse(null);
+                if (nouvelUtilisateur != null && nouvelUtilisateur.getEmail() != null && !nouvelUtilisateur.getEmail().isBlank()) {
+                    String nom = nouvelUtilisateur.getPrenom() != null ? nouvelUtilisateur.getPrenom() : nouvelUtilisateur.getNom();
+                    emailService.envoyerEmailConfirmationInscription(nouvelUtilisateur.getClub(), nouvelUtilisateur.getEmail(), nom != null ? nom : "");
+                    emailSent = true;
+
+                    if (nouvelUtilisateur.getClub() != null) {
+                        String nomComplet = ((nouvelUtilisateur.getPrenom() != null ? nouvelUtilisateur.getPrenom() : "") + " "
+                                + (nouvelUtilisateur.getNom() != null ? nouvelUtilisateur.getNom() : "")).trim();
+                        emailService.envoyerNotificationInscriptionClub(
+                                nouvelUtilisateur.getClub(),
+                                nomComplet,
+                                nouvelUtilisateur.getEmail(),
+                                roleDemande);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            result.setEmailSent(emailSent);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));

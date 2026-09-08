@@ -3,6 +3,7 @@ package club.taekwondo.service.jpa;
 import club.taekwondo.dto.UtilisateurDTO;
 import club.taekwondo.entity.jpa.Utilisateur;
 import club.taekwondo.enums.Role;
+import club.taekwondo.repository.jpa.ClubRepository;
 import club.taekwondo.repository.jpa.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,9 @@ class UtilisateurServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private ClubRepository clubRepository;
+
     @InjectMocks
     private UtilisateurService utilisateurService;
 
@@ -38,6 +42,7 @@ class UtilisateurServiceTest {
         dto.setPrenom("Jean");
         dto.setEmail("jean.dupont@example.com");
         dto.setPassword("secret");
+        dto.setClubId(1L);
 
         Utilisateur saved = new Utilisateur();
         saved.setId(1L);
@@ -48,6 +53,8 @@ class UtilisateurServiceTest {
 
         when(passwordEncoder.encode("secret")).thenReturn("hashed");
         when(utilisateurRepository.existsByEmailIgnoreCase("jean.dupont@example.com")).thenReturn(false);
+        when(clubRepository.existsById(1L)).thenReturn(true);
+        when(clubRepository.findById(1L)).thenReturn(Optional.empty());
         when(utilisateurRepository.save(any(Utilisateur.class))).thenReturn(saved);
 
         // ACT
