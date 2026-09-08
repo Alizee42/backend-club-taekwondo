@@ -87,25 +87,25 @@ public class MembreService {
             // Membre adulte → rattachement au compte utilisateur
             if (utilisateurId != null) {
                 Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID : " + utilisateurId));
+                        .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé avec l'ID : " + utilisateurId));
                 membre.setCompteUtilisateur(utilisateur);
                 // Adultes: si aucun club précisé dans le DTO mais que l'utilisateur a un club, on l'hérite par défaut
                 if (membre.getClub() == null && utilisateur.getClub() != null) {
                     membre.setClub(utilisateur.getClub());
                 }
             } else {
-                throw new RuntimeException("Impossible de créer un membre adulte sans utilisateur associé.");
+                throw new IllegalArgumentException("Impossible de créer un membre adulte sans utilisateur associé.");
             }
         } else {
             // Membre enfant → rattachement au parent
             if (utilisateurId != null) {
                 Utilisateur parent = utilisateurRepository.findById(utilisateurId)
-                        .orElseThrow(() -> new RuntimeException("Parent non trouvé avec l'ID : " + utilisateurId));
+                        .orElseThrow(() -> new IllegalArgumentException("Parent non trouvé avec l'ID : " + utilisateurId));
                 membre.setParent(parent);
 
                 // Enforcer: l'enfant doit appartenir au même club que le parent
                 if (parent.getClub() == null) {
-                    throw new RuntimeException("Le parent n'a pas de club renseigné. Veuillez d'abord définir le club du parent.");
+                    throw new IllegalArgumentException("Le parent n'a pas de club renseigné. Veuillez d'abord définir le club du parent.");
                 }
 
                 // Si un club est déjà positionné via DTO et différent, on force celui du parent
@@ -113,14 +113,14 @@ public class MembreService {
                     membre.setClub(parent.getClub());
                 }
             } else {
-                throw new RuntimeException("Impossible de créer un membre enfant sans parent associé.");
+                throw new IllegalArgumentException("Impossible de créer un membre enfant sans parent associé.");
             }
         }
 
         // 🔹 Cas général restant: si le DTO fournit un club et qu'aucune règle précédente ne l'a fixé
         if (membre.getClub() == null && membreDTO.getClubId() != null) {
             Club club = clubRepository.findById(membreDTO.getClubId())
-                    .orElseThrow(() -> new RuntimeException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Club non trouvé avec l'ID : " + membreDTO.getClubId()));
             membre.setClub(club);
         }
 
