@@ -1,14 +1,14 @@
 #!/bin/bash
 # Sauvegarde quotidienne de la base taekwondodb (Postgres tournant dans Docker Compose,
-# partage avec le projet Benin Explo sur le meme VPS).
+# partage avec le projet Benin Explo sur le meme VPS, mais bucket B2 dedie et isole).
 # Usage prevu : cron sur le VPS, pas en local.
 #
 # 1. pg_dump compresse -> /opt/backups/taekwondodb/
-# 2. Upload vers Backblaze B2 (remote rclone "b2backup", bucket beniexplo-backups,
-#    sous-dossier taekwondo pour ne pas se melanger avec les sauvegardes Benin Explo)
+# 2. Upload vers Backblaze B2 (remote rclone "b2taekwondo", bucket taekwondo-backups
+#    dedie, separe du bucket beniexplo-backups)
 # 3. Purge des sauvegardes locales ET distantes de plus de RETENTION_DAYS jours
 #
-# Pre-requis sur le VPS : rclone configure (remote "b2backup"), docker compose
+# Pre-requis sur le VPS : rclone configure (remote "b2taekwondo"), docker compose
 # avec un service "postgres", le fichier /opt/projects/.env avec POSTGRES_USER.
 
 set -euo pipefail
@@ -17,7 +17,7 @@ COMPOSE_DIR="/opt/projects"
 BACKUP_DIR="/opt/backups/taekwondodb"
 DB_NAME="taekwondodb"
 RETENTION_DAYS=7
-RCLONE_REMOTE="b2backup:beniexplo-backups/taekwondo"
+RCLONE_REMOTE="b2taekwondo:taekwondo-backups"
 DATE=$(date +%Y%m%d-%H%M%S)
 DUMP_FILE="${BACKUP_DIR}/taekwondodb_${DATE}.sql.gz"
 
